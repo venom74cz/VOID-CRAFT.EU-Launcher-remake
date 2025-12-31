@@ -1,0 +1,39 @@
+# Build Results
+[Bb]in/
+[Oo]bj/
+/publish/
+/release_assets/
+
+# Visual Studio / IDE
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Logs
+*.log
+logs/
+*.txt
+
+# Temporary Application Files
+*.bak
+*.new
+*.tmp
+
+# OS Generated
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+
+# Node.js (Legacy)
+node_modules/
+package-lock.json
+
+# VoidCraft Specific
+/VoidCraftLauncher/Instances/
+/VoidCraftLauncher/IconConverter/
+installed_files.json
+version.json

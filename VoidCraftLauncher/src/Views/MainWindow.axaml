@@ -1,0 +1,461 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:VoidCraftLauncher.ViewModels"
+        xmlns:converters="using:VoidCraftLauncher.Converters"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:asyncImage="clr-namespace:AsyncImageLoader;assembly=AsyncImageLoader.Avalonia"
+        xmlns:wv="using:WebView.Avalonia"
+        mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="600"
+        x:Class="VoidCraftLauncher.Views.MainWindow"
+        Icon="/src/Assets/icon.png"
+        x:DataType="vm:MainViewModel"
+        Title="VOID-CRAFT.EU Launcher"
+        Width="1280" Height="720"
+        MinWidth="1280" MinHeight="720"
+        WindowStartupLocation="CenterScreen"
+        TransparencyLevelHint="Mica"
+        Background="{DynamicResource SolidBackgroundFillColorBaseBrush}">
+
+    <Window.Resources>
+        <converters:ObjectEqualityConverter x:Key="ObjectEqualityConverter"/>
+    </Window.Resources>
+    
+    <Design.DataContext>
+        <vm:MainViewModel/>
+    </Design.DataContext>
+
+    <Grid ColumnDefinitions="300,*">
+        <!-- Sidebar -->
+        <Border Grid.Column="0" Background="#202020">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Spacing="10" Margin="15">
+                    <TextBlock Text="VOID-CRAFT.EU" FontSize="24" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                    <TextBlock Text="{Binding Greeting}" Foreground="#FFDD00" FontSize="11" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"/>
+                    
+                    <!-- User Profile -->
+                    <Border Background="#303030" CornerRadius="8" Padding="10">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <asyncImage:AdvancedImage Width="40" Height="40" CornerRadius="4"
+                                Source="{Binding PlayerSkinUrl, FallbackValue='https://crafatar.com/avatars/MHF_Steve?size=40&amp;overlay'}"/>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="{Binding UserSession.Username, FallbackValue='Guest'}" FontWeight="SemiBold" Foreground="White"/>
+                                <Button Content="PŘIHLÁSIT SE" Command="{Binding LoginCommand}" IsVisible="{Binding !IsLoggedIn}" 
+                                        FontSize="10" Padding="8,4" Height="26" Background="#007ACC" Foreground="White" CornerRadius="4" Margin="0,2,0,0"/>
+                                <TextBlock Text="Online" IsVisible="{Binding IsLoggedIn}" FontSize="12" Foreground="#44FF44"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+                    
+                    <!-- Spacer -->
+                    <Border Height="20"/>
+
+                    <!-- NAVIGATION -->
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="NAVIGACE" FontSize="10" FontWeight="Bold" Foreground="#666666" Margin="0,0,0,5"/>
+                        
+                        <Button Command="{Binding GoToHomeCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" Padding="10" CornerRadius="8">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <TextBlock Text="🏠" FontSize="16"/>
+                                <TextBlock Text="Moje Modpacky" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                            </StackPanel>
+                        </Button>
+                        
+                        <Button Command="{Binding GoToBrowserCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" Padding="10" CornerRadius="8">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <TextBlock Text="🌐" FontSize="16"/>
+                                <TextBlock Text="Prohlížeč" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                            </StackPanel>
+                        </Button>
+                        
+                        <Button Command="{Binding GoToSettingsCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" Padding="10" CornerRadius="8">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <TextBlock Text="⚙" FontSize="16"/>
+                                <TextBlock Text="Nastavení" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+
+                    <!-- Server Status Card -->
+                    <Border Background="#222222" CornerRadius="8" Padding="0" Margin="0,0,0,15" ClipToBounds="True">
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="STAV SERVERU" FontSize="10" FontWeight="Bold" Foreground="#666666"/>
+                            
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <!-- Better Approach for Dot -->
+                                <Panel VerticalAlignment="Center">
+                                    <Border Width="8" Height="8" CornerRadius="4" Background="#44FF44" IsVisible="{Binding IsServerOnline}">
+                                        <Border.Effect>
+                                            <DropShadowEffect BlurRadius="4" Color="#44FF44" Opacity="0.6"/>
+                                        </Border.Effect>
+                                    </Border>
+                                    <Border Width="8" Height="8" CornerRadius="4" Background="#FF4444" IsVisible="{Binding !IsServerOnline}"/>
+                                </Panel>
+
+                                <TextBlock Text="{Binding ServerMotd}" FontWeight="Bold" Foreground="White" FontSize="12" TextTrimming="CharacterEllipsis"/>
+                            </StackPanel>
+                            
+                            <TextBlock Text="{Binding ServerStatusText}" FontSize="11" Foreground="#AAAAAA"/>
+                            <ProgressBar Value="{Binding ServerPlayerCount}" Maximum="{Binding ServerMaxPlayers}" Height="4" CornerRadius="2" Background="#333333" Foreground="#44FF44"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Quick Links -->
+                    <StackPanel Spacing="0">
+                        <Button Content="🌐 Webové stránky" Command="{Binding OpenUrlCommand}" CommandParameter="https://void-craft.eu/"
+                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                                Background="Transparent" Foreground="#AAAAAA" FontSize="12" Padding="10,6"/>
+                        
+                        <Button Content="💬 Discord" Command="{Binding OpenUrlCommand}" CommandParameter="https://discord.com/invite/8rjhkck9w4"
+                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                                Background="Transparent" Foreground="#AAAAAA" FontSize="12" Padding="10,6"/>
+                        
+                        <Button Content="📘 Facebook" Command="{Binding OpenUrlCommand}" CommandParameter="https://www.facebook.com/share/17i6QGG6jn/"
+                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                                Background="Transparent" Foreground="#AAAAAA" FontSize="12" Padding="10,6"/>
+                        
+                        <Button Content="📸 Instagram" Command="{Binding OpenUrlCommand}" CommandParameter="https://www.instagram.com/void_craft.eu"
+                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                                Background="Transparent" Foreground="#AAAAAA" FontSize="12" Padding="10,6"/>
+                        
+                        <Button Content="🎬 YouTube" Command="{Binding OpenUrlCommand}" CommandParameter="https://www.youtube.com/@void-craft-eu"
+                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                                Background="Transparent" Foreground="#AAAAAA" FontSize="12" Padding="10,6"/>
+                    </StackPanel>
+
+            <!-- Spacer -->
+            <Border Height="20"/>
+            
+            </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+        <!-- Main Content (Modpack Browser) -->
+        <Border Grid.Column="1" Background="#121212">
+            <!-- RIGHT PANEL CONTENT -->
+            <Grid RowDefinitions="Auto,*">
+                    
+                <!-- Header Bar (Shared) -->
+                <Border Grid.Row="0" BorderBrush="#333333" BorderThickness="0,0,0,1" Padding="20,15">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <!-- Back Button (Only visible if not Home) -->
+                            <Button Command="{Binding GoToHomeCommand}" IsVisible="{Binding !IsHomeView}" 
+                                    Background="Transparent" Padding="5">
+                                <TextBlock Text="⬅ Zpět na moje modpacky" FontSize="14" Foreground="#AAAAAA" FontWeight="SemiBold"/>
+                            </Button>
+                            
+                            <TextBlock Text="{Binding RightPanelTitle}" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="#DDDDDD"/>
+                        </StackPanel>
+                        
+                        <!-- Search & Add (Only on Home) -->
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" IsVisible="{Binding IsHomeView}">
+                            <TextBox Width="200" Watermark="Hledat nainstalované..." Background="#252525" Foreground="White" BorderThickness="0" CornerRadius="4" Padding="8,5"/>
+                            <Button Content="+ CurseForge" Command="{Binding OpenBrowserCommand}" CommandParameter="CurseForge"
+                                    Background="#F16436" Foreground="White" FontWeight="Bold" Padding="10,5" CornerRadius="4"/>
+                            <Button Content="+ Modrinth" Command="{Binding OpenBrowserCommand}" CommandParameter="Modrinth"
+                                    Background="#1BD96A" Foreground="Black" FontWeight="Bold" Padding="10,5" CornerRadius="4"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+                    
+                    <!-- Content Area -->
+                    <Grid Grid.Row="1">
+
+                        <!-- VIEW 1: LIBRARY (Grid of Modpacks) -->
+                        <ScrollViewer IsVisible="{Binding IsHomeView}">
+                             <Grid Margin="20">
+                                <ItemsControl ItemsSource="{Binding InstalledModpacks}" HorizontalAlignment="Left">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel Orientation="Horizontal" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:CompileBindings="False">
+                                            <Border Width="220" Height="300" Margin="0,0,20,20" Background="#1E1E1E" CornerRadius="12" ClipToBounds="True">
+                                               <Grid>
+                                                   <!-- 1. Full Background Image -->
+                                                   <asyncImage:AdvancedImage Source="{Binding LogoUrl, FallbackValue='https://media.forgecdn.net/avatars/1131/716/638738139330137422_animated.gif'}" 
+                                                                             Stretch="UniformToFill"/>
+                                                   
+                                                   <!-- 2. Dark Gradient Overlay -->
+                                                   <Border VerticalAlignment="Bottom" Height="150">
+                                                       <Border.Background>
+                                                           <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
+                                                               <GradientStop Color="#00000000" Offset="0"/>
+                                                               <GradientStop Color="#E6000000" Offset="0.6"/>
+                                                               <GradientStop Color="#FF121212" Offset="1"/>
+                                                           </LinearGradientBrush>
+                                                       </Border.Background>
+                                                   </Border>
+
+                                                   <!-- 3. Content Overlay -->
+                                                   <StackPanel VerticalAlignment="Bottom" Margin="15" Spacing="8">
+                                                        <TextBlock Text="{Binding Name}" FontWeight="Bold" Foreground="White" FontSize="18" 
+                                                                   TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis">
+                                                            <TextBlock.Effect>
+                                                                <DropShadowEffect BlurRadius="4" Color="Black" Opacity="1"/>
+                                                            </TextBlock.Effect>
+                                                        </TextBlock>
+                                                        
+                                                        <!-- Buttons Loop - Normal State -->
+                                                        <Grid ColumnDefinitions="*, Auto">
+                                                            <Grid.IsVisible>
+                                                                <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                                                    <Binding Path="!DataContext.IsLaunching" RelativeSource="{RelativeSource AncestorType=Window}"/>
+                                                                    <Binding Path="!IsVisible" ElementName="BtnStop"/>
+                                                                </MultiBinding>
+                                                            </Grid.IsVisible>
+                                                            <Button Grid.Column="0" Margin="0,0,5,0"
+                                                                    Command="{Binding DataContext.SelectAndPlayCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                                                    CommandParameter="{Binding}"
+                                                                    Background="#007ACC" Foreground="White" FontWeight="Bold" 
+                                                                    CornerRadius="6" Padding="0,8" VerticalAlignment="Center"
+                                                                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
+                                                                <StackPanel Orientation="Horizontal" Spacing="5">
+                                                                    <TextBlock Text="▶" FontSize="12"/>
+                                                                    <TextBlock Text="HRÁT" FontSize="12"/>
+                                                                </StackPanel>
+                                                            </Button>
+                                                            
+                                                            <Button Grid.Column="1"
+                                                                    Command="{Binding DataContext.SelectAndConfigureCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                                                    CommandParameter="{Binding}"
+                                                                    Background="#333333" Foreground="White" 
+                                                                    CornerRadius="6" Padding="10,8" VerticalAlignment="Center">
+                                                                <TextBlock Text="⚙" FontSize="14"/>
+                                                            </Button>
+                                                        </Grid>
+                                                        
+                                                        <!-- Stop Button - Game Running State (Only for this modpack) -->
+                                                        <Button x:Name="BtnStop"
+                                                                Command="{Binding DataContext.StopGameCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                Background="#CC3333" Foreground="White" FontWeight="Bold" 
+                                                                CornerRadius="6" Padding="0,8" VerticalAlignment="Center"
+                                                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
+                                                            <Button.IsVisible>
+                                                                <MultiBinding Converter="{StaticResource ObjectEqualityConverter}">
+                                                                    <Binding Path="DataContext.RunningModpack" RelativeSource="{RelativeSource AncestorType=Window}"/>
+                                                                    <Binding Path="."/>
+                                                                </MultiBinding>
+                                                            </Button.IsVisible>
+                                                            <StackPanel Orientation="Horizontal" Spacing="5">
+                                                                <TextBlock Text="⏹" FontSize="12"/>
+                                                                <TextBlock Text="UKONČIT" FontSize="12"/>
+                                                            </StackPanel>
+                                                        </Button>
+
+                                                        <!-- Installing Progress Overlay -->
+                                                        <StackPanel Spacing="5">
+                                                            <StackPanel.IsVisible>
+                                                                <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                                                    <Binding Path="DataContext.IsLaunching" RelativeSource="{RelativeSource AncestorType=Window}"/>
+                                                                    <MultiBinding Converter="{StaticResource ObjectEqualityConverter}">
+                                                                        <Binding Path="."/>
+                                                                        <Binding Path="DataContext.CurrentModpack" RelativeSource="{RelativeSource AncestorType=Window}"/>
+                                                                    </MultiBinding>
+                                                                </MultiBinding>
+                                                            </StackPanel.IsVisible>
+                                                            
+                                                            <ProgressBar Value="{Binding DataContext.LaunchProgress, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                                                         Maximum="100" Height="4" CornerRadius="2" Background="#444" Foreground="#007ACC"/>
+                                                            <TextBlock Text="{Binding DataContext.LaunchStatus, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                                                       FontSize="10" Foreground="#AAA" TextTrimming="CharacterEllipsis"/>
+                                                        </StackPanel>
+                                                   </StackPanel>
+                                               </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                             </Grid>
+                        </ScrollViewer>
+
+                        <!-- VIEW 2: GLOBAL SETTINGS (Compact) -->
+                        <ScrollViewer IsVisible="{Binding IsSettingsView}">
+                            <StackPanel Margin="30" Spacing="20">
+                                <StackPanel Spacing="5">
+                                    <TextBlock Text="Globální Konfigurace" FontSize="24" FontWeight="Bold" Foreground="White"/>
+                                    <TextBlock Text="Nastavení pro všechny modpacky." Foreground="#888888"/>
+                                </StackPanel>
+
+                                <Grid ColumnDefinitions="*, 20, *">
+                                    <!-- Column 1: RAM & Java -->
+                                    <StackPanel Grid.Column="0" Spacing="15">
+                                        <!-- RAM -->
+                                        <Border Background="#252525" CornerRadius="8" Padding="15">
+                                            <StackPanel Spacing="10">
+                                                <Grid ColumnDefinitions="*,Auto">
+                                                    <TextBlock Text="RAM (Paměť)" FontWeight="Bold" Foreground="#DDDDDD"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding Config.MaxRamMb, StringFormat='{}{0} MB'}" FontWeight="Bold" Foreground="#007ACC"/>
+                                                </Grid>
+                                                <Slider Minimum="2048" Maximum="{Binding SystemRamMb}" Value="{Binding Config.MaxRamMb}" TickFrequency="512" IsSnapToTickEnabled="True"/>
+                                                <TextBlock Text="{Binding SystemRamMb, StringFormat='Dostupná: {0} MB'}" FontSize="10" Foreground="#666"/>
+                                            </StackPanel>
+                                        </Border>
+                                        
+                                        <!-- Java -->
+                                        <Border Background="#252525" CornerRadius="8" Padding="15">
+                                            <StackPanel Spacing="10">
+                                                <TextBlock Text="Java Cesta" FontWeight="Bold" Foreground="#DDDDDD"/>
+                                                <Grid ColumnDefinitions="*, Auto">
+                                                    <TextBox Grid.Column="0" Text="{Binding Config.JavaPath}" Watermark="Automaticky (spravováno launcherem)" Background="#333333" BorderThickness="0"/>
+                                                    <Button Grid.Column="1" Content="Auto" Command="{Binding SetAutoJavaCommand}" Margin="5,0,0,0" ToolTip.Tip="Vymazat cestu a nechat launcher spravovat Javu automaticky"/>
+                                                </Grid>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+
+                                    <!-- Column 2: Optimization -->
+                                    <StackPanel Grid.Column="2" Spacing="15">
+                                        <Border Background="#252525" CornerRadius="8" Padding="15">
+                                            <StackPanel Spacing="10">
+                                                <Grid ColumnDefinitions="*,Auto">
+                                                    <TextBlock Text="Optimalizace" FontWeight="Bold" Foreground="#DDDDDD" VerticalAlignment="Center"/>
+                                                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding Config.EnableOptimizationFlags}" OnContent="ZAP" OffContent="VYP"/>
+                                                </Grid>
+                                                
+                                                <StackPanel IsVisible="{Binding Config.EnableOptimizationFlags}" Spacing="5">
+                                                    <TextBlock Text="Garbage Collector" FontSize="11" Foreground="#AAA"/>
+                                                    <ComboBox ItemsSource="{Binding GcTypes}" SelectedItem="{Binding Config.SelectedGc}" HorizontalAlignment="Stretch" Background="#333333"/>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Border>
+                                        
+                                        <Button Content="💾 Uložit a Zpět" Command="{Binding SaveSettingsCommand}" Background="#007ACC" Foreground="White" FontWeight="Bold" Padding="0,10" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,20,0,0"/>
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <!-- VIEW 3: MODPACK SETTINGS (Compact) -->
+                        <ScrollViewer IsVisible="{Binding IsModpackSettingsView}">
+                            <StackPanel Margin="30" Spacing="20">
+                                <StackPanel Spacing="5">
+                                    <TextBlock Text="{Binding CurrentModpackConfig.ModpackName, StringFormat='Nastavení: {0}'}" 
+                                               FontSize="24" FontWeight="Bold" Foreground="White"/>
+                                </StackPanel>
+
+                                <Border Background="#252525" CornerRadius="8" Padding="15">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <StackPanel>
+                                            <TextBlock Text="Specifické nastavení" FontWeight="Bold" Foreground="#DDDDDD"/>
+                                            <TextBlock Text="Přepsat globální nastavení pro tento modpack?" FontSize="11" Foreground="#888888"/>
+                                        </StackPanel>
+                                        <ToggleSwitch IsChecked="{Binding CurrentModpackConfig.IsEnabled}" Grid.Column="1" OnContent="ZAP" OffContent="VYP"/>
+                                    </Grid>
+                                </Border>
+
+                                <Grid ColumnDefinitions="*, 20, *" IsVisible="{Binding CurrentModpackConfig.IsEnabled}">
+                                    <!-- Column 1: RAM & Java -->
+                                    <StackPanel Grid.Column="0" Spacing="15">
+                                        <!-- Override RAM -->
+                                        <Border Background="#252525" CornerRadius="8" Padding="15">
+                                            <StackPanel Spacing="10">
+                                                <Grid ColumnDefinitions="*,Auto">
+                                                    <TextBlock Text="Override RAM" FontWeight="Bold" Foreground="#DDDDDD" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding CurrentModpackConfig.RamSliderValue, StringFormat={}{0:0} MB}" FontWeight="Bold" Foreground="#007ACC"/>
+                                                </Grid>
+                                                <Slider Minimum="0" Maximum="{Binding SystemRamMb}" 
+                                                        Value="{Binding CurrentModpackConfig.RamSliderValue}" 
+                                                        TickFrequency="512" IsSnapToTickEnabled="True"/>
+                                                <TextBlock Text="0 = Použít Globální" FontSize="10" Foreground="#666"/>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <!-- Override Java -->
+                                        <Border Background="#252525" CornerRadius="8" Padding="15">
+                                            <StackPanel Spacing="10">
+                                                <TextBlock Text="Override Java" FontWeight="Bold" Foreground="#DDDDDD"/>
+                                                <TextBox Text="{Binding CurrentModpackConfig.OverrideJavaPath}" Watermark="Globální" Background="#333333" BorderThickness="0"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+
+                                    <!-- Column 2: Optimization -->
+                                    <StackPanel Grid.Column="2" Spacing="15">
+                                        <Border Background="#252525" CornerRadius="8" Padding="15">
+                                            <StackPanel Spacing="10">
+                                                <Grid ColumnDefinitions="*,Auto">
+                                                    <TextBlock Text="Over. Optimalizace" FontWeight="Bold" Foreground="#DDDDDD" VerticalAlignment="Center"/>
+                                                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding CurrentModpackConfig.OptimizationFlagsHelper}" OnContent="ZAP" OffContent="VYP"/>
+                                                </Grid>
+                                                
+                                                <StackPanel IsVisible="{Binding CurrentModpackConfig.OptimizationFlagsHelper}" Spacing="5">
+                                                    <TextBlock Text="Garbage Collector" FontSize="11" Foreground="#AAA"/>
+                                                    <ComboBox ItemsSource="{Binding GcTypes}" SelectedItem="{Binding CurrentModpackConfig.OverrideGcType}" HorizontalAlignment="Stretch" Background="#333333" PlaceholderText="Globální"/>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+                                </Grid>
+                                
+                                <!-- Action Buttons -->
+                                <Grid ColumnDefinitions="*,10,*" Margin="0,10,0,0">
+                                    <Button Grid.Column="0" Content="📂 Otevřít složku" Command="{Binding OpenModpackFolderCommand}" 
+                                            Background="#333333" Foreground="White" Padding="0,10" 
+                                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                                    <Button Grid.Column="2" Content="🔧 Správa modů" Command="{Binding ManageModsCommand}" 
+                                            Background="#333333" Foreground="White" Padding="0,10" 
+                                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                                </Grid>
+                                
+                                <Button Content="💾 Uložit změny" Command="{Binding SaveModpackSettingsCommand}" Background="#007ACC" Foreground="White" FontWeight="Bold" Padding="0,10" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,10,0,0"/>
+                                <Button Content="🗑 Odstranit modpack" Command="{Binding DeleteModpackCommand}" IsVisible="{Binding CurrentModpack.IsDeletable}" Background="#AA3333" Foreground="White" FontWeight="Bold" Padding="0,10" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,15,0,0" ToolTip.Tip="Trvale odstraní tento modpack a všchna jeho data"/>
+                            </StackPanel>
+                        </ScrollViewer>
+                        <!-- VIEW 4: BROWSER -->
+                        <Grid Grid.Row="1" IsVisible="{Binding IsBrowserView}" RowDefinitions="Auto,*">
+                            <!-- Search Bar -->
+                            <Border Grid.Row="0" Margin="20" Background="#252525" CornerRadius="8" Padding="5">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBox Text="{Binding BrowserSearchQuery}" Watermark="Hledat modpacky..." BorderThickness="0" Background="Transparent" Foreground="White"/>
+                                    <Button Grid.Column="1" Content="🔍 Hledat" Command="{Binding SearchModpacksCommand}" 
+                                            IsEnabled="{Binding !IsSearching}"
+                                            Background="#007ACC" Foreground="White" CornerRadius="4"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- Results -->
+                            <ScrollViewer Grid.Row="1" Padding="20,20,30,20" HorizontalScrollBarVisibility="Disabled">
+                                <StackPanel>
+                                    <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsSearching}" HorizontalAlignment="Stretch" Height="2"/>
+                                    <TextBlock Text="Žádné výsledky" IsVisible="{Binding !BrowserResults.Count}" HorizontalAlignment="Center" Margin="20" Foreground="#666666"/>
+                                    
+                                    <ItemsControl ItemsSource="{Binding BrowserResults}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Background="#1E1E1E" CornerRadius="8" Padding="10" Margin="0,0,30,10">
+                                                    <Grid ColumnDefinitions="64,*,Auto">
+                                                        <asyncImage:AdvancedImage Width="64" Height="64" CornerRadius="4" Source="{Binding IconUrl}" VerticalAlignment="Top"/>
+                                                        
+                                                        <StackPanel Grid.Column="1" Margin="15,0,15,0" Spacing="5">
+                                                            <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="16" Foreground="White"/>
+                                                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                                                <TextBlock Text="{Binding Author, StringFormat='by {0}'}" FontSize="12" Foreground="#AAAAAA"/>
+                                                                <TextBlock Text="{Binding Source}" FontSize="12" Foreground="#007ACC" FontWeight="Bold"/>
+                                                                <TextBlock Text="{Binding DownloadCount, StringFormat='⬇ {0}'}" FontSize="12" Foreground="#888888"/>
+                                                            </StackPanel>
+                                                            <TextBlock Text="{Binding Description}" FontSize="12" Foreground="#CCCCCC" TextTrimming="CharacterEllipsis" MaxLines="2"/>
+                                                        </StackPanel>
+                                                        
+                                                        <StackPanel Grid.Column="2" Spacing="5" VerticalAlignment="Center">
+                                                            <Button Content="Instalovat" Command="{Binding $parent[Window].DataContext.InstallModpackFromBrowserCommand}" CommandParameter="{Binding}"
+                                                                    Background="#44FF44" Foreground="Black" FontWeight="Bold"/>
+                                                            <Button Content="Web" Command="{Binding $parent[Window].DataContext.OpenUrlCommand}" CommandParameter="{Binding WebLink}"
+                                                                    Background="Transparent" Foreground="#888888" FontSize="11"/>
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </Border>
+    </Grid>
+</Window>

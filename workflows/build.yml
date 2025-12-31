@@ -1,0 +1,186 @@
+name: Build and Release .NET
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths-ignore:
+      - '**.md' # Ignorovat změny v dokumentaci, aby nespouštěly build zbytečně
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  # 1. Check version and if release exists
+  check-version:
+    runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.check.outputs.should_release }}
+      version: ${{ steps.get_version.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get Version from .csproj
+        id: get_version
+        run: |
+          if [ -f "VoidCraftLauncher/VoidCraftLauncher.csproj" ]; then
+             VERSION=$(grep -oP '<Version>\K[^<]+' VoidCraftLauncher/VoidCraftLauncher.csproj)
+          else
+             echo "Error: .csproj file not found"
+             exit 1
+          fi
+          
+          if [ -z "$VERSION" ]; then
+             echo "Error: Could not extract version from .csproj"
+             exit 1
+          fi
+          
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Detected version in csproj: $VERSION"
+
+      - name: Check if Tag Exists
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VER="${{ steps.get_version.outputs.version }}"
+          TAG="v$VER"
+          
+          echo "Checking if release '$TAG' exists..."
+          
+          if gh release view "$TAG" > /dev/null 2>&1; then
+             echo "Release $TAG already exists."
+             echo "should_release=false" >> $GITHUB_OUTPUT
+          else
+             echo "Release $TAG does not exist. A new release will be created."
+             echo "should_release=true" >> $GITHUB_OUTPUT
+          fi
+
+  # 2. Build application (Always run to ensure code validity)
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Restore Dependencies
+        run: dotnet restore VoidCraftLauncher/VoidCraftLauncher.csproj
+
+      - name: Build
+        run: dotnet build VoidCraftLauncher/VoidCraftLauncher.csproj --configuration Release --no-restore
+
+      - name: Publish
+        run: dotnet publish VoidCraftLauncher/VoidCraftLauncher.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o ./publish
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: VoidCraftLauncher-Windows
+          path: ./publish/VoidCraftLauncher.exe
+
+  # 3. Create Release (Only if check-version said true)
+  create-release:
+    needs: [build-windows, check-version]
+    if: needs.check-version.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Prepare Version
+        run: echo "VERSION=${{ needs.check-version.outputs.version }}" >> $GITHUB_ENV
+
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: VoidCraftLauncher-Windows
+          path: ./release_assets
+
+      - name: Extract Release Notes
+        id: extract_notes
+        run: |
+          VERSION="${{ env.VERSION }}"
+          awk -v ver="$VERSION" '
+            /^## / { 
+              if (p) exit; 
+              if ($0 ~ ver) { 
+                p=1; next 
+              } 
+            } 
+            p
+          ' CHANGELOG.md > release_body.md
+          
+          if [ ! -s release_body.md ]; then
+            echo "Release v$VERSION" > release_body.md
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ env.VERSION }}
+          name: v${{ env.VERSION }}
+          files: ./release_assets/VoidCraftLauncher.exe
+          body_path: release_body.md
+          draft: false
+          prerelease: ${{ contains(env.VERSION, 'alpha') || contains(env.VERSION, 'beta') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # 4. Notify Discord (Only if Release was created)
+  notify-discord:
+    if: needs.check-version.outputs.should_release == 'true'
+    needs: [create-release, check-version]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Prepare Notification
+        run: |
+          VERSION="${{ needs.check-version.outputs.version }}"
+          
+          # Re-extract notes for discord
+           awk -v ver="$VERSION" '/^## / { if (p) exit; if ($0 ~ ver) { p=1; next } } p' CHANGELOG.md > notes.md
+           if [ ! -s notes.md ]; then echo "New version released." > notes.md; fi
+           
+           # Discord Format
+           CONTENT="||<@&1326633984196870235>||"
+           BODY=$(cat notes.md)
+           
+           # Escape check? simple approach:
+           jq -n \
+            --arg content "$CONTENT" \
+            --arg body "$BODY" \
+            --arg title "VoidCraft Launcher v$VERSION" \
+            --arg url "https://github.com/${{ github.repository }}/releases/tag/v$VERSION" \
+            '{
+              username: "VoidCraft BuildBot",
+              avatar_url: "https://void-craft.eu/logo.png",
+              content: $content,
+              embeds: [{
+                title: $title,
+                url: $url,
+                description: $body,
+                color: 5814783,
+                footer: { text: "Auto-Release System" },
+                timestamp: (now | iso8601)
+              }]
+            }' > payload.json
+
+      - name: Send Notification
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.LAUNCHER_UPDATE }}
+        run: |
+          if [ -n "$DISCORD_WEBHOOK" ]; then
+             curl -H "Content-Type: application/json" -d @payload.json "$DISCORD_WEBHOOK"
+          fi

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.2-alpha
+
+### 🔧 Opravy Hotfix
+- **Critical fix**: Opraven pád při spuštění způsobený poškozeným souborem ikony (`icon.ico`).
+
 ## 1.0.1-alpha
 
 ### 🔧 Opravy Hotfix

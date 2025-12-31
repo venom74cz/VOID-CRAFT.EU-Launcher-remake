@@ -48,7 +48,9 @@ namespace VoidCraftLauncher.Services
                     File.AppendAllText(_logPath, logLine, Encoding.UTF8);
                 }
                 
+                
                 System.Diagnostics.Debug.Write(logLine);
+                Console.Write(logLine);
             }
             catch
             {

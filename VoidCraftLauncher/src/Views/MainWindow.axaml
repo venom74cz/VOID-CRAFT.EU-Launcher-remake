@@ -8,7 +8,8 @@
         xmlns:wv="using:WebView.Avalonia"
         mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="600"
         x:Class="VoidCraftLauncher.Views.MainWindow"
-        Icon="/src/Assets/icon.png"
+        Icon="/src/Assets/icon.ico"
+
         x:DataType="vm:MainViewModel"
         Title="VOID-CRAFT.EU Launcher"
         Width="1280" Height="720"

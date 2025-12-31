@@ -156,6 +156,7 @@ jobs:
            # Discord Format
            CONTENT="||<@&1326633984196870235>||"
            BODY=$(cat notes.md)
+           TIMESTAMP=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
            
            # Escape check? simple approach:
            jq -n \
@@ -163,6 +164,7 @@ jobs:
             --arg body "$BODY" \
             --arg title "VoidCraft Launcher v$VERSION" \
             --arg url "https://github.com/${{ github.repository }}/releases/tag/v$VERSION" \
+            --arg timestamp "$TIMESTAMP" \
             '{
               username: "VoidCraft BuildBot",
               avatar_url: "https://void-craft.eu/logo.png",
@@ -173,7 +175,7 @@ jobs:
                 description: $body,
                 color: 5814783,
                 footer: { text: "Auto-Release System" },
-                timestamp: (now | iso8601)
+                timestamp: $timestamp
               }]
             }' > payload.json
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.1-alpha
+
+### 🔧 Opravy Hotfix
+- **Auto-Update**: Opraven URL repozitáře pro kontrolu aktualizací (nyní `venom74cz/VOID-CRAFT.EU-Launcher-remake`).
+- **Instalace**: Launcher je nyní "Self-Contained" (obsahuje .NET Runtime), takže hráči nemusí nic instalovat.
+- **Ikona**: Přidána ikona aplikace.
+- **Build**: Opraveny problémy s CI/CD workflow.
+
 ## 1.0.0-alpha
 
 ### ✨ Nové Funkce

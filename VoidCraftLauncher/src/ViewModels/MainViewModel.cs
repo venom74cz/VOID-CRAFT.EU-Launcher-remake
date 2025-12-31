@@ -220,7 +220,7 @@ public partial class MainViewModel : ViewModelBase
             // GitHub API requires User-Agent
             _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("VoidCraftLauncher");
             
-            var response = await _httpClient.GetStringAsync("https://api.github.com/repos/venom74cz/void-craft.eu-Launcher/releases/latest");
+            var response = await _httpClient.GetStringAsync("https://api.github.com/repos/venom74cz/VOID-CRAFT.EU-Launcher-remake/releases/latest");
             var json = JsonNode.Parse(response);
             
             var tagName = json?["tag_name"]?.ToString(); // e.g. "v1.0.1"

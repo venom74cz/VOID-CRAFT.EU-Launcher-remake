@@ -6,7 +6,7 @@
     <NoWarn>$(NoWarn);CS8600;CS8601;CS8602;CS8603;CS8604;CS8618;CS8625;CS8629</NoWarn>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
-    <Version>1.1.0</Version>
+    <Version>1.1.1</Version>
     <Authors>VOIDIVIDE</Authors>
     <Company>Void-Craft.EU</Company>
     <Product>Void-Craft Launcher</Product>

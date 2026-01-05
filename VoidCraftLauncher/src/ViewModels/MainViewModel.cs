@@ -61,7 +61,7 @@ public partial class MainViewModel : ViewModelBase
     public List<GcType> GcTypes { get; } = Enum.GetValues(typeof(GcType)).Cast<GcType>().ToList();
 
     [ObservableProperty]
-    private string _greeting = "Vítejte ve VoidCraft Launcheru!";
+    private string _greeting = "Vítejte ve VOID-CRAFT Launcheru!";
 
     [ObservableProperty]
     private string _authUrl;
@@ -252,7 +252,7 @@ public partial class MainViewModel : ViewModelBase
             var currentVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
             
             // GitHub API requires User-Agent
-            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("VoidCraftLauncher");
+            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("VOID-CRAFT-Launcher");
             
             var response = await _httpClient.GetStringAsync("https://api.github.com/repos/venom74cz/VOID-CRAFT.EU-Launcher-remake/releases/latest");
             var json = JsonNode.Parse(response);
@@ -405,7 +405,29 @@ public partial class MainViewModel : ViewModelBase
             }
             else
             {
-                Avalonia.Threading.Dispatcher.UIThread.Post(() => Greeting = "Vítejte ve VoidCraft Launcheru!");
+                // Try Offline Auto-Login
+                if (!string.IsNullOrEmpty(Config.LastOfflineUsername))
+                {
+                    Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                    {
+                        try 
+                        {
+                            UserSession = _authService.LoginOffline(Config.LastOfflineUsername);
+                            IsLoggedIn = true;
+                            OfflineUsername = Config.LastOfflineUsername;
+                            OnPropertyChanged(nameof(PlayerSkinUrl));
+                            Greeting = $"Vítejte zpět, {Config.LastOfflineUsername} (Offline)!";
+                        }
+                        catch
+                        {
+                            Greeting = "Vítejte ve VOID-CRAFT Launcheru!";
+                        }
+                    });
+                }
+                else
+                {
+                    Avalonia.Threading.Dispatcher.UIThread.Post(() => Greeting = "Vítejte ve VOID-CRAFT Launcheru!");
+                }
             }
         }
         catch
@@ -1067,6 +1089,11 @@ public partial class MainViewModel : ViewModelBase
         try 
         {
             await _authService.LogoutAsync();
+            
+            // Clear persistent session
+            Config.LastOfflineUsername = null;
+            _launcherService.SaveConfig(Config);
+
             UserSession = MSession.CreateOfflineSession("Guest");
             IsLoggedIn = false;
             Greeting = "Byli jste odhlášeni.";
@@ -1122,7 +1149,7 @@ public partial class MainViewModel : ViewModelBase
         // Reset greeting after 2s
         _ = Task.Delay(2000).ContinueWith(_ => 
         {
-            Avalonia.Threading.Dispatcher.UIThread.Post(() => Greeting = "Vítejte ve VoidCraft Launcheru");
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => Greeting = "Vítejte ve VOID-CRAFT Launcheru");
         });
     }
 

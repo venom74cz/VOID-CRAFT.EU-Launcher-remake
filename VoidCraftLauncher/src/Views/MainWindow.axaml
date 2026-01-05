@@ -8,7 +8,7 @@
         xmlns:wv="using:WebView.Avalonia"
         mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="600"
         x:Class="VoidCraftLauncher.Views.MainWindow"
-        Icon="/src/Assets/icon.ico"
+        Icon="avares://VoidCraftLauncher/src/Assets/icon.ico"
 
         x:DataType="vm:MainViewModel"
         Title="VOID-CRAFT.EU Launcher"
@@ -136,7 +136,11 @@
                 <!-- Footer: Version & Check Update -->
                 <Border Grid.Row="2" Padding="15" Background="#1A1A1A">
                     <Grid ColumnDefinitions="*,Auto">
-                         <TextBlock Text="{Binding AppVersion}" Foreground="#666" FontSize="11" VerticalAlignment="Center"/>
+                         <StackPanel VerticalAlignment="Center" Spacing="0">
+                             <TextBlock Text="{Binding AppVersion}" Foreground="#666" FontSize="11"/>
+                             <Button Content="Made by VOIDIVIDE" Command="{Binding OpenUrlCommand}" CommandParameter="https://void-craft.eu/"
+                                     Background="Transparent" Padding="0" Foreground="#444" FontSize="9" BorderThickness="0"/>
+                         </StackPanel>
                          
                          <Button Grid.Column="1" Command="{Binding CheckForUpdatesCommand}" Background="Transparent" Padding="5" ToolTip.Tip="Zkontrolovat aktualizace">
                             <TextBlock Text="🔄" Foreground="#888" FontSize="12"/>
@@ -231,7 +235,7 @@
                                                                     HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
                                                                 <StackPanel Orientation="Horizontal" Spacing="5">
                                                                     <TextBlock Text="▶" FontSize="12"/>
-                                                                    <TextBlock Text="HRÁT" FontSize="12"/>
+                                                                    <TextBlock Text="{Binding PlayButtonText}" FontSize="12"/>
                                                                 </StackPanel>
                                                             </Button>
                                                             
@@ -457,7 +461,7 @@
                                                         </StackPanel>
                                                         
                                                         <StackPanel Grid.Column="2" Spacing="5" VerticalAlignment="Center">
-                                                            <Button Content="Instalovat" Command="{Binding $parent[Window].DataContext.InstallModpackFromBrowserCommand}" CommandParameter="{Binding}"
+                                                            <Button Content="Stáhnout" Command="{Binding $parent[Window].DataContext.InstallModpackFromBrowserCommand}" CommandParameter="{Binding}"
                                                                     Background="#44FF44" Foreground="Black" FontWeight="Bold"/>
                                                             <Button Content="Web" Command="{Binding $parent[Window].DataContext.OpenUrlCommand}" CommandParameter="{Binding WebLink}"
                                                                     Background="Transparent" Foreground="#888888" FontSize="11"/>

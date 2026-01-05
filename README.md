@@ -1,8 +1,8 @@
-# IO - VoidCraft Launcher
+# IO - VOID-CRAFT Launcher
 
 Official custom Minecraft launcher for the **VOID-CRAFT** community. Built with .NET 9 (C#) and Avalonia UI.
 
-![VoidCraft Logo](https://void-craft.eu/logo.png)
+![VOID-CRAFT Logo](https://void-craft.eu/logo.png)
 
 ## ✨ Funkce
 - 🚀 **Nativní Výkon**: Startuje rychleji a spotřebovává méně RAM než Electron verze.

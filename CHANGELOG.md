@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.1
+
+### 🔧 Rychlé Opravy (Hotfix)
+- **UI Branding**: Opraveno názvosloví na **“VOID-CRAFT”** a přidáno logo copyrightu.
+- **Tlačítka**: Dynamická změna tlačítka “HRÁT” na “AKTUALIZOVAT” a “Instalovat” na “Stáhnout”.
+- **Offline Login**: Opraveno automatické přihlášení pro offline (Warez) účty.
+- **CI/CD Fix**: Opravena cesta k souborům pro instalátor v GitHub Actions.
+
 ## 1.1.0
 
 ### ✨ Nové Funkce

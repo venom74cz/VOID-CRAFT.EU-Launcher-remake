@@ -122,5 +122,23 @@ namespace VoidCraftLauncher.Models.CurseForge
         
         [JsonPropertyName("slug")]
         public string Slug { get; set; }
+
+        [JsonPropertyName("summary")]
+        public string Summary { get; set; }
+
+        [JsonPropertyName("categories")]
+        public List<Category> Categories { get; set; }
+    }
+
+    public class Category
+    {
+        [JsonPropertyName("id")]
+        public int Id { get; set; }
+
+        [JsonPropertyName("name")]
+        public string Name { get; set; }
+
+        [JsonPropertyName("slug")]
+        public string Slug { get; set; }
     }
 }

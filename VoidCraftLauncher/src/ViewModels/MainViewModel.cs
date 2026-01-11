@@ -1235,19 +1235,13 @@ public partial class MainViewModel : ViewModelBase
         // Ensure config exists
         ModUtils.GetPotatoModList(modpackDir);
         
-        var configPath = Path.Combine(modpackDir, "potato_mods.json");
+        // Open UI
+        var vm = new PotatoModsViewModel(modpackDir);
+        var window = new VoidCraftLauncher.Views.PotatoModsWindow { DataContext = vm };
         
-        try
+        if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
         {
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = configPath,
-                UseShellExecute = true
-            });
-        }
-        catch (Exception ex)
-        {
-           Greeting = $"Nelze otevřít config: {ex.Message}";
+            window.ShowDialog(desktop.MainWindow);
         }
     }
 

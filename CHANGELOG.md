@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.2.2
+
+### ✨ Nové Funkce
+- **Potato Mode UI**: Nové grafické rozhraní pro výběr vypnutých modů.
+    - Nahrazuje ruční editaci souboru `potato_mods.json`.
+    - Umožňuje snadné vyhledávání a filtrování modů.
+- **Metadata**: Launcher nyní ukládá metadata modů (Client-Side/Server-Side) pro chytřejší filtrování v budoucnu.
+
+### 🔧 Vylepšení
+- **Robustnost**: Seznam zakázaných modů nyní preferuje stabilní identifikátory (slugy) před názvy souborů.
+
 ## 1.2.1
 
 ### ✨ Nové Funkce

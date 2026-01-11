@@ -1,0 +1,81 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:VoidCraftLauncher.ViewModels"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+        x:Class="VoidCraftLauncher.Views.PotatoModsWindow"
+        x:DataType="vm:PotatoModsViewModel"
+        Title="Úprava seznamu modů (Bramborový režim)"
+        Width="900" Height="700"
+        WindowStartupLocation="CenterOwner"
+        Background="#1E1E1E"
+        TransparencyLevelHint="Mica"
+        ExtendClientAreaToDecorationsHint="True">
+    
+    <Design.DataContext>
+        <vm:PotatoModsViewModel/>
+    </Design.DataContext>
+
+    <Grid RowDefinitions="Auto, *, Auto" Margin="20">
+        <!-- Header -->
+        <StackPanel Spacing="10">
+            <TextBlock Text="Bramborový režim - Černá listina" FontSize="24" FontWeight="Bold" Foreground="White"/>
+            <TextBlock Text="Vyber mody, které se mají VYPNOUT při aktivaci Bramborového režimu." Foreground="#AAAAAA" TextWrapping="Wrap"/>
+            
+            <Border Background="#252525" CornerRadius="8" Padding="10" Margin="0,10">
+                <Grid ColumnDefinitions="*, Auto">
+                    <TextBox Text="{Binding SearchQuery}" Watermark="Hledat mod..." Background="Transparent" BorderThickness="0" Foreground="White" FontSize="14"/>
+                    <TextBlock Grid.Column="1" Text="{Binding FilteredMods.Count, StringFormat='Nalezeno: {0}'}" VerticalAlignment="Center" Foreground="#666"/>
+                </Grid>
+            </Border>
+        </StackPanel>
+
+        <!-- List -->
+        <Border Grid.Row="1" Background="#252525" CornerRadius="8" Padding="5" Margin="0,10">
+            <ScrollViewer>
+                <ItemsControl ItemsSource="{Binding FilteredMods}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:ModItemViewModel">
+                            <Border Background="#2A2A2A" CornerRadius="4" Padding="10" Margin="0,2">
+                                <Grid ColumnDefinitions="Auto, *, Auto">
+                                    <CheckBox Grid.Column="0" IsChecked="{Binding IsSelected}" VerticalAlignment="Center">
+                                        <CheckBox.RenderTransform>
+                                            <ScaleTransform ScaleX="1.2" ScaleY="1.2"/>
+                                        </CheckBox.RenderTransform>
+                                    </CheckBox>
+                                    
+                                    <StackPanel Grid.Column="1" Margin="10,0">
+                                        <TextBlock Text="{Binding DisplayName}" FontWeight="Bold" Foreground="White" FontSize="14"/>
+                                        <TextBlock Text="{Binding FileName}" FontSize="10" Foreground="#666666"/>
+                                        <TextBlock Text="{Binding Description}" FontSize="10" Foreground="#999999" IsVisible="{Binding Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" TextTrimming="CharacterEllipsis"/>
+                                    </StackPanel>
+                                    
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                                        <Border Background="#333" CornerRadius="4" Padding="6,2" IsVisible="{Binding Side, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                                            <TextBlock Text="{Binding Side}" FontSize="10" Foreground="#AAA"/>
+                                        </Border>
+                                        <Border Background="#004400" CornerRadius="4" Padding="6,2" IsVisible="{Binding Categories, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                                            <TextBlock Text="{Binding Categories}" FontSize="10" Foreground="#44FF44"/>
+                                        </Border>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Border>
+        
+        <!-- Loading Overlay -->
+        <Grid Grid.Row="1" IsVisible="{Binding IsLoading}" Background="#CC000000">
+            <TextBlock Text="Načítám..." HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White"/>
+        </Grid>
+
+        <!-- Footer -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
+            <Button Content="Zrušit" Command="{Binding CancelCommand}" Background="Transparent" Foreground="#AAA"/>
+            <Button Content="Uložit změny" Command="{Binding SaveCommand}" Background="#007ACC" Foreground="White" FontWeight="Bold" Padding="20,10"/>
+        </StackPanel>
+    </Grid>
+</Window>

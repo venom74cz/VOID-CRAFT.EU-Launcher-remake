@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Text.Json;
+using VoidCraftLauncher.Models;
 using VoidCraftLauncher.Models.CurseForge;
 
 namespace VoidCraftLauncher.Services
@@ -109,6 +110,53 @@ namespace VoidCraftLauncher.Services
                         foreach (var m in modsData.Data)
                         {
                             modClassMap[m.Id] = m.ClassId;
+                        }
+
+                        // METADATA PERSISTENCE
+                        try 
+                        {
+                            var metadataList = new List<ModMetadata>();
+                            // Try load existing
+                            var metadataPath = Path.Combine(installPath, "mods_metadata.json");
+                            if (File.Exists(metadataPath))
+                            {
+                                try 
+                                {
+                                    var existingJson = File.ReadAllText(metadataPath);
+                                    var existing = JsonSerializer.Deserialize<List<ModMetadata>>(existingJson);
+                                    if (existing != null) metadataList.AddRange(existing);
+                                } 
+                                catch {}
+                            }
+
+                            // Update/Add new
+                            foreach (var m in modsData.Data)
+                            {
+                                // Find associated file(s) for this mod
+                                var filesForMod = curseFiles.Where(f => f.ModId == m.Id);
+                                foreach(var f in filesForMod)
+                                {
+                                    // Remove existing entry for this filename if present
+                                    metadataList.RemoveAll(x => x.FileName == f.FileName);
+                                    
+                                    metadataList.Add(new ModMetadata
+                                    {
+                                        FileName = f.FileName,
+                                        Name = m.Name,
+                                        Slug = m.Slug,
+                                        Summary = m.Summary,
+                                        Categories = m.Categories?.Select(c => c.Name).ToList() ?? new List<string>()
+                                    });
+                                }
+                            }
+                            
+                            // Save back
+                            var metaJson = JsonSerializer.Serialize(metadataList, new JsonSerializerOptions { WriteIndented = true });
+                            File.WriteAllText(metadataPath, metaJson);
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Failed to save mod metadata: {ex.Message}");
                         }
                     }
                 }

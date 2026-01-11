@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.2.0
+
+### ✨ Nové Funkce
+- **Potato Mode**: Přidán režim pro slabší počítače ("Bramborový režim").
+    - Vypíná náročné vizuální módy (Shadery, Animace, Fyzika) pro zvýšení FPS.
+    - Nastavení je specifické pro každý modpack (výchozí stav: Vypnuto).
+    - Možnost upravit seznam zakázaných modů (`potato_mods.json`).
+- **Chytré Aktualizace**: Installer nyní respektuje vypnuté módy i při aktualizaci modpacku (zůstanou vypnuté).
+
+### 🔧 Vylepšení
+- **UI**: Přidána sekce "Potato Mode" do nastavení modpacku.
+
 ## 1.1.1
 
 ### 🔧 Rychlé Opravy (Hotfix)

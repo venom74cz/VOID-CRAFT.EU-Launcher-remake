@@ -781,6 +781,24 @@ public partial class MainViewModel : ViewModelBase
             {
                 jvmArgs.AddRange(Config.JvmArguments);
             }
+
+            // ---------------------------------------------------------
+            // APPLY POTATO MODE (Renaming files)
+            // ---------------------------------------------------------
+            bool potatoMode = overrideConfig?.PotatoModeEnabled ?? false;
+            LaunchStatus = potatoMode ? "Aplikuji Potato Mode (vypínám mody)..." : "Kontrola Potato Mode...";
+            
+            try
+            {
+               ModUtils.ApplyPotatoMode(modsDir, modpackDir, potatoMode);
+            }
+            catch (Exception ex)
+            {
+                // If file lock occurs, we should probably stop launch or warn?
+                // For now log and continue, unless critical?
+                LogService.Error("Failed to apply Potato Mode", ex);
+                // Ideally show dialog here if critical
+            }
             
             var gameProcess = await _launcherService.LaunchAsync(
                 mcVersion,
@@ -1206,6 +1224,31 @@ public partial class MainViewModel : ViewModelBase
         // Persist to disk
         _launcherService.SaveConfig(Config);
         Greeting = $"Nastavení pro {CurrentModpackConfig.ModpackName} uloženo.";
+    }
+
+    [RelayCommand]
+    public void OpenPotatoConfig()
+    {
+        if (CurrentModpack == null) return;
+        
+        var modpackDir = _launcherService.GetModpackPath(CurrentModpack.Name);
+        // Ensure config exists
+        ModUtils.GetPotatoModList(modpackDir);
+        
+        var configPath = Path.Combine(modpackDir, "potato_mods.json");
+        
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = configPath,
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+           Greeting = $"Nelze otevřít config: {ex.Message}";
+        }
     }
 
     // --- Modpack Browser Logic ---

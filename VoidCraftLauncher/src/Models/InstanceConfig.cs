@@ -24,6 +24,10 @@ public partial class InstanceConfig : ObservableObject
 
     [ObservableProperty]
     private bool _isEnabled = true; // "Zapínat/Vypnout"
+
+    [ObservableProperty]
+    private bool _potatoModeEnabled = false; // "Potato Mode"
+
     
     // UI Helpers (Not serialized if needed, but useful)
     [JsonIgnore]

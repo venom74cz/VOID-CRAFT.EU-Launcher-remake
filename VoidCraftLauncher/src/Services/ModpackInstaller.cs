@@ -140,23 +140,28 @@ namespace VoidCraftLauncher.Services
                 }
 
                 // A. Delete old mods (ONLY if they were installed by us previously)
-                // We primarily scan 'mods' folder. RPs in 'resourcepacks' might pile up if we don't track them well,
-                // but doing a full scan of all folders is risky.
-                // For now, let's clean 'mods' folder as usual.
-                var existingFiles = Directory.GetFiles(modsDir, "*.jar");
+                // We scan for both active (.jar) and disabled (.jar.disabled) files
+                var jarFiles = Directory.GetFiles(modsDir, "*.jar");
+                var disabledFiles = Directory.GetFiles(modsDir, "*.jar.disabled");
+                var existingFiles = jarFiles.Concat(disabledFiles).ToArray();
+                
                 var newModNames = curseFiles.Select(f => f.FileName).ToHashSet();
                 
                 foreach (var file in existingFiles)
                 {
                     var fileName = Path.GetFileName(file);
+                    // Remove .disabled suffix for comparison if present
+                    var pureFileName = fileName.EndsWith(".disabled") 
+                        ? fileName.Substring(0, fileName.Length - ".disabled".Length) 
+                        : fileName;
                     
-                    // If the file is not in the new manifest...
-                    if (!newModNames.Contains(fileName))
+                    // If the pure filename is not in the new manifest...
+                    if (!newModNames.Contains(pureFileName))
                     {
                         // ...AND we tracked it as installed previously -> it's an old version -> DELETE
-                        if (previouslyInstalledFiles.Contains(fileName))
+                        if (previouslyInstalledFiles.Contains(pureFileName))
                         {
-                            File.Delete(file);
+                            try { File.Delete(file); } catch {}
                             StatusChanged?.Invoke($"Odstraňuji starý soubor: {fileName}");
                         }
                     }
@@ -180,12 +185,14 @@ namespace VoidCraftLauncher.Services
                     if (modClassMap.TryGetValue(mod.ModId, out int classId))
                     {
                         if (classId == 12) targetDir = rpDir; // Resource Pack
-                        else if (classId == 6552 || classId == 4546) targetDir = shaderDir; // Shader Pack (6552 is standard, 4546 is 'Twitch Integration' but sometimes used for customizations)
+                        else if (classId == 6552 || classId == 4546) targetDir = shaderDir; // Shader Pack
                     }
 
                     var destPath = Path.Combine(targetDir, mod.FileName);
+                    var disabledPath = destPath + ".disabled";
 
-                    if (File.Exists(destPath))
+                    // Check if file exists (enabled OR disabled)
+                    if (File.Exists(destPath) || File.Exists(disabledPath))
                     {
                         skipped++;
                         continue;

@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.8
+
+### 🔧 Rychlé Opravy (Hotfix)
+- **Linux Microsoft login**: Na Linuxu se nyní používá Device Code flow přímo, takže odpadá problémový `localhost` callback.
+- **Zobrazení kódu v launcheru**: Přihlašovací kód se zobrazí okamžitě v login modalu + lze ho zkopírovat tlačítkem.
+- **Spolehlivější parsování**: Launcher rozpozná kód ve formátu `kód:` i `code:`.
+- **Windows login**: Beze změny (zůstává klasický Microsoft browser login).
+
 ## 1.2.7
 
 ### 🔧 Rychlé Opravy (Hotfix)

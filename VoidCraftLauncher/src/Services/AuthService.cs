@@ -112,6 +112,12 @@ public class AuthService
         }
         catch (MsalUiRequiredException)
         {
+            if (OperatingSystem.IsLinux())
+            {
+                authResult = await AcquireTokenWithDeviceCodeAsync(scopes, statusCallback);
+            }
+            else
+            {
             try
             {
                 statusCallback("Čekám na přihlášení v prohlížeči...");
@@ -126,6 +132,7 @@ public class AuthService
             catch (MsalClientException)
             {
                 authResult = await AcquireTokenWithDeviceCodeAsync(scopes, statusCallback);
+            }
             }
         }
 

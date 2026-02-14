@@ -1326,7 +1326,7 @@ public partial class MainViewModel : ViewModelBase
                         AuthUrl = urlMatch.Value.Trim().TrimEnd('.', ',', ';');
                     }
 
-                    var codeMatch = Regex.Match(msg, @"kód:\s*([A-Z0-9\-]+)", RegexOptions.IgnoreCase);
+                    var codeMatch = Regex.Match(msg, @"(?:kód|code):\s*([A-Z0-9\-]+)", RegexOptions.IgnoreCase);
                     if (codeMatch.Success)
                     {
                         ManualLoginCode = codeMatch.Groups[1].Value.Trim();

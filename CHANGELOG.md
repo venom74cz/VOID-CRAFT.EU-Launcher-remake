@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.2.4
+
+### 🔧 Opravy & Vylepšení
+- **Update flow stabilita**: Opraveno vyhodnocení dostupné aktualizace modpacku podle `FileId` (méně false-positive stavu „AKTUALIZOVAT“).
+- **Cílení na nejnovější build**: Při kliknutí na aktualizaci launcher konzistentně používá nejnovější dostupný `FileId`.
+- **Synchronizace po instalaci**: Po úspěšném updatu se interní stav nainstalované verze okamžitě přepíše na reálný `manifest_info.json`.
+- **Prevence pádu po neúplném updatu**: Pokud update nedoběhne, hra se nespustí v rozbitém stavu (smíchané staré/nové soubory).
+- **Locked file handling**: Zamčené soubory v `overrides` už neshodí celý update; po retry se problematický soubor bezpečně přeskočí a instalace pokračuje.
+- **Diagnostika**: Zlepšené logování chyb při update/instalaci modpacku.
+
 ## 1.2.3
 
 ### ✨ Nové Funkce

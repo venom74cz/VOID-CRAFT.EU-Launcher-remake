@@ -59,10 +59,7 @@ namespace VoidCraftLauncher.Models
         {
             get
             {
-                // If Versions are loaded and Latest != Current -> Update
-                if (Versions != null && Versions.Count > 0 && 
-                    CurrentVersion != null && CurrentVersion.Name != "-" && 
-                    Versions.FirstOrDefault()?.Name != CurrentVersion.Name)
+                if (IsUpdateAvailable)
                 {
                     return "AKTUALIZOVAT";
                 }
@@ -79,10 +76,26 @@ namespace VoidCraftLauncher.Models
         public string VersionTransitionText => IsUpdateAvailable
             ? $"{InstalledVersionName} → {LatestVersionName}"
             : InstalledVersionName;
+
+        private bool HasDifferentLatestFileId()
+        {
+            var latest = Versions?.FirstOrDefault();
+            if (latest == null || CurrentVersion == null)
+            {
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(latest.FileId) && !string.IsNullOrWhiteSpace(CurrentVersion.FileId))
+            {
+                return !string.Equals(latest.FileId, CurrentVersion.FileId, System.StringComparison.OrdinalIgnoreCase);
+            }
+
+            return latest.Name != CurrentVersion.Name;
+        }
         
         public bool IsUpdateAvailable => 
             Versions != null && Versions.Count > 0 && 
             CurrentVersion != null && CurrentVersion.Name != "-" && 
-            Versions.FirstOrDefault()?.Name != CurrentVersion.Name;
+            HasDifferentLatestFileId();
     }
 }

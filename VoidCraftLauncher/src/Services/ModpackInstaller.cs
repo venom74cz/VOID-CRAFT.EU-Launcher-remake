@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Text.Json;
+using System.Threading;
 using VoidCraftLauncher.Models;
 using VoidCraftLauncher.Models.CurseForge;
 
@@ -327,8 +328,33 @@ namespace VoidCraftLauncher.Services
                         
                         // Ensure directory exists (in case directory entry was missing)
                         Directory.CreateDirectory(Path.GetDirectoryName(targetPath));
-                        entry.ExtractToFile(targetPath, overwrite: true);
-                        extractedCount++;
+
+                        bool extracted = false;
+                        for (int attempt = 1; attempt <= 3 && !extracted; attempt++)
+                        {
+                            try
+                            {
+                                entry.ExtractToFile(targetPath, overwrite: true);
+                                extracted = true;
+                            }
+                            catch (IOException ioEx)
+                            {
+                                if (attempt < 3)
+                                {
+                                    await Task.Delay(250);
+                                    continue;
+                                }
+
+                                // Locked/used file should not fail the whole update
+                                StatusChanged?.Invoke($"Soubor je používán, přeskakuji: {relativePath}");
+                                debugLog.WriteLine($"SKIP Locked Override: {relativePath} | {ioEx.Message}");
+                            }
+                        }
+
+                        if (extracted)
+                        {
+                            extractedCount++;
+                        }
                     }
                 }
             }
@@ -459,7 +485,27 @@ namespace VoidCraftLauncher.Services
                     if (IsProtected(relativePath) && File.Exists(targetPath)) continue;
                     
                     Directory.CreateDirectory(Path.GetDirectoryName(targetPath));
-                    entry.ExtractToFile(targetPath, overwrite: false);
+
+                    bool extracted = false;
+                    for (int attempt = 1; attempt <= 3 && !extracted; attempt++)
+                    {
+                        try
+                        {
+                            entry.ExtractToFile(targetPath, overwrite: true);
+                            extracted = true;
+                        }
+                        catch (IOException ioEx)
+                        {
+                            if (attempt < 3)
+                            {
+                                await Task.Delay(250);
+                                continue;
+                            }
+
+                            statusCallback?.Invoke($"Soubor je používán, přeskakuji: {relativePath}");
+                            LogService.Error($"[Modrinth Overrides] Locked file skipped: {relativePath}", ioEx);
+                        }
+                    }
                 }
             }
             

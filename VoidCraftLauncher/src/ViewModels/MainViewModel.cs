@@ -743,6 +743,7 @@ public partial class MainViewModel : ViewModelBase
             {
                 bool apiSuccess = false;
                 ModpackManifestInfo manifestInfo = null;
+                Exception? updateError = null;
                 LaunchStatus = "Ověřuji integritu souborů...";
                 
                 // Debug.WriteLine($"[PlayModpack] ProjectId: {CurrentModpack.ProjectId}, FileId: {CurrentModpack.CurrentVersion?.FileId}");
@@ -756,7 +757,14 @@ public partial class MainViewModel : ViewModelBase
                 int fileId = 0;
                 
                 // Try to resolve target FileId
-                if (int.TryParse(CurrentModpack.CurrentVersion?.FileId, out var parsedId) && parsedId > 0)
+                var latestKnownVersion = CurrentModpack.Versions?.FirstOrDefault();
+
+                // If update is available, always target latest known version
+                if (CurrentModpack.IsUpdateAvailable && int.TryParse(latestKnownVersion?.FileId, out var latestParsedId) && latestParsedId > 0)
+                {
+                    fileId = latestParsedId;
+                }
+                else if (int.TryParse(CurrentModpack.CurrentVersion?.FileId, out var parsedId) && parsedId > 0)
                 {
                     fileId = parsedId;
                 }
@@ -854,6 +862,8 @@ public partial class MainViewModel : ViewModelBase
                         }
                         catch (Exception ex)
                         {
+                            updateError = ex;
+                            LogService.Error("[PlayModpack] Update/install failed", ex);
                             LaunchStatus = $"Chyba aktualizace: {ex.Message} (Pokračuji offline)";
                             // Removed delay
                         }
@@ -871,7 +881,22 @@ public partial class MainViewModel : ViewModelBase
                         {
                              LaunchStatus = "Instaluji z lokální zálohy...";
                              manifestInfo = await _modpackInstaller.InstallOrUpdateAsync(localZip, modpackDir, fileId);
+                             apiSuccess = manifestInfo != null;
                         }
+                    }
+                }
+
+                // If update was required but not fully completed, STOP launch to avoid mixed/mod-broken state
+                if (needsUpdate)
+                {
+                    var updateCompleted = manifestInfo != null && fileId > 0 && manifestInfo.FileId == fileId;
+                    if (!updateCompleted)
+                    {
+                        var reason = updateError?.Message ?? "Nepodařilo se dokončit aktualizaci modpacku.";
+                        LaunchStatus = $"Aktualizace selhala: {reason}";
+                        Greeting = "Aktualizace modpacku nebyla dokončena. Hra nebyla spuštěna, aby nedošlo k pádu.";
+                        IsLaunching = false;
+                        return;
                     }
                 }
                 
@@ -886,6 +911,21 @@ public partial class MainViewModel : ViewModelBase
                 if (manifestInfo != null)
                 {
                     _lastManifestInfo = manifestInfo;
+
+                    if (manifestInfo.FileId > 0)
+                    {
+                        var installedFileId = manifestInfo.FileId.ToString();
+                        var matchedVersion = CurrentModpack.Versions?.FirstOrDefault(v => v.FileId == installedFileId);
+
+                        CurrentModpack.CurrentVersion = matchedVersion ?? new ModpackVersion
+                        {
+                            Name = CurrentModpack.CurrentVersion?.Name ?? $"File {installedFileId}",
+                            FileId = installedFileId,
+                            ReleaseDate = CurrentModpack.CurrentVersion?.ReleaseDate ?? ""
+                        };
+
+                        SaveModpacks();
+                    }
                 }
                 else
                 {

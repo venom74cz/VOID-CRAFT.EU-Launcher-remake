@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using System.Text.Json;
 using System.Linq;
+using System.Diagnostics;
 
 namespace VoidCraftLauncher.Services;
 
@@ -111,15 +112,28 @@ public class AuthService
         }
         catch (MsalUiRequiredException)
         {
-            // Need interactive login - opens system browser
-            statusCallback("Čekám na přihlášení v prohlížeči...");
-            authResult = await _msalApp.AcquireTokenInteractive(scopes)
-                .WithSystemWebViewOptions(new SystemWebViewOptions
+            if (OperatingSystem.IsLinux())
+            {
+                authResult = await AcquireTokenWithDeviceCodeAsync(scopes, statusCallback);
+            }
+            else
+            {
+                try
                 {
-                    HtmlMessageSuccess = "<html><body style='font-family:sans-serif;text-align:center;padding:50px;background:#1a1a1a;color:white;'><h1>✅ Přihlášení úspěšné!</h1><p>Můžeš zavřít toto okno a vrátit se do launcheru.</p></body></html>",
-                    HtmlMessageError = "<html><body style='font-family:sans-serif;text-align:center;padding:50px;background:#1a1a1a;color:white;'><h1>❌ Chyba</h1><p>Přihlášení selhalo.</p></body></html>"
-                })
-                .ExecuteAsync();
+                    statusCallback("Čekám na přihlášení v prohlížeči...");
+                    authResult = await _msalApp.AcquireTokenInteractive(scopes)
+                        .WithSystemWebViewOptions(new SystemWebViewOptions
+                        {
+                            HtmlMessageSuccess = "<html><body style='font-family:sans-serif;text-align:center;padding:50px;background:#1a1a1a;color:white;'><h1>✅ Přihlášení úspěšné!</h1><p>Můžeš zavřít toto okno a vrátit se do launcheru.</p></body></html>",
+                            HtmlMessageError = "<html><body style='font-family:sans-serif;text-align:center;padding:50px;background:#1a1a1a;color:white;'><h1>❌ Chyba</h1><p>Přihlášení selhalo.</p></body></html>"
+                        })
+                        .ExecuteAsync();
+                }
+                catch (MsalClientException)
+                {
+                    authResult = await AcquireTokenWithDeviceCodeAsync(scopes, statusCallback);
+                }
+            }
         }
 
         statusCallback("Ověřuji Xbox Live...");
@@ -144,6 +158,47 @@ public class AuthService
         mSession.UserType = "msa";
         // Note: Xuid stored in userHash but MSession v3 doesn't have this property
         return mSession;
+    }
+
+    private async Task<AuthenticationResult> AcquireTokenWithDeviceCodeAsync(string[] scopes, Action<string> statusCallback)
+    {
+        statusCallback("Linux login fallback: Device Code...");
+
+        return await _msalApp.AcquireTokenWithDeviceCode(scopes, deviceCodeResult =>
+        {
+            statusCallback($"Otevři {deviceCodeResult.VerificationUrl} a zadej kód: {deviceCodeResult.UserCode}");
+            TryOpenBrowser(deviceCodeResult.VerificationUrl);
+            return Task.CompletedTask;
+        }).ExecuteAsync();
+    }
+
+    private static void TryOpenBrowser(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+            return;
+
+        try
+        {
+            if (OperatingSystem.IsWindows())
+            {
+                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+                return;
+            }
+
+            if (OperatingSystem.IsLinux())
+            {
+                Process.Start("xdg-open", url);
+                return;
+            }
+
+            if (OperatingSystem.IsMacOS())
+            {
+                Process.Start("open", url);
+            }
+        }
+        catch
+        {
+        }
     }
 
     private string ExtractUserHash(XboxAuthResponse xsts)

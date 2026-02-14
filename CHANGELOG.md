@@ -1,10 +1,18 @@
 # Changelog
 
+## 1.2.6
+
+### 🔧 Rychlé Opravy (Hotfix)
+- **Linux Microsoft login**: Opraven problém s callbackem na `localhost` v browser OAuth flow (stránka „Unable to connect“).
+- **Fallback přihlášení**: Přidán Device Code fallback, takže přihlášení funguje i když lokální callback nedoběhne.
+- **Windows**: Beze změny, release neobsahuje žádný zásah do Windows login/build flow.
+
 ## 1.2.5
 
 ### 🔧 Rychlé Opravy (Hotfix)
 - **Linux AppImage start**: Opraven crash při spuštění (`Unable to load shared library 'libSkiaSharp'`).
 - **Build pipeline (Linux)**: `dotnet publish` nyní používá `IncludeNativeLibrariesForSelfExtract=true`, aby se nativní Skia knihovny správně přibalily do single-file buildu.
+- **Linux Microsoft login**: Přidán bezpečný fallback na Device Code flow (bez `localhost` callbacku), aby přihlášení fungovalo i když browser callback selže.
 - **Windows build**: Beze změny (fix je omezený pouze na Linux workflow).
 
 ## 1.2.4

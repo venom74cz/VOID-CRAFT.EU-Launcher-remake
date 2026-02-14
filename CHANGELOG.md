@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.5
+
+### 🔧 Rychlé Opravy (Hotfix)
+- **Linux AppImage start**: Opraven crash při spuštění (`Unable to load shared library 'libSkiaSharp'`).
+- **Build pipeline (Linux)**: `dotnet publish` nyní používá `IncludeNativeLibrariesForSelfExtract=true`, aby se nativní Skia knihovny správně přibalily do single-file buildu.
+- **Windows build**: Beze změny (fix je omezený pouze na Linux workflow).
+
 ## 1.2.4
 
 ### 🔧 Opravy & Vylepšení

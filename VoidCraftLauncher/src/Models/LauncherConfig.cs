@@ -26,6 +26,9 @@ public partial class LauncherConfig : ObservableObject
 
     public System.Collections.Generic.Dictionary<string, InstanceConfig> InstanceOverrides { get; set; } = new();
 
+    // Global options.txt presets (Name -> File Content)
+    public System.Collections.Generic.Dictionary<string, string> OptionsPresets { get; set; } = new();
+
     [ObservableProperty]
     private string? _lastOfflineUsername;
 }

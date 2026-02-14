@@ -8,7 +8,7 @@
         xmlns:wv="using:WebView.Avalonia"
         mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="600"
         x:Class="VoidCraftLauncher.Views.MainWindow"
-        Icon="avares://VoidCraftLauncher/src/Assets/icon.ico"
+        Icon="avares://VoidCraftLauncher/src/Assets/icon.png"
 
         x:DataType="vm:MainViewModel"
         Title="VOID-CRAFT.EU Launcher"
@@ -33,6 +33,11 @@
                 <!-- Header / Profile / Navigation (Scrollable) -->
                 <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Spacing="10" Margin="15">
+                        <Image Source="avares://VoidCraftLauncher/src/Assets/icon.png"
+                               Width="64" Height="64"
+                               Stretch="Uniform"
+                               HorizontalAlignment="Center"
+                               Margin="0,6,0,0"/>
                         <TextBlock Text="VOID-CRAFT.EU" FontSize="24" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" Margin="0,10,0,0"/>
                         <TextBlock Text="{Binding Greeting}" Foreground="#FFDD00" FontSize="11" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"/>
                         
@@ -218,6 +223,13 @@
                                                                 <DropShadowEffect BlurRadius="4" Color="Black" Opacity="1"/>
                                                             </TextBlock.Effect>
                                                         </TextBlock>
+
+                                                        <TextBlock Text="{Binding VersionTransitionText}" Foreground="#DDDDDD" FontSize="10"
+                                                                   TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis">
+                                                            <TextBlock.Effect>
+                                                                <DropShadowEffect BlurRadius="3" Color="Black" Opacity="0.9"/>
+                                                            </TextBlock.Effect>
+                                                        </TextBlock>
                                                         
                                                         <!-- Buttons Loop - Normal State -->
                                                         <Grid ColumnDefinitions="*, Auto">
@@ -230,7 +242,7 @@
                                                             <Button Grid.Column="0" Margin="0,0,5,0"
                                                                     Command="{Binding DataContext.SelectAndPlayCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
                                                                     CommandParameter="{Binding}"
-                                                                    Background="#007ACC" Foreground="White" FontWeight="Bold" 
+                                                                    Background="{Binding PlayButtonBackground}" Foreground="White" FontWeight="Bold" 
                                                                     CornerRadius="6" Padding="0,8" VerticalAlignment="Center"
                                                                     HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
                                                                 <StackPanel Orientation="Horizontal" Spacing="5">
@@ -439,6 +451,80 @@
                                             Background="#333333" Foreground="White" Padding="0,10" 
                                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
                                 </Grid>
+
+                                <Border Background="#252525" CornerRadius="8" Padding="15" Margin="0,10,0,0">
+                                    <StackPanel Spacing="10">
+                                        <TextBlock Text="OPTIONS PRESETY (Globální)" FontWeight="Bold" Foreground="#DDDDDD"/>
+                                        <TextBlock Text="Ulož options.txt z tohoto modpacku pod vlastním názvem a nahraj preset do jiného modpacku."
+                                                   Foreground="#888" FontSize="11" TextWrapping="Wrap"/>
+
+                                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                            <TextBox Grid.Column="0"
+                                                     Text="{Binding NewOptionsPresetName}"
+                                                     Watermark="Název nového presetu (např. PVP_1.21)"
+                                                     Background="#333333"
+                                                     BorderThickness="0"/>
+                                            <Button Grid.Column="1"
+                                                    Content="Uložit options jako preset"
+                                                    Command="{Binding SaveOptionsPresetCommand}"
+                                                    Background="#3A3A3A"
+                                                    Foreground="White"
+                                                    Padding="12,8"/>
+                                        </Grid>
+
+                                        <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                                            <ComboBox Grid.Column="0"
+                                                      ItemsSource="{Binding OptionsPresetNames}"
+                                                      SelectedItem="{Binding SelectedOptionsPresetName}"
+                                                      PlaceholderText="Vyber uložený preset"
+                                                      Background="#333333"/>
+                                            <Button Grid.Column="1"
+                                                    Content="Nahrát preset do tohoto modpacku"
+                                                    Command="{Binding LoadOptionsPresetToCurrentModpackCommand}"
+                                                    Background="#007ACC"
+                                                    Foreground="White"
+                                                    Padding="12,8"/>
+                                            <Button Grid.Column="2"
+                                                    Content="Smazat preset"
+                                                    Command="{Binding DeleteOptionsPresetCommand}"
+                                                    Background="#AA3333"
+                                                    Foreground="White"
+                                                    Padding="12,8"/>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Background="#252525" CornerRadius="8" Padding="15" Margin="0,10,0,0">
+                                    <StackPanel Spacing="10">
+                                        <TextBlock Text="SCREENSHOTS / Galerie" FontWeight="Bold" Foreground="#DDDDDD"/>
+
+                                        <TextBlock Text="Zatím žádné screenshoty v tomto modpacku." Foreground="#888" FontSize="11"
+                                                   IsVisible="{Binding !HasCurrentModpackScreenshots}"/>
+
+                                        <ScrollViewer MaxHeight="240" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto"
+                                                      IsVisible="{Binding HasCurrentModpackScreenshots}">
+                                            <ItemsControl ItemsSource="{Binding CurrentModpackScreenshots}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <WrapPanel Orientation="Horizontal"/>
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:CompileBindings="False">
+                                                        <Button Width="180" Height="102" Margin="0,0,10,10"
+                                                                Background="Transparent" BorderThickness="0" Padding="0"
+                                                                Command="{Binding DataContext.OpenScreenshotCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                CommandParameter="{Binding .}">
+                                                            <Border CornerRadius="6" ClipToBounds="True" Background="#1B1B1B">
+                                                                <asyncImage:AdvancedImage Source="{Binding .}" Stretch="UniformToFill"/>
+                                                            </Border>
+                                                        </Button>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </ScrollViewer>
+                                    </StackPanel>
+                                </Border>
                                 
                                 <Button Content="💾 Uložit změny" Command="{Binding SaveModpackSettingsCommand}" Background="#007ACC" Foreground="White" FontWeight="Bold" Padding="0,10" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,10,0,0"/>
                                 <Button Content="🗑 Odstranit modpack" Command="{Binding DeleteModpackCommand}" IsVisible="{Binding CurrentModpack.IsDeletable}" Background="#AA3333" Foreground="White" FontWeight="Bold" Padding="0,10" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,15,0,0" ToolTip.Tip="Trvale odstraní tento modpack a všchna jeho data"/>

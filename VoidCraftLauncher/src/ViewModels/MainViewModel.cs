@@ -13,6 +13,8 @@ using System.Net.Http;
 using System.IO;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Threading;
+using System.Collections.Specialized;
 
 namespace VoidCraftLauncher.ViewModels;
 
@@ -27,6 +29,8 @@ public partial class MainViewModel : ViewModelBase
     private readonly HttpClient _httpClient;
     private readonly ModpackInstaller _modpackInstaller;
     private ModpackManifestInfo _lastManifestInfo;
+    private readonly SemaphoreSlim _modpackUpdateCheckLock = new(1, 1);
+    private static readonly TimeSpan ModpackUpdateCheckInterval = TimeSpan.FromSeconds(5);
 
     [ObservableProperty]
     private string _serverStatusText = "Načítám...";
@@ -45,6 +49,12 @@ public partial class MainViewModel : ViewModelBase
 
     [ObservableProperty]
     private ModpackInfo _currentModpack;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasCurrentModpackScreenshots))]
+    private ObservableCollection<string> _currentModpackScreenshots = new();
+
+    public bool HasCurrentModpackScreenshots => CurrentModpackScreenshots.Count > 0;
 
     [ObservableProperty]
     private MSession _userSession;
@@ -181,6 +191,7 @@ public partial class MainViewModel : ViewModelBase
 
         _currentModpack = new ModpackInfo();
         InstalledModpacks = new ObservableCollection<ModpackInfo>();
+        CurrentModpackScreenshots.CollectionChanged += OnCurrentModpackScreenshotsChanged;
         
         _httpClient = new HttpClient();
         _httpClient.DefaultRequestHeaders.Add("User-Agent", "VoidCraftLauncher/1.0");
@@ -224,6 +235,9 @@ public partial class MainViewModel : ViewModelBase
 
         // Spustíme načítání na pozadí
         Task.Run(LoadModpackData);
+
+        // Kontrola aktualizací modpacků: hned při startu a pak každých 5s
+        Task.Run(ModpackUpdateLoop);
         
         // Zkusíme auto-login z cache
         Task.Run(TryAutoLogin);
@@ -240,6 +254,164 @@ public partial class MainViewModel : ViewModelBase
                 await Task.Delay(60000); // 1 min update
             }
         });
+    }
+
+    partial void OnCurrentModpackChanged(ModpackInfo value)
+    {
+        _ = LoadCurrentModpackScreenshotsAsync();
+    }
+
+    private void OnCurrentModpackScreenshotsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        OnPropertyChanged(nameof(HasCurrentModpackScreenshots));
+    }
+
+    private async Task LoadCurrentModpackScreenshotsAsync()
+    {
+        try
+        {
+            if (CurrentModpack == null || string.IsNullOrWhiteSpace(CurrentModpack.Name))
+            {
+                await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() => CurrentModpackScreenshots.Clear());
+                return;
+            }
+
+            var modpackPath = _launcherService.GetModpackPath(CurrentModpack.Name);
+            var screenshotsPath = Path.Combine(modpackPath, "screenshots");
+            var screenshotyPath = Path.Combine(modpackPath, "screenshoty");
+
+            var targetFolder = Directory.Exists(screenshotsPath)
+                ? screenshotsPath
+                : (Directory.Exists(screenshotyPath) ? screenshotyPath : screenshotsPath);
+
+            if (!Directory.Exists(targetFolder))
+            {
+                await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() => CurrentModpackScreenshots.Clear());
+                return;
+            }
+
+            var allowedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ".png", ".jpg", ".jpeg", ".bmp", ".gif", ".webp"
+            };
+
+            var screenshots = Directory
+                .GetFiles(targetFolder)
+                .Where(file => allowedExtensions.Contains(Path.GetExtension(file)))
+                .OrderByDescending(file => File.GetLastWriteTimeUtc(file))
+                .Select(file => new Uri(file).AbsoluteUri)
+                .ToList();
+
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                CurrentModpackScreenshots.Clear();
+                foreach (var screenshot in screenshots)
+                {
+                    CurrentModpackScreenshots.Add(screenshot);
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            LogService.Error("[LoadCurrentModpackScreenshotsAsync] Failed", ex);
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() => CurrentModpackScreenshots.Clear());
+        }
+    }
+
+    private async Task ModpackUpdateLoop()
+    {
+        while (true)
+        {
+            try
+            {
+                await CheckInstalledModpacksForUpdates();
+            }
+            catch (Exception ex)
+            {
+                LogService.Error("[ModpackUpdateLoop] Update check failed", ex);
+            }
+
+            await Task.Delay(ModpackUpdateCheckInterval);
+        }
+    }
+
+    private async Task CheckInstalledModpacksForUpdates()
+    {
+        if (!await _modpackUpdateCheckLock.WaitAsync(0))
+        {
+            return;
+        }
+
+        try
+        {
+            List<ModpackInfo> modpacks = new();
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                modpacks = InstalledModpacks
+                    .Where(m => m != null && m.ProjectId > 0)
+                    .ToList();
+            });
+
+            foreach (var modpack in modpacks)
+            {
+                try
+                {
+                    var filesJson = await _curseForgeApi.GetModpackFilesAsync(modpack.ProjectId);
+                    var filesNode = JsonNode.Parse(filesJson);
+                    var files = filesNode?["data"]?.AsArray();
+                    if (files == null || files.Count == 0)
+                    {
+                        continue;
+                    }
+
+                    var sortedFiles = files.OrderByDescending(f => f?["fileDate"]?.ToString());
+                    var latestVersions = new ObservableCollection<ModpackVersion>();
+
+                    foreach (var file in sortedFiles)
+                    {
+                        latestVersions.Add(new ModpackVersion
+                        {
+                            Name = file?["displayName"]?.ToString() ?? "Unknown",
+                            FileId = file?["id"]?.ToString() ?? "0",
+                            ReleaseDate = file?["fileDate"]?.ToString() ?? ""
+                        });
+                    }
+
+                    var currentVersion = modpack.CurrentVersion;
+                    var installedManifest = ModpackInstaller.LoadManifestInfo(_launcherService.GetModpackPath(modpack.Name));
+
+                    if (installedManifest?.FileId > 0)
+                    {
+                        var installedFileId = installedManifest.FileId.ToString();
+                        currentVersion = latestVersions.FirstOrDefault(v => v.FileId == installedFileId)
+                            ?? new ModpackVersion
+                            {
+                                Name = modpack.CurrentVersion?.Name ?? $"File {installedFileId}",
+                                FileId = installedFileId,
+                                ReleaseDate = modpack.CurrentVersion?.ReleaseDate ?? ""
+                            };
+                    }
+                    else if (currentVersion == null)
+                    {
+                        currentVersion = new ModpackVersion { Name = "-", FileId = "0", ReleaseDate = "" };
+                    }
+
+                    await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+                    {
+                        modpack.Versions = latestVersions;
+                        modpack.CurrentVersion = currentVersion;
+                    });
+                }
+                catch (Exception ex)
+                {
+                    LogService.Error($"[CheckInstalledModpacksForUpdates] Failed for {modpack.Name}", ex);
+                }
+            }
+        }
+        finally
+        {
+            _modpackUpdateCheckLock.Release();
+        }
     }
     
     [RelayCommand]
@@ -877,14 +1049,14 @@ public partial class MainViewModel : ViewModelBase
     {
         if (CurrentModpack != null)
         {
-            var modsPath = Path.Combine(_launcherService.GetModpackPath(CurrentModpack.Name), "mods");
-            Directory.CreateDirectory(modsPath);
-            Process.Start(new ProcessStartInfo
+            var modpackPath = _launcherService.GetModpackPath(CurrentModpack.Name);
+            var vm = new ModManagerViewModel(CurrentModpack.Name, modpackPath);
+            var window = new VoidCraftLauncher.Views.ModManagerWindow { DataContext = vm };
+
+            if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
             {
-                FileName = modsPath,
-                UseShellExecute = true,
-                Verb = "open"
-            });
+                window.ShowDialog(desktop.MainWindow);
+            }
         }
     }
 
@@ -924,14 +1096,14 @@ public partial class MainViewModel : ViewModelBase
     {
         if (modpack != null)
         {
-            var modsPath = Path.Combine(_launcherService.GetModpackPath(modpack.Name), "mods");
-            Directory.CreateDirectory(modsPath);
-            Process.Start(new ProcessStartInfo
+            var modpackPath = _launcherService.GetModpackPath(modpack.Name);
+            var vm = new ModManagerViewModel(modpack.Name, modpackPath);
+            var window = new VoidCraftLauncher.Views.ModManagerWindow { DataContext = vm };
+
+            if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
             {
-                FileName = modsPath,
-                UseShellExecute = true,
-                Verb = "open"
-            });
+                window.ShowDialog(desktop.MainWindow);
+            }
         }
     }
 
@@ -996,6 +1168,41 @@ public partial class MainViewModel : ViewModelBase
                 // Log error
                 System.Diagnostics.Debug.WriteLine($"Error opening URL: {ex}");
             }
+        }
+    }
+
+    [RelayCommand]
+    public void OpenScreenshot(string screenshotUri)
+    {
+        if (string.IsNullOrWhiteSpace(screenshotUri))
+        {
+            return;
+        }
+
+        try
+        {
+            var filePath = screenshotUri;
+            if (Uri.TryCreate(screenshotUri, UriKind.Absolute, out var parsedUri) && parsedUri.IsFile)
+            {
+                filePath = parsedUri.LocalPath;
+            }
+
+            if (!File.Exists(filePath))
+            {
+                Greeting = "Screenshot nebyl nalezen.";
+                return;
+            }
+
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = filePath,
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            LogService.Error("[OpenScreenshot] Failed to open screenshot", ex);
+            Greeting = "Nepodařilo se otevřít screenshot.";
         }
     }
 
@@ -1191,6 +1398,15 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     private InstanceConfig _currentModpackConfig;
 
+    [ObservableProperty]
+    private ObservableCollection<string> _optionsPresetNames = new();
+
+    [ObservableProperty]
+    private string _newOptionsPresetName = "";
+
+    [ObservableProperty]
+    private string? _selectedOptionsPresetName;
+
     [RelayCommand]
     public void GoToModpackSettings()
     {
@@ -1210,7 +1426,140 @@ public partial class MainViewModel : ViewModelBase
             };
         }
 
+        ReloadOptionsPresets();
         CurrentRightView = RightViewType.ModpackSettings;
+    }
+
+    private void ReloadOptionsPresets()
+    {
+        var names = Config.OptionsPresets?.Keys
+            .Where(k => !string.IsNullOrWhiteSpace(k))
+            .OrderBy(k => k, StringComparer.OrdinalIgnoreCase)
+            .ToList() ?? new List<string>();
+
+        OptionsPresetNames = new ObservableCollection<string>(names);
+
+        if (names.Count == 0)
+        {
+            SelectedOptionsPresetName = null;
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(SelectedOptionsPresetName) || !names.Contains(SelectedOptionsPresetName))
+        {
+            SelectedOptionsPresetName = names[0];
+        }
+    }
+
+    [RelayCommand]
+    public void SaveOptionsPreset()
+    {
+        if (CurrentModpack == null)
+        {
+            Greeting = "Nejdříve vyber modpack.";
+            return;
+        }
+
+        var presetName = (NewOptionsPresetName ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(presetName))
+        {
+            Greeting = "Zadej název presetu options.";
+            return;
+        }
+
+        try
+        {
+            var modpackPath = _launcherService.GetModpackPath(CurrentModpack.Name);
+            var optionsPath = Path.Combine(modpackPath, "options.txt");
+
+            if (!File.Exists(optionsPath))
+            {
+                Greeting = "V modpacku nebyl nalezen options.txt.";
+                return;
+            }
+
+            var content = File.ReadAllText(optionsPath);
+            Config.OptionsPresets[presetName] = content;
+            _launcherService.SaveConfig(Config);
+
+            NewOptionsPresetName = "";
+            ReloadOptionsPresets();
+            SelectedOptionsPresetName = presetName;
+            Greeting = $"Preset '{presetName}' uložen.";
+        }
+        catch (Exception ex)
+        {
+            LogService.Error("[SaveOptionsPreset] Failed", ex);
+            Greeting = "Nepodařilo se uložit preset options.";
+        }
+    }
+
+    [RelayCommand]
+    public void LoadOptionsPresetToCurrentModpack()
+    {
+        if (CurrentModpack == null)
+        {
+            Greeting = "Nejdříve vyber modpack.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(SelectedOptionsPresetName))
+        {
+            Greeting = "Vyber preset options pro načtení.";
+            return;
+        }
+
+        if (!Config.OptionsPresets.TryGetValue(SelectedOptionsPresetName, out var content))
+        {
+            Greeting = "Vybraný preset už neexistuje.";
+            ReloadOptionsPresets();
+            return;
+        }
+
+        try
+        {
+            var modpackPath = _launcherService.GetModpackPath(CurrentModpack.Name);
+            Directory.CreateDirectory(modpackPath);
+            var optionsPath = Path.Combine(modpackPath, "options.txt");
+            File.WriteAllText(optionsPath, content);
+
+            Greeting = $"Preset '{SelectedOptionsPresetName}' načten do modpacku {CurrentModpack.Name}.";
+        }
+        catch (Exception ex)
+        {
+            LogService.Error("[LoadOptionsPresetToCurrentModpack] Failed", ex);
+            Greeting = "Nepodařilo se načíst preset options do modpacku.";
+        }
+    }
+
+    [RelayCommand]
+    public void DeleteOptionsPreset()
+    {
+        if (string.IsNullOrWhiteSpace(SelectedOptionsPresetName))
+        {
+            Greeting = "Vyber preset, který chceš smazat.";
+            return;
+        }
+
+        var presetName = SelectedOptionsPresetName;
+        if (!Config.OptionsPresets.Remove(presetName))
+        {
+            Greeting = "Preset nebyl nalezen.";
+            ReloadOptionsPresets();
+            return;
+        }
+
+        try
+        {
+            _launcherService.SaveConfig(Config);
+            ReloadOptionsPresets();
+            Greeting = $"Preset '{presetName}' byl smazán.";
+        }
+        catch (Exception ex)
+        {
+            LogService.Error("[DeleteOptionsPreset] Failed", ex);
+            Greeting = "Nepodařilo se smazat preset.";
+        }
     }
 
     [RelayCommand]

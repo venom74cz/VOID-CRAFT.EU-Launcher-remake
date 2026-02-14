@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.2.3
+
+### ✨ Nové Funkce
+- **Moje Modpacky – verze & update stav**: Každý modpack nyní zobrazuje nainstalovanou verzi a při dostupném updatu i přechod na novou verzi (`stará → nová`) + tlačítko **AKTUALIZOVAT**.
+- **Automatická kontrola update modpacků**: Kontrola proběhne při startu launcheru a následně každých 5 sekund.
+- **Galerie screenshotů per modpack**: V nastavení modpacku je nová sekce **SCREENSHOTS / Galerie** načítaná ze složky `screenshots` (resp. `screenshoty`).
+- **Interakce v galerii**: Kolečko myši scrolluje přímo v galerii a klik na screenshot otevře obrázek v systémovém prohlížeči.
+- **In-launcher Správa modů**: Nový editor modů přímo v launcheru (vyhledávání, zapnout/vypnout mod, přidání lokálních `.jar` souborů).
+- **Globální options.txt presety**: Ukládání presetů pod vlastním názvem a jejich načítání mezi různými modpacky.
+- **Smazání options presetu**: Přidána možnost odstranit vybraný globální preset.
+
+### 🔧 Opravy & Vylepšení
+- **Ikony a branding**: Stabilizace práce s ikonou aplikace a úpravy zobrazení brandingu v UI.
+
 ## 1.2.2
 
 ### ✨ Nové Funkce

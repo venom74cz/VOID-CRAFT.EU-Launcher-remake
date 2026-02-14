@@ -1,0 +1,89 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:VoidCraftLauncher.ViewModels"
+        mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="700"
+        x:Class="VoidCraftLauncher.Views.ModManagerWindow"
+        x:DataType="vm:ModManagerViewModel"
+        Title="Správa modů"
+        Width="950" Height="720"
+        WindowStartupLocation="CenterOwner"
+        Background="#1E1E1E"
+        TransparencyLevelHint="Mica"
+        ExtendClientAreaToDecorationsHint="True">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="20" RowSpacing="10">
+        <StackPanel Grid.Row="0" Spacing="4">
+            <TextBlock Text="Správa modů" FontSize="24" FontWeight="Bold" Foreground="White"/>
+            <TextBlock Text="{Binding ModpackName, StringFormat='Modpack: {0}'}" Foreground="#AAAAAA"/>
+        </StackPanel>
+
+        <Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+            <TextBox Grid.Column="0"
+                     Text="{Binding SearchQuery}"
+                     Watermark="Hledat mod..."
+                     Background="#252525"
+                     Foreground="White"
+                     BorderThickness="0"
+                     Padding="10,8"/>
+
+            <Button Grid.Column="1"
+                    Content="Přidat mod(y)"
+                    Click="OnAddModsClick"
+                    Background="#3A3A3A"
+                    Foreground="White"
+                    Padding="12,8"/>
+
+            <Button Grid.Column="2"
+                    Content="Obnovit"
+                    Command="{Binding ReloadModsCommand}"
+                    Background="#2E2E2E"
+                    Foreground="White"
+                    Padding="12,8"/>
+        </Grid>
+
+        <Border Grid.Row="2" Background="#252525" CornerRadius="8" Padding="6">
+            <ScrollViewer>
+                <ItemsControl ItemsSource="{Binding FilteredMods}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:CompileBindings="False">
+                            <Border Background="#2A2A2A" CornerRadius="6" Padding="10" Margin="0,0,0,6">
+                                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+                                    <StackPanel Grid.Column="0" Spacing="2">
+                                        <TextBlock Text="{Binding DisplayName}" FontWeight="Bold" Foreground="White" FontSize="14"/>
+                                        <TextBlock Text="{Binding BaseFileName}" FontSize="10" Foreground="#8C8C8C"/>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding SizeText}" Foreground="#B0B0B0" FontSize="11" HorizontalAlignment="Right"/>
+                                        <Border Background="#333333" CornerRadius="4" Padding="8,3" Margin="0,4,0,0">
+                                            <TextBlock Text="{Binding StatusText}" Foreground="#DDDDDD" FontSize="11"/>
+                                        </Border>
+                                    </StackPanel>
+
+                                    <Button Grid.Column="2"
+                                            Command="{Binding DataContext.ToggleModStateCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                            CommandParameter="{Binding}"
+                                            Content="{Binding ToggleButtonText}"
+                                            Background="#007ACC"
+                                            Foreground="White"
+                                            Padding="10,6"
+                                            VerticalAlignment="Center"/>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Border>
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
+            <Button Content="Zavřít" Command="{Binding CloseCommand}" Background="Transparent" Foreground="#AAAAAA"/>
+        </StackPanel>
+
+        <Grid Grid.RowSpan="4" IsVisible="{Binding IsLoading}" Background="#88000000">
+            <TextBlock Text="Načítám mody..." HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontSize="15"/>
+        </Grid>
+    </Grid>
+</Window>

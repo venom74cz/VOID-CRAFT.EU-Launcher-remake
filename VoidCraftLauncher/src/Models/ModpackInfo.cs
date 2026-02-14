@@ -24,11 +24,19 @@ namespace VoidCraftLauncher.Models
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(PlayButtonText))]
         [NotifyPropertyChangedFor(nameof(IsUpdateAvailable))]
+        [NotifyPropertyChangedFor(nameof(InstalledVersionName))]
+        [NotifyPropertyChangedFor(nameof(LatestVersionName))]
+        [NotifyPropertyChangedFor(nameof(VersionTransitionText))]
+        [NotifyPropertyChangedFor(nameof(PlayButtonBackground))]
         private ModpackVersion _currentVersion = new ModpackVersion { Name = "-" };
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(PlayButtonText))]
         [NotifyPropertyChangedFor(nameof(IsUpdateAvailable))]
+        [NotifyPropertyChangedFor(nameof(InstalledVersionName))]
+        [NotifyPropertyChangedFor(nameof(LatestVersionName))]
+        [NotifyPropertyChangedFor(nameof(VersionTransitionText))]
+        [NotifyPropertyChangedFor(nameof(PlayButtonBackground))]
         private ObservableCollection<ModpackVersion> _versions = new();
 
         [ObservableProperty]
@@ -61,6 +69,16 @@ namespace VoidCraftLauncher.Models
                 return "HRÁT";
             }
         }
+
+        public string PlayButtonBackground => IsUpdateAvailable ? "#3A3A3A" : "#007ACC";
+
+        public string InstalledVersionName => CurrentVersion?.Name ?? "-";
+
+        public string LatestVersionName => Versions?.FirstOrDefault()?.Name ?? "-";
+
+        public string VersionTransitionText => IsUpdateAvailable
+            ? $"{InstalledVersionName} → {LatestVersionName}"
+            : InstalledVersionName;
         
         public bool IsUpdateAvailable => 
             Versions != null && Versions.Count > 0 && 

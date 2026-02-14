@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading;
 using System.Collections.Specialized;
+using System.Text.RegularExpressions;
 
 namespace VoidCraftLauncher.ViewModels;
 
@@ -78,6 +79,12 @@ public partial class MainViewModel : ViewModelBase
 
     [ObservableProperty]
     private string _manualLoginCode;
+
+    [ObservableProperty]
+    private string _loginStatus = "";
+
+    [ObservableProperty]
+    private bool _isLoginInProgress = false;
 
     [ObservableProperty]
     private bool _isWebviewVisible = true;
@@ -1276,6 +1283,10 @@ public partial class MainViewModel : ViewModelBase
         if (IsLoggedIn) return;
         IsLoginModalVisible = true;
         IsLoginModalVisible = true;
+        LoginStatus = "";
+        ManualLoginCode = "";
+        AuthUrl = "";
+        IsLoginInProgress = false;
         // Pre-fill "Player" if empty and nothing in config
         if (string.IsNullOrEmpty(OfflineUsername)) OfflineUsername = Config.LastOfflineUsername ?? "Player";
     }
@@ -1289,27 +1300,78 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     public async Task LoginMicrosoft()
     {
+        if (IsLoginInProgress)
+            return;
+
         try
         {
-            IsLoginModalVisible = false; // Hide modal
+            IsLoginInProgress = true;
+            IsLoginModalVisible = true;
             IsWebviewVisible = true;
             IsBrowserPanelVisible = false;
+            LoginStatus = "Otevírám přihlášení...";
+            ManualLoginCode = "";
+            AuthUrl = "";
             
             var session = await _authService.LoginWithBrowserAsync((msg) =>
             {
-                Avalonia.Threading.Dispatcher.UIThread.Post(() => Greeting = msg);
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    Greeting = msg;
+                    LoginStatus = msg;
+
+                    var urlMatch = Regex.Match(msg, @"https?://\S+", RegexOptions.IgnoreCase);
+                    if (urlMatch.Success)
+                    {
+                        AuthUrl = urlMatch.Value.Trim().TrimEnd('.', ',', ';');
+                    }
+
+                    var codeMatch = Regex.Match(msg, @"kód:\s*([A-Z0-9\-]+)", RegexOptions.IgnoreCase);
+                    if (codeMatch.Success)
+                    {
+                        ManualLoginCode = codeMatch.Groups[1].Value.Trim();
+                    }
+                });
             });
             
             UserSession = session;
             IsLoggedIn = true;
+            IsLoginInProgress = false;
+            IsLoginModalVisible = false;
             IsWebviewVisible = false;
             OnPropertyChanged(nameof(PlayerSkinUrl));
             Greeting = $"Vítejte, {session.Username}!";
         }
         catch (System.Exception ex)
         {
+            IsLoginInProgress = false;
             Greeting = $"Chyba přihlášení: {ex.Message}";
+            LoginStatus = Greeting;
             IsWebviewVisible = false;
+        }
+    }
+
+    [RelayCommand]
+    public async Task CopyLoginCode()
+    {
+        if (string.IsNullOrWhiteSpace(ManualLoginCode))
+            return;
+
+        try
+        {
+            var topLevel = Avalonia.Controls.TopLevel.GetTopLevel(
+                Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop
+                    ? desktop.MainWindow
+                    : null);
+
+            if (topLevel?.Clipboard != null)
+            {
+                await topLevel.Clipboard.SetTextAsync(ManualLoginCode);
+                Greeting = "Přihlašovací kód zkopírován.";
+            }
+        }
+        catch
+        {
         }
     }
 

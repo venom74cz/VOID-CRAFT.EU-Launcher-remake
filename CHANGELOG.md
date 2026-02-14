@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.7
+
+### 🔧 Rychlé Opravy (Hotfix)
+- **Linux Microsoft login stabilita**: Upravena logika přihlášení tak, aby primárně používala standardní browser flow a Device Code využila jako fallback při selhání.
+- **Device Code UX v launcheru**: Kód pro propojení se nyní zobrazuje přímo v login modalu (včetně stavu průběhu), takže je možné ho snadno opsat nebo zkopírovat.
+- **Srozumitelné chyby AADSTS700021**: Přidána jasná hláška při nepovoleném Device Code flow v Azure App Registration.
+- **Windows login**: Beze změny (klasický Microsoft browser login zůstává výchozí).
+
 ## 1.2.6
 
 ### 🔧 Rychlé Opravy (Hotfix)

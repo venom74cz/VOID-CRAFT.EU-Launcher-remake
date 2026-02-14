@@ -112,27 +112,20 @@ public class AuthService
         }
         catch (MsalUiRequiredException)
         {
-            if (OperatingSystem.IsLinux())
+            try
+            {
+                statusCallback("Čekám na přihlášení v prohlížeči...");
+                authResult = await _msalApp.AcquireTokenInteractive(scopes)
+                    .WithSystemWebViewOptions(new SystemWebViewOptions
+                    {
+                        HtmlMessageSuccess = "<html><body style='font-family:sans-serif;text-align:center;padding:50px;background:#1a1a1a;color:white;'><h1>✅ Přihlášení úspěšné!</h1><p>Můžeš zavřít toto okno a vrátit se do launcheru.</p></body></html>",
+                        HtmlMessageError = "<html><body style='font-family:sans-serif;text-align:center;padding:50px;background:#1a1a1a;color:white;'><h1>❌ Chyba</h1><p>Přihlášení selhalo.</p></body></html>"
+                    })
+                    .ExecuteAsync();
+            }
+            catch (MsalClientException)
             {
                 authResult = await AcquireTokenWithDeviceCodeAsync(scopes, statusCallback);
-            }
-            else
-            {
-                try
-                {
-                    statusCallback("Čekám na přihlášení v prohlížeči...");
-                    authResult = await _msalApp.AcquireTokenInteractive(scopes)
-                        .WithSystemWebViewOptions(new SystemWebViewOptions
-                        {
-                            HtmlMessageSuccess = "<html><body style='font-family:sans-serif;text-align:center;padding:50px;background:#1a1a1a;color:white;'><h1>✅ Přihlášení úspěšné!</h1><p>Můžeš zavřít toto okno a vrátit se do launcheru.</p></body></html>",
-                            HtmlMessageError = "<html><body style='font-family:sans-serif;text-align:center;padding:50px;background:#1a1a1a;color:white;'><h1>❌ Chyba</h1><p>Přihlášení selhalo.</p></body></html>"
-                        })
-                        .ExecuteAsync();
-                }
-                catch (MsalClientException)
-                {
-                    authResult = await AcquireTokenWithDeviceCodeAsync(scopes, statusCallback);
-                }
             }
         }
 
@@ -164,12 +157,19 @@ public class AuthService
     {
         statusCallback("Linux login fallback: Device Code...");
 
-        return await _msalApp.AcquireTokenWithDeviceCode(scopes, deviceCodeResult =>
+        try
         {
-            statusCallback($"Otevři {deviceCodeResult.VerificationUrl} a zadej kód: {deviceCodeResult.UserCode}");
-            TryOpenBrowser(deviceCodeResult.VerificationUrl);
-            return Task.CompletedTask;
-        }).ExecuteAsync();
+            return await _msalApp.AcquireTokenWithDeviceCode(scopes, deviceCodeResult =>
+            {
+                statusCallback($"Otevři {deviceCodeResult.VerificationUrl} a zadej kód: {deviceCodeResult.UserCode}");
+                TryOpenBrowser(deviceCodeResult.VerificationUrl);
+                return Task.CompletedTask;
+            }).ExecuteAsync();
+        }
+        catch (MsalServiceException ex) when (ex.Message.Contains("AADSTS700021", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new Exception("Device Code login není povolený v Azure App Registration (AADSTS700021). Zapni v Azure: Authentication -> Allow public client flows = Yes (Mobile and desktop applications), nebo použij standardní browser login.");
+        }
     }
 
     private static void TryOpenBrowser(string? url)

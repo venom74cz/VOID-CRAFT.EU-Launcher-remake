@@ -1,100 +1,103 @@
 # AI Context: VoidCraft Launcher
 
-## 1. Project Overview
-**Project Name**: VoidCraft Launcher
-**Purpose**: Custom Minecraft Launcher tailored for the VOID-CRAFT community.
-**Framework**: .NET 9.0 (C#)
-**UI Framework**: Avalonia UI (Cross-platform XAML)
-**Key External Libraries**: 
-- `CmlLib.Core` (Minecraft Launch Logic)
-- `CommunityToolkit.Mvvm` (MVVM Pattern)
-- `Microsoft.Identity.Client` (MSAL - Microsoft Auth)
-- `System.Text.Json` (Serialization)
+## 1) Project Snapshot
+- **Name**: VoidCraft Launcher
+- **Current version**: **1.2.8**
+- **Stack**: .NET 9 + Avalonia UI + MVVM Toolkit
+- **Primary goal**: Community Minecraft launcher (VOID-CRAFT) with modpack install/update, Microsoft auth, offline mode, and cross-platform builds.
 
-## 2. Directory Structure (`VoidCraftLauncher/src`)
-The project follows a standard MVVM architecture.
+## 2) Current Architecture
+The app is still a classic MVVM desktop app with a single main window.
 
-### 📂 `Views/`
-Contains the UI definitions (XAML).
-- **`MainWindow.axaml`**: The single main window of the application.
-  - **Structure**: Sidebar (Left) + Content Area (Right).
-  - **Overlays**: Contains a `Grid` overlay for the Login Modal.
-  - **Navigation**: Uses visibility toggling of UI sections based on `MainViewModel` state.
+- **UI**: `VoidCraftLauncher/src/Views/MainWindow.axaml`
+  - Sidebar + right panel sections (Home/Settings/ModpackSettings/Browser).
+  - Login modal overlay is embedded directly in this view.
 
-### 📂 `ViewModels/`
-Application logic and state management.
-- **`MainViewModel.cs`**: The core "Brain" of the UI.
-  - **Responsibilities**: Navigation, Auth state, Modpack management, Download progress, Server status polling.
-  - **State**: Holds `ObservableCollection<ModpackInfo>` (Library) and `BrowserResults`.
-  - **Commands**: `LoginMicrosoft`, `LoginOffline`, `PlayModpack`, `InstallModpackFromBrowser`, etc.
+- **Main VM**: `VoidCraftLauncher/src/ViewModels/MainViewModel.cs`
+  - Large orchestration VM (navigation, auth state, modpack lifecycle, update loops, settings, screenshots, presets).
+  - Uses async background loops for server status and installed-modpack update checks.
 
-### 📂 `Services/`
-Business logic and external interactions.
-- **`AuthService.cs`**: 
-  - Handles Microsoft OAuth 2.0 (Azure AD) with Scope `XboxLive.signin`.
-  - Handles Offline (Warez) login creating a dummy session.
-  - Manages Token Cache persistence.
-- **`LauncherService.cs`**: 
-  - Manages `CmlLib.Core` session.
-  - Handles `LaunchAsync` (Process start).
-  - Loads/Saves `LauncherConfig` (JSON).
-- **`ModpackInstaller.cs`**: 
-  - Core logic for downloading and installing modpacks.
-  - **Smart Updates**: Compares `ModpackManifestInfo` to avoid redownloading unchanged versions.
-  - Handles `overrides/` copying and mod downloading from CurseForge/Modrinth APIs.
-- **`CurseForgeApi.cs` / `ModrinthApi.cs`**: 
-  - HTTP Clients for searching and fetching metadata from respective platforms.
-- **`LogService.cs`**: 
-  - Writes logs to `%Documents%/.voidcraft/launcher.log`.
+- **Services**:
+  - `AuthService.cs`: Microsoft/Offline auth, MSAL token cache, Xbox/XSTS/Minecraft token chain.
+  - `LauncherService.cs`: launch preparation + game process execution.
+  - `ModpackInstaller.cs`: install/update pipeline, manifest management, protected files, resilient overrides extraction.
+  - `CurseForgeApi.cs` / `ModrinthApi.cs`: remote metadata/search.
+  - `LogService.cs`: centralized logging.
 
-### 📂 `Models/`
-Data structures and DTOs.
-- **`ModpackInfo`**: Represents an installed instance (Name, Path, Version, Icon).
-- **`LauncherConfig`**: Global settings (Java Path, RAM, JVM Args, Optimization flags).
-- **`InstanceConfig`**: Per-modpack overrides (e.g. specialized RAM settings for heavy packs).
+- **Models**:
+  - `ModpackInfo`: installed pack state + UI-computed properties (play button text/color, version transition).
+  - `LauncherConfig`: global launcher settings and options presets.
+  - `InstanceConfig`: per-pack overrides (RAM/JVM/potato mode toggles).
 
-## 3. Key Workflows
+## 3) Key Features Implemented (Current State)
 
-### Authentication
-1. **User clicks "Přihlásit se"**: Opens `IsLoginModalVisible` overlay.
-2. **Microsoft**: Calls `AuthService.LoginWithBrowserAsync`. Uses system browser for OAuth -> Returns `MSession`.
-3. **Offline**: Validates username -> Calls `AuthService.LoginOffline` -> Returns Offline `MSession`.
+### Modpack cards / updates
+- Installed and latest versions are shown directly in "Moje Modpacky".
+- Update check runs at startup and then every **5 seconds**.
+- Update availability detection uses **FileId-first** comparison (fallback by name).
+- Card button changes between Play/Update state and style.
 
-### Modpack Installation
-1. User searches in Browser (CurseForge/Modrinth).
-2. `MainViewModel` creates a placeholder `ModpackInfo` in Library.
-3. Background Task downloads `.zip` / `.mrpack`.
-4. `ModpackInstaller` extracts and installs:
-   - Resolves dependencies.
-   - Downloads mods.
-   - Copies overrides.
-5. `installed_modpacks.json` is updated.
+### Update reliability
+- Update/install targets latest FileId when needed.
+- Prevents game launch when required update did not complete (avoids mixed old/new files crash state).
+- After successful install, current version state is re-synced from manifest info.
+- Locked files in overrides are retried and then safely skipped instead of failing whole update.
 
-### Launching
-1. **Check**: Is User logged in? Is Modpack valid?
-2. **Update**: Checks for updates via `ModpackInstaller` (Version verification).
-3. **Optimizations**: Applies JVM arguments (G1GC / ZGC) based on `LauncherConfig` or `InstanceConfig`.
-4. **Process**: `LauncherService` starts `java.exe` process.
-5. **Monitoring**: Redirects `STDOUT`/`STDERR` to `LogService` and console.
+### Screenshots gallery (per pack)
+- Reads from `screenshots` (fallback `screenshoty`) in instance folder.
+- Shown in modpack settings, supports wheel scrolling and click-to-open.
 
-## 4. Specific Mechanics
-- **Self-Contained**: The application is published as a self-contained executable (includes .NET Runtime).
-- **Auto-Update**: Checks GitHub Releases (`venom74cz/VOID-CRAFT.EU-Launcher-remake`) on startup. Downloads new `.exe`, renames old to `.bak`, and restarts.
-- **File Storage**:
-  - Configuration: `launcher_config.json`
-  - Library Registry: `installed_modpacks.json`
-  - Instances: `Before version 1.0.3` logic mixed, currently standardizing on specific instance folders managed by `LauncherService`.
+### In-launcher mod manager
+- Separate `ModManagerWindow` with search.
+- Enable/disable mod by renaming `.jar` <-> `.jar.disabled`.
+- Import local mod `.jar` files into current pack.
 
-## 5. Important Constants
-- **Microsoft Client ID**: `a12295b0-3505-46f1-a299-88ae9cc80174`
-- **Server IP**: `mc.void-craft.eu`
-- **Redirect URI**: (Default/Localhost for Desktop Apps)
+### Global options presets
+- Save current pack `options.txt` under a custom preset name.
+- Load preset into any selected pack.
+- Delete presets.
+- Presets are stored globally in launcher config.
 
-## 6. Known "Tech Debt" / Notes for AI
-- `MainViewModel.cs` is very large (God Object). Future refactoring should split it (e.g., `BrowserViewModel`, `LibraryViewModel`).
-- Navigation is boolean-flag based (`IsHomeView`, `IsSettingsView`, etc.) rather than using a proper Routing/View injection system.
-- XAML `MainWindow.axaml` contains the Login Overlay directly in the visual tree. 
-- Exception handling is often generic (`catch (Exception ex)`).
+### Microsoft login behavior (important)
+- **Windows**: default classic interactive Microsoft browser login.
+- **Linux**: uses Device Code flow directly (stability over localhost callback).
+- Login modal now displays ongoing status + Device Code and allows copy/open actions.
+- Clear guidance is shown for `AADSTS700021` (when public client flow is disabled in Azure App Registration).
+
+## 4) Build / Release / Packaging
+- CI workflow: `.github/workflows/build.yml`
+- **Windows publish**: single-file self-contained + native self-extract.
+- **Linux publish**: single-file self-contained **with** native self-extract (`IncludeNativeLibrariesForSelfExtract=true`) to ship Skia native libs properly.
+- Linux artifacts: raw binary + AppImage.
+
+## 5) Data & Paths
+- Base data folder: `Documents/.voidcraft`
+- Important files:
+  - `launcher_config.json`
+  - `installed_modpacks.json`
+  - `launcher.log`
+  - `instances/{ModpackName}/...`
+
+## 6) Critical Integration Settings (Azure)
+- MSAL Client ID in code: `a12295b0-3505-46f1-a299-88ae9cc80174`
+- For Device Code to work, Azure App Registration must have:
+  - Platform: **Mobile and desktop applications**
+  - Redirect URI including `http://localhost`
+  - **Allow public client flows = Yes**
+
+## 7) Known Technical Debt
+- `MainViewModel.cs` is still a large "god object".
+- Some generic catch blocks and limited typed error handling remain.
+- Navigation is state-flag based instead of routed/view-composed architecture.
+- Existing non-blocking compiler warnings remain (not introduced by latest changes):
+  - Unused exception variable in `PotatoModsViewModel.cs`
+  - Non-awaited call warning in `MainViewModel.cs`
+
+## 8) Latest Release Notes Context
+- `1.2.5`: Linux AppImage Skia native library packaging fix.
+- `1.2.6`: Linux login callback reliability + fallback guidance.
+- `1.2.7`: Login modal UX improvements for Device Code visibility.
+- `1.2.8`: Linux Device Code-first flow + robust code parsing (`kód:` / `code:`), Windows login unchanged.
 
 ---
-*Created: 2026-01-05*
+*Last updated: 2026-02-14*

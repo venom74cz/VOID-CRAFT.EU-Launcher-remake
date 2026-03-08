@@ -19,5 +19,11 @@ namespace VoidCraftLauncher.Models
 
         [JsonPropertyName("categories")]
         public List<string> Categories { get; set; } = new();
+
+        [JsonPropertyName("iconUrl")]
+        public string IconUrl { get; set; }
+
+        [JsonPropertyName("webLink")]
+        public string WebLink { get; set; }
     }
 }

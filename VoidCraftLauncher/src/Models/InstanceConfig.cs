@@ -8,8 +8,6 @@ public partial class InstanceConfig : ObservableObject
 {
     public string ModpackName { get; set; } = "";
 
-    [ObservableProperty]
-    private string? _overrideJavaPath;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(RamSliderValue))]
@@ -28,13 +26,13 @@ public partial class InstanceConfig : ObservableObject
     [ObservableProperty]
     private bool _potatoModeEnabled = false; // "Potato Mode"
 
-    
+    [ObservableProperty]
+    private string[]? _customJvmArguments; // Per-instance custom JVM arguments (e.g. GTNH --add-opens)
+
     // UI Helpers (Not serialized if needed, but useful)
     [JsonIgnore]
     public bool HasRamOverride => OverrideMaxRamMb.HasValue;
     
-    [JsonIgnore]
-    public bool HasJavaOverride => !string.IsNullOrEmpty(OverrideJavaPath);
 
     [System.Text.Json.Serialization.JsonIgnore]
     public double RamSliderValue

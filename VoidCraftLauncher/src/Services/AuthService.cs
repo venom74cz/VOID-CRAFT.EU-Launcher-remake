@@ -124,8 +124,8 @@ public class AuthService
                 authResult = await _msalApp.AcquireTokenInteractive(scopes)
                     .WithSystemWebViewOptions(new SystemWebViewOptions
                     {
-                        HtmlMessageSuccess = "<html><body style='font-family:sans-serif;text-align:center;padding:50px;background:#1a1a1a;color:white;'><h1>✅ Přihlášení úspěšné!</h1><p>Můžeš zavřít toto okno a vrátit se do launcheru.</p></body></html>",
-                        HtmlMessageError = "<html><body style='font-family:sans-serif;text-align:center;padding:50px;background:#1a1a1a;color:white;'><h1>❌ Chyba</h1><p>Přihlášení selhalo.</p></body></html>"
+                        HtmlMessageSuccess = "<html><head><meta charset='utf-8'></head><body style='font-family:sans-serif;text-align:center;padding:50px;background:#1a1a1a;color:white;'><h1>✅ Přihlášení úspěšné!</h1><p>Můžeš zavřít toto okno a vrátit se do launcheru.</p></body></html>",
+                        HtmlMessageError = "<html><head><meta charset='utf-8'></head><body style='font-family:sans-serif;text-align:center;padding:50px;background:#1a1a1a;color:white;'><h1>❌ Chyba</h1><p>Přihlášení selhalo.</p></body></html>"
                     })
                     .ExecuteAsync();
             }
@@ -328,6 +328,63 @@ public class AuthService
         {
             File.Delete(_tokenCacheFile);
         }
+    }
+
+    /// <summary>
+    /// Remove a specific MS account from MSAL cache by its identifier.
+    /// </summary>
+    public async Task RemoveAccountAsync(string msalAccountId)
+    {
+        if (string.IsNullOrEmpty(msalAccountId)) return;
+        var accounts = await _msalApp.GetAccountsAsync();
+        var target = accounts.FirstOrDefault(a => a.HomeAccountId?.Identifier == msalAccountId);
+        if (target != null)
+        {
+            await _msalApp.RemoveAsync(target);
+        }
+    }
+
+    /// <summary>
+    /// Try silent login for a specific MS account using its MSAL identifier.
+    /// Returns null if silent login fails (token expired, account removed, etc.).
+    /// </summary>
+    public async Task<MSession?> TrySilentLoginForAccountAsync(string msalAccountId)
+    {
+        if (string.IsNullOrEmpty(msalAccountId)) return null;
+
+        var scopes = new[] { "XboxLive.signin", "XboxLive.offline_access" };
+        try
+        {
+            var accounts = await _msalApp.GetAccountsAsync();
+            var account = accounts.FirstOrDefault(a => a.HomeAccountId?.Identifier == msalAccountId);
+            if (account == null) return null;
+
+            var authResult = await _msalApp.AcquireTokenSilent(scopes, account).ExecuteAsync();
+
+            var userToken = await RequestXboxUserToken(authResult.AccessToken);
+            var xsts = await RequestXstsToken(userToken.Token);
+            string userHash = ExtractUserHash(xsts);
+            var mcToken = await LoginToMinecraftAsync(userHash, xsts.Token);
+            var profile = await GetMinecraftProfileAsync(mcToken);
+
+            var mSession = new MSession(profile.Name, mcToken, profile.Id);
+            mSession.UserType = "msa";
+            return mSession;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Get the MSAL account identifier for the most recently authenticated MS account.
+    /// Used to populate AccountProfile.MsalAccountId after a successful login.
+    /// </summary>
+    public async Task<string?> GetLastMsalAccountIdAsync()
+    {
+        var accounts = await _msalApp.GetAccountsAsync();
+        return accounts.FirstOrDefault()?.HomeAccountId?.Identifier;
     }
 
     public MSession LoginOffline(string username)

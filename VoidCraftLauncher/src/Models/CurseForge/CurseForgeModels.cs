@@ -128,6 +128,24 @@ namespace VoidCraftLauncher.Models.CurseForge
 
         [JsonPropertyName("categories")]
         public List<Category> Categories { get; set; }
+
+        [JsonPropertyName("links")]
+        public CurseModLinks Links { get; set; }
+
+        [JsonPropertyName("logo")]
+        public CurseModLogo Logo { get; set; }
+    }
+
+    public class CurseModLinks
+    {
+        [JsonPropertyName("websiteUrl")]
+        public string WebsiteUrl { get; set; }
+    }
+
+    public class CurseModLogo
+    {
+        [JsonPropertyName("thumbnailUrl")]
+        public string ThumbnailUrl { get; set; }
     }
 
     public class Category

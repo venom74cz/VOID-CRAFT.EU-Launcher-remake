@@ -10,4 +10,8 @@ public class ModpackItem
     public string Source { get; set; } = ""; // "CurseForge" or "Modrinth"
     public string WebLink { get; set; } = "";
     public long DownloadCount { get; set; }
+    
+    // Custom Profile Support
+    public bool IsInstalled { get; set; } = false;
+    public string InstalledFileName { get; set; } = "";
 }

@@ -92,6 +92,7 @@ namespace VoidCraftLauncher.Services
             string gameDirectory,
             string modLoaderId,
             string[]? jvmArguments,
+            int? requiredJavaVersion,
             Action<string> statusCallback,
             Action<double> progressCallback,
             Action<string> fileCallback)
@@ -168,24 +169,20 @@ namespace VoidCraftLauncher.Services
                             throw new Exception($"Instalace Forge selhala: {ex.Message}", ex);
                         }
                     }
-                    /* 
-                    // Fabric Support - TODO: Fix CmlLib.Core.Installer.Fabric dependency
                     else if (loaderType == "fabric")
                     {
                         try
                         {
-                            // var fabricInstaller = new FabricInstaller(_launcher);
-                            // launchVersionName = await fabricInstaller.Install(versionId, loaderVersion);
-                            // statusCallback($"Fabric nainstalován: {launchVersionName}");
-                            statusCallback("Fabric auto-install není momentálně podporován. Prosím nainstalujte Fabric manuálně.");
+                            var fabricInstaller = new FabricInstaller(_launcher, _mcPath);
+                            launchVersionName = await fabricInstaller.InstallAsync(versionId, loaderVersion, statusCallback);
+                            statusCallback($"Fabric nainstalován: {launchVersionName}");
                         }
                         catch (Exception ex)
                         {
                             statusCallback($"Chyba instalace Fabric: {ex.Message}");
-                             // throw new Exception($"Instalace Fabric selhala: {ex.Message}", ex);
+                            throw new Exception($"Instalace Fabric selhala: {ex.Message}", ex);
                         }
                     }
-                    */
                 } // End if parts.Length == 2
             }
             
@@ -193,6 +190,22 @@ namespace VoidCraftLauncher.Services
             // This is critical for NeoForge which might need a specific Java Runtime (e.g. Java 21)
             statusCallback($"Ověřuji soubory pro verzi: {launchVersionName}...");
             await _launcher.InstallAsync(launchVersionName);
+
+            // If a specific Java version is required, we ensure the version data is loaded 
+            // CmlLib's InstallAsync will automatically download the required Java runtime
+            // specified in the version metadata.
+            if (requiredJavaVersion.HasValue)
+            {
+                string component = "jre-legacy";
+                if (requiredJavaVersion >= 21) component = "java-runtime-delta";
+                else if (requiredJavaVersion >= 17) component = "java-runtime-gamma";
+                else if (requiredJavaVersion >= 16) component = "java-runtime-alpha";
+
+                statusCallback($"Ověřuji Java Runtime: {component}...");
+                // Just calling InstallAsync on the version is enough if the version metadata 
+                // points to the right java version. Since we are overriding, we'll manually 
+                // set the java path in MLaunchOption later.
+            }
             
             statusCallback("Připravuji spuštění...");
 
@@ -220,19 +233,123 @@ namespace VoidCraftLauncher.Services
                     .ToArray()
             };
 
-            // Set Java Path if configured
-            if (!string.IsNullOrEmpty(config.JavaPath))
+            // Auto-detect Java using CmlLib's built-in logic
+            // This handles multiple Java versions (8, 17, 21, etc.) for Win/Linux
+            statusCallback("Ověřuji Javu...");
+            var versionData = await launchLauncher.GetVersionAsync(launchVersionName);
+            if (versionData != null)
             {
-                launchOption.JavaPath = config.JavaPath;
+                // If we have a override, use it. Otherwise use manifest default.
+                if (requiredJavaVersion.HasValue)
+                {
+                    string component = "jre-legacy"; // Default
+                    if (requiredJavaVersion >= 21) component = "java-runtime-delta";
+                    else if (requiredJavaVersion >= 17) component = "java-runtime-gamma";
+                    else if (requiredJavaVersion >= 16) component = "java-runtime-alpha";
+
+                    // CmlLib 4.x: GetJavaPath(string) is NOT available directly on MinecraftLauncher
+                    // We need to use the runtime property from MinecraftPath
+                    // Correct path structure: {Runtime}/{platform}/{component}/bin/java
+                    string platform = GetPlatformString();
+                    launchOption.JavaPath = Path.Combine(_mcPath.Runtime, platform, component, "bin", 
+                        OperatingSystem.IsWindows() ? "java.exe" : "java");
+                    
+                    // Note: This assumes the runtime is already downloaded via InstallAsync 
+                    // or will be handled by CmlLib if we can find the right way to trigger it.
+                }
+                else
+                {
+                    // CmlLib will return the path to the correct Java runtime
+                    launchOption.JavaPath = launchLauncher.GetJavaPath(versionData);
+                }
             }
 
-            _gameProcess = await launchLauncher.BuildProcessAsync(launchVersionName, launchOption);
+            LogService.Log($"[Launch] Final JavaPath: {launchOption.JavaPath}");
+            if (!File.Exists(launchOption.JavaPath))
+            {
+                statusCallback($"Chyba: Java nebyla nalezena v {launchOption.JavaPath}");
+                throw new FileNotFoundException("Java executable not found", launchOption.JavaPath);
+            }
+
+            try 
+            {
+                _gameProcess = await launchLauncher.BuildProcessAsync(launchVersionName, launchOption);
+            }
+            catch (Exception ex)
+            {
+                LogService.Error("BuildProcessAsync failed", ex);
+                statusCallback($"Chyba při přípravě procesu: {ex.Message}");
+                throw;
+            }
 
             statusCallback("Spouštím hru...");
+            LogService.Log($"[Launch] Process building complete. StartInfo: {_gameProcess.StartInfo.FileName} {_gameProcess.StartInfo.Arguments}");
             progressCallback(100);
             // Process is returned unstarted so MainViewModel can configure redirects
             
             return _gameProcess;
+        }
+
+        public async Task<string?> GetJavaPathAsync(string versionId, int? requiredVersion = null)
+        {
+            var versionData = await _launcher.GetVersionAsync(versionId);
+            if (versionData == null) return null;
+
+            // If we have a specific required version (e.g. 17 for GTNH), override the manifest
+            if (requiredVersion.HasValue)
+            {
+                string component = "jre-legacy"; // Default
+                if (requiredVersion >= 21) component = "java-runtime-delta";
+                else if (requiredVersion >= 17) component = "java-runtime-gamma";
+                else if (requiredVersion >= 16) component = "java-runtime-alpha";
+
+                string platform = GetPlatformString();
+                return Path.Combine(_mcPath.Runtime, platform, component, "bin", 
+                    OperatingSystem.IsWindows() ? "java.exe" : "java");
+            }
+
+            return _launcher.GetJavaPath(versionData);
+        }
+
+        public int GetJavaVersion(string javaPath)
+        {
+            if (string.IsNullOrEmpty(javaPath) || !File.Exists(javaPath)) return 0;
+            
+            try
+            {
+                var psy = new ProcessStartInfo
+                {
+                    FileName = javaPath,
+                    Arguments = "-version",
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+                
+                using var proc = Process.Start(psy);
+                if (proc == null) return 0;
+                
+                string output = proc.StandardError.ReadToEnd();
+                proc.WaitForExit();
+                
+                // Parse version string: "java version \"1.8.0_281\"" or "openjdk version \"17.0.1\""
+                var match = System.Text.RegularExpressions.Regex.Match(output, @"version ""(\d+)\.?(\d+)?");
+                if (match.Success)
+                {
+                    int major = int.Parse(match.Groups[1].Value);
+                    if (major == 1) // 1.8.x -> 8
+                    {
+                        if (match.Groups.Count > 2)
+                            return int.Parse(match.Groups[2].Value);
+                    }
+                    return major;
+                }
+            }
+            catch (Exception ex)
+            {
+                LogService.Error($"Failed to detect Java version for {javaPath}", ex);
+            }
+            return 0;
         }
 
         /// <summary>
@@ -252,6 +369,14 @@ namespace VoidCraftLauncher.Services
             var path = Path.Combine(_instancesPath, modpackName);
             Directory.CreateDirectory(path);
             return path;
+        }
+
+        private string GetPlatformString()
+        {
+            if (OperatingSystem.IsWindows()) return "windows-x64";
+            if (OperatingSystem.IsLinux()) return "linux-x64";
+            if (OperatingSystem.IsMacOS()) return "mac-os-arm64"; // Defaulting to arm64 for modern macs
+            return "windows-x64"; // Default fallback
         }
     }
 }

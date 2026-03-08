@@ -19,6 +19,15 @@ namespace VoidCraftLauncher.Models
         private int _projectId;
 
         [ObservableProperty]
+        private string _source = "CurseForge"; // "CurseForge" or "Modrinth" or "Custom"
+
+        [ObservableProperty]
+        private string _modrinthId = ""; // For Modrinth project IDs (string)
+
+        [ObservableProperty]
+        private string _webLink = ""; // URL to the modpack page
+
+        [ObservableProperty]
         private string _name = "Načítání...";
 
         [ObservableProperty]
@@ -53,6 +62,22 @@ namespace VoidCraftLauncher.Models
 
         [ObservableProperty]
         private bool _isDeletable = true;
+
+        /// <summary>Custom profile = user-created, allows adding/removing individual mods</summary>
+        [ObservableProperty]
+        private bool _isCustomProfile = false;
+
+        /// <summary>MC version for custom profiles (e.g. "1.21.1")</summary>
+        [ObservableProperty]
+        private string _customMcVersion = "";
+
+        /// <summary>Mod loader for custom profiles (e.g. "forge", "fabric", "neoforge")</summary>
+        [ObservableProperty]
+        private string _customModLoader = "";
+
+        /// <summary>Specific mod loader version (e.g. "0.16.5")</summary>
+        [ObservableProperty]
+        private string _customModLoaderVersion = "";
 
         // Dynamic Button Text Logic
         public string PlayButtonText 

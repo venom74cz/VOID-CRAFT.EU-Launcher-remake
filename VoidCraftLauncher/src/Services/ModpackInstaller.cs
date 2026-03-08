@@ -34,6 +34,8 @@ namespace VoidCraftLauncher.Services
         {
             _api = api;
             _httpClient = new HttpClient();
+            _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+            _httpClient.DefaultRequestHeaders.Add("Accept", "application/octet-stream, */*");
         }
 
         public async Task<ModpackManifestInfo> InstallOrUpdateAsync(string modpackZipPath, string installPath, int? targetFileId = null)
@@ -91,74 +93,86 @@ namespace VoidCraftLauncher.Services
 
                 StatusChanged?.Invoke($"Načítám informace o modech ({manifest.Files.Count})...");
 
-                // 2. Resolve URLs for mods
-                var fileIds = manifest.Files.Select(f => f.FileID).Distinct();
-                // CurseForge API batch limit is often around 8k-10k IDs, but let's be safe. Modpacks usually usually have < 500 mods.
-                var filesJson = await _api.GetFilesAsync(fileIds);
-                var curseFilesData = JsonSerializer.Deserialize<CurseFileDatas>(filesJson);
-                var curseFiles = curseFilesData?.Data ?? new List<CurseFile>();
 
-                // 2b. RESOLVE CATEGORIES (Mods vs ResourcePacks)
-                var modIds = curseFiles.Select(f => f.ModId).Distinct();
+                // 2. Resolve URLs for mods - CHUNKED to avoid API limits
+                var fileIds = manifest.Files.Select(f => f.FileID).Distinct().ToList();
+                var curseFiles = new List<CurseFile>();
+                
+                for (int i = 0; i < fileIds.Count; i += 40)
+                {
+                    var chunk = fileIds.Skip(i).Take(40);
+                    var filesJson = await _api.GetFilesAsync(chunk);
+                    var curseFilesData = JsonSerializer.Deserialize<CurseFileDatas>(filesJson);
+                    if (curseFilesData?.Data != null) curseFiles.AddRange(curseFilesData.Data);
+                }
+
+                // 2b. RESOLVE CATEGORIES - CHUNKED
+                var modIds = curseFiles.Select(f => f.ModId).Distinct().ToList();
                 var modClassMap = new Dictionary<int, int>(); // ModId -> ClassId
+                var allMods = new List<CurseMod>();
+                
                 try
                 {
                     StatusChanged?.Invoke("Ověřuji typy souborů...");
-                    var modsJson = await _api.GetModsAsync(modIds);
-                    var modsData = JsonSerializer.Deserialize<CurseModsData>(modsJson);
-                    if (modsData?.Data != null)
+                    for (int i = 0; i < modIds.Count; i += 40)
                     {
-                        foreach (var m in modsData.Data)
+                        var chunk = modIds.Skip(i).Take(40);
+                        var modsJson = await _api.GetModsAsync(chunk);
+                        var modsData = JsonSerializer.Deserialize<CurseModsData>(modsJson);
+                        if (modsData?.Data != null)
                         {
-                            modClassMap[m.Id] = m.ClassId;
-                        }
-
-                        // METADATA PERSISTENCE
-                        try 
-                        {
-                            var metadataList = new List<ModMetadata>();
-                            // Try load existing
-                            var metadataPath = Path.Combine(installPath, "mods_metadata.json");
-                            if (File.Exists(metadataPath))
-                            {
-                                try 
-                                {
-                                    var existingJson = File.ReadAllText(metadataPath);
-                                    var existing = JsonSerializer.Deserialize<List<ModMetadata>>(existingJson);
-                                    if (existing != null) metadataList.AddRange(existing);
-                                } 
-                                catch {}
-                            }
-
-                            // Update/Add new
+                            allMods.AddRange(modsData.Data);
                             foreach (var m in modsData.Data)
                             {
-                                // Find associated file(s) for this mod
-                                var filesForMod = curseFiles.Where(f => f.ModId == m.Id);
-                                foreach(var f in filesForMod)
-                                {
-                                    // Remove existing entry for this filename if present
-                                    metadataList.RemoveAll(x => x.FileName == f.FileName);
-                                    
-                                    metadataList.Add(new ModMetadata
-                                    {
-                                        FileName = f.FileName,
-                                        Name = m.Name,
-                                        Slug = m.Slug,
-                                        Summary = m.Summary,
-                                        Categories = m.Categories?.Select(c => c.Name).ToList() ?? new List<string>()
-                                    });
-                                }
+                                modClassMap[m.Id] = m.ClassId;
                             }
-                            
-                            // Save back
-                            var metaJson = JsonSerializer.Serialize(metadataList, new JsonSerializerOptions { WriteIndented = true });
-                            File.WriteAllText(metadataPath, metaJson);
                         }
-                        catch (Exception ex)
+                    }
+
+                    // METADATA PERSISTENCE
+                    try 
+                    {
+                        var metadataList = new List<ModMetadata>();
+                        var metadataPath = Path.Combine(installPath, "mods_metadata.json");
+                        
+                        // Try load existing
+                        if (File.Exists(metadataPath))
                         {
-                            System.Diagnostics.Debug.WriteLine($"Failed to save mod metadata: {ex.Message}");
+                            try 
+                            {
+                                var existingJson = File.ReadAllText(metadataPath);
+                                var existing = JsonSerializer.Deserialize<List<ModMetadata>>(existingJson);
+                                if (existing != null) metadataList.AddRange(existing);
+                            } 
+                            catch {}
                         }
+
+                        // Update/Add new using the collected allMods
+                        foreach (var m in allMods)
+                        {
+                            var filesForMod = curseFiles.Where(f => f.ModId == m.Id);
+                            foreach(var f in filesForMod)
+                            {
+                                metadataList.RemoveAll(x => x.FileName == f.FileName);
+                                metadataList.Add(new ModMetadata
+                                {
+                                    FileName = f.FileName,
+                                    Name = m.Name,
+                                    Slug = m.Slug,
+                                    Summary = m.Summary,
+                                    Categories = m.Categories?.Select(c => c.Name).ToList() ?? new List<string>(),
+                                    IconUrl = m.Logo?.ThumbnailUrl,
+                                    WebLink = m.Links?.WebsiteUrl
+                                });
+                            }
+                        }
+                        
+                        var metaJson = JsonSerializer.Serialize(metadataList, new JsonSerializerOptions { WriteIndented = true });
+                        File.WriteAllText(metadataPath, metaJson);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Failed to save mod metadata: {ex.Message}");
                     }
                 }
                 catch (Exception ex)

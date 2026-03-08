@@ -29,6 +29,7 @@ public partial class MainViewModel : ViewModelBase
     private readonly ModrinthApi _modrinthApi;
     private readonly HttpClient _httpClient;
     private readonly ModpackInstaller _modpackInstaller;
+    private readonly DiscordRpcService _discordRpcService;
     private ModpackManifestInfo _lastManifestInfo;
     private readonly SemaphoreSlim _modpackUpdateCheckLock = new(1, 1);
     private static readonly TimeSpan ModpackUpdateCheckInterval = TimeSpan.FromSeconds(5);
@@ -95,42 +96,94 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     private bool _isLaunchIndeterminate = false;
 
-    public enum RightViewType
+    public enum MainViewType
     {
-        Home,
-        GlobalSettings,
-        ModpackSettings,
-        Browser,
-        Dashboard
+        Library,
+        Discover,
+        Settings,
+        InstanceDetail
     }
 
     [ObservableProperty]
-    private RightViewType _currentRightView = RightViewType.Home;
+    private MainViewType _currentMainView = MainViewType.Library;
 
-    public bool IsHomeView => CurrentRightView == RightViewType.Home;
-    public bool IsSettingsView => CurrentRightView == RightViewType.GlobalSettings;
-    public bool IsModpackSettingsView => CurrentRightView == RightViewType.ModpackSettings;
-    public bool IsBrowserView => CurrentRightView == RightViewType.Browser;
-    public bool IsDashboardView => CurrentRightView == RightViewType.Dashboard;
+    public bool IsLibraryView => CurrentMainView == MainViewType.Library;
+    public bool IsDiscoverView => CurrentMainView == MainViewType.Discover;
+    public bool IsSettingsView => CurrentMainView == MainViewType.Settings;
+    public bool IsInstanceDetailView => CurrentMainView == MainViewType.InstanceDetail;
 
-    partial void OnCurrentRightViewChanged(RightViewType value)
+    partial void OnCurrentMainViewChanged(MainViewType value)
     {
-        OnPropertyChanged(nameof(IsHomeView));
+        OnPropertyChanged(nameof(IsLibraryView));
+        OnPropertyChanged(nameof(IsDiscoverView));
         OnPropertyChanged(nameof(IsSettingsView));
-        OnPropertyChanged(nameof(IsModpackSettingsView));
-        OnPropertyChanged(nameof(IsBrowserView));
-        OnPropertyChanged(nameof(IsDashboardView));
-        OnPropertyChanged(nameof(RightPanelTitle));
+        OnPropertyChanged(nameof(IsInstanceDetailView));
+        OnPropertyChanged(nameof(MainPanelTitle));
+
+        if (value == MainViewType.InstanceDetail)
+        {
+            LoadInstalledMods();
+            _ = FetchFullDescriptionAsync();
+        }
+
+        UpdateDiscordPresence();
     }
 
-    public string RightPanelTitle => CurrentRightView switch
+    private void UpdateDiscordPresence()
     {
-        RightViewType.GlobalSettings => "Globální Nastavení",
-        RightViewType.ModpackSettings => "Nastavení Modpacku",
-        RightViewType.Browser => $"Procházet Modpacky ({BrowserSource})",
-        RightViewType.Home => "Moje Modpacky",
-        RightViewType.Dashboard => CurrentModpack?.Name ?? "Přehled Modpacku",
-        _ => "Přehled"
+        string details = MainPanelTitle;
+        string state = CurrentMainView switch
+        {
+            MainViewType.Library => "Prohlíží si knihovnu",
+            MainViewType.Discover => $"Hledá nové modpacky ({BrowserSource})",
+            MainViewType.Settings => "Upravuje nastavení",
+            MainViewType.InstanceDetail => $"Detail: {CurrentModpack?.Name}",
+            _ => "V hlavní nabídce"
+        };
+
+        _discordRpcService.SetState(details, state);
+    }
+
+    private async Task FetchFullDescriptionAsync()
+    {
+        if (CurrentModpack == null) return;
+        
+        // Don't refetch if already have a long description (optional optimization)
+        // if (CurrentModpack.Description.Length > 500) return;
+
+        try
+        {
+            string fullDescription = "";
+            if (CurrentModpack.Source == "CurseForge" && CurrentModpack.ProjectId > 0)
+            {
+                fullDescription = await _curseForgeApi.GetProjectDescriptionAsync(CurrentModpack.ProjectId);
+            }
+            else if (CurrentModpack.Source == "Modrinth" && !string.IsNullOrEmpty(CurrentModpack.ModrinthId))
+            {
+                fullDescription = await _modrinthApi.GetProjectDescriptionAsync(CurrentModpack.ModrinthId);
+            }
+
+            if (!string.IsNullOrWhiteSpace(fullDescription))
+            {
+                await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() => 
+                {
+                    CurrentModpack.Description = fullDescription;
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            LogService.Error($"[FetchFullDescriptionAsync] Failed for {CurrentModpack.Name}", ex);
+        }
+    }
+
+    public string MainPanelTitle => CurrentMainView switch
+    {
+        MainViewType.Library => "Knihovna Modpacků",
+        MainViewType.Discover => $"Procházet Modpacky ({BrowserSource})",
+        MainViewType.Settings => "Nastavení",
+        MainViewType.InstanceDetail => CurrentModpack?.Name ?? "Detail Modpacku",
+        _ => "VoidCraft Launcher"
     };
 
     // Detect system RAM (in MB)
@@ -141,6 +194,9 @@ public partial class MainViewModel : ViewModelBase
 
     [ObservableProperty]
     private double _launchProgress = 0;
+
+    [ObservableProperty]
+    private ModpackInfo? _targetModpack; // Used to track which modpack is actively installing/launching so progress bars don't jump on navigation
 
     [ObservableProperty]
     private string _launchStatus = "";
@@ -162,6 +218,16 @@ public partial class MainViewModel : ViewModelBase
 
     [ObservableProperty]
     private string _appVersion = "v1.0.0"; // Placeholder
+
+    // Multi-Account
+    [ObservableProperty]
+    private ObservableCollection<AccountProfile> _accounts = new();
+
+    [ObservableProperty]
+    private AccountProfile? _activeAccount;
+
+    [ObservableProperty]
+    private bool _isAccountPickerOpen = false;
 
     public MainViewModel()
     {
@@ -187,6 +253,8 @@ public partial class MainViewModel : ViewModelBase
         _curseForgeApi = new CurseForgeApi();
         _modrinthApi = new ModrinthApi();
         _modpackInstaller = new ModpackInstaller(_curseForgeApi);
+        _discordRpcService = new DiscordRpcService();
+        _discordRpcService.Initialize();
         
         // Forward installer events to UI
         _modpackInstaller.StatusChanged += (status) => LaunchStatus = status;
@@ -212,28 +280,32 @@ public partial class MainViewModel : ViewModelBase
         {
             Config = new LauncherConfig();
         }
-        
-        // One-time migration to force Auto Java (User Request)
-        try 
-        {
-            var migrationFlag = Path.Combine(_launcherService.BasePath, "auto_java_migrated.flag");
-            if (!File.Exists(migrationFlag) && _launcherService.BasePath != null)
-            {
-                Config.JavaPath = ""; // Force Auto
-                _launcherService.SaveConfig(Config);
-                File.Create(migrationFlag).Dispose();
-                Debug.WriteLine("Migrated JavaPath to Auto.");
-            }
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"Migration failed: {ex.Message}");
-        }
+
 
         // Restore offline username
         if (!string.IsNullOrEmpty(Config.LastOfflineUsername))
         {
             OfflineUsername = Config.LastOfflineUsername;
+        }
+
+        // Load saved accounts
+        if (Config.Accounts != null && Config.Accounts.Count > 0)
+        {
+            foreach (var acc in Config.Accounts)
+                Accounts.Add(acc);
+        }
+        else if (!string.IsNullOrEmpty(Config.LastOfflineUsername))
+        {
+            // Migration: convert old single offline username to account profile
+            var migrated = new AccountProfile
+            {
+                DisplayName = Config.LastOfflineUsername,
+                Type = AccountType.Offline
+            };
+            Accounts.Add(migrated);
+            Config.Accounts.Add(migrated);
+            Config.ActiveAccountId = migrated.Id;
+            _launcherService.SaveConfig(Config);
         }
 
         // Výchozí offline session
@@ -533,9 +605,13 @@ public partial class MainViewModel : ViewModelBase
                 var online = players?["online"]?.GetValue<int>() ?? 0;
                 var max = players?["max"]?.GetValue<int>() ?? 0;
                 
-                // Parse MOTD (cleanup formatting codes if needed, but for now simple string)
+                // Parse MOTD (show full text as requested by user, joined with spaces for single line)
                 var motdList = json["motd"]?["clean"]?.AsArray();
-                var motd = motdList != null && motdList.Count > 0 ? motdList[0]?.ToString() : "Void Craft";
+                var motd = "Void Craft";
+                if (motdList != null && motdList.Count > 0)
+                {
+                    motd = string.Join(" ", motdList.Select(m => m?.ToString()));
+                }
 
                 Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                 {
@@ -543,7 +619,7 @@ public partial class MainViewModel : ViewModelBase
                     ServerPlayerCount = online;
                     ServerMaxPlayers = max;
                     ServerStatusText = $"{online}/{max} Hráčů";
-                    ServerMotd = motd ?? "Void-Craft.eu";
+                    ServerMotd = (string.IsNullOrWhiteSpace(motd) ? "Void-Craft.eu" : motd).Trim();
                 });
             }
             else
@@ -570,48 +646,58 @@ public partial class MainViewModel : ViewModelBase
         {
             Avalonia.Threading.Dispatcher.UIThread.Post(() => Greeting = "Přihlašuji...");
             
-            var session = await _authService.TrySilentLoginAsync();
-            
-            if (session != null)
+            // Find active account from config
+            var activeAcc = Accounts.FirstOrDefault(a => a.Id == Config.ActiveAccountId)
+                            ?? Accounts.FirstOrDefault();
+
+            if (activeAcc != null)
+            {
+                MSession? session = null;
+
+                if (activeAcc.Type == AccountType.Microsoft && !string.IsNullOrEmpty(activeAcc.MsalAccountId))
+                {
+                    session = await _authService.TrySilentLoginForAccountAsync(activeAcc.MsalAccountId);
+                }
+                else if (activeAcc.Type == AccountType.Offline)
+                {
+                    session = _authService.LoginOffline(activeAcc.DisplayName);
+                }
+
+                if (session != null)
+                {
+                    Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                    {
+                        UserSession = session;
+                        IsLoggedIn = true;
+                        ActiveAccount = activeAcc;
+                        OnPropertyChanged(nameof(PlayerSkinUrl));
+                        var suffix = activeAcc.Type == AccountType.Offline ? " (Offline)" : "";
+                        Greeting = $"Vítejte, {session.Username}{suffix}!";
+                    });
+                    return;
+                }
+            }
+
+            // Fallback: try generic silent login (backward compat)
+            var fallbackSession = await _authService.TrySilentLoginAsync();
+            if (fallbackSession != null)
             {
                 Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                 {
-                    UserSession = session;
+                    UserSession = fallbackSession;
                     IsLoggedIn = true;
                     OnPropertyChanged(nameof(PlayerSkinUrl));
-                    Greeting = $"Vítejte, {session.Username}!";
+                    Greeting = $"Vítejte, {fallbackSession.Username}!";
                 });
             }
             else
             {
-                // Try Offline Auto-Login
-                if (!string.IsNullOrEmpty(Config.LastOfflineUsername))
-                {
-                    Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-                    {
-                        try 
-                        {
-                            UserSession = _authService.LoginOffline(Config.LastOfflineUsername);
-                            IsLoggedIn = true;
-                            OfflineUsername = Config.LastOfflineUsername;
-                            OnPropertyChanged(nameof(PlayerSkinUrl));
-                            Greeting = $"Vítejte zpět, {Config.LastOfflineUsername} (Offline)!";
-                        }
-                        catch
-                        {
-                            Greeting = "Vítejte ve VOID-CRAFT Launcheru!";
-                        }
-                    });
-                }
-                else
-                {
-                    Avalonia.Threading.Dispatcher.UIThread.Post(() => Greeting = "Vítejte ve VOID-CRAFT Launcheru!");
-                }
+                Avalonia.Threading.Dispatcher.UIThread.Post(() => Greeting = "Vítejte ve VOID-CRAFT Launcheru!");
             }
         }
         catch
         {
-            Avalonia.Threading.Dispatcher.UIThread.Post(() => Greeting = "Vítejte ve VoidCraft Launcheru!");
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => Greeting = "Vítejte ve VOID-CRAFT Launcheru!");
         }
     }
 
@@ -734,6 +820,7 @@ public partial class MainViewModel : ViewModelBase
 
         try
         {
+            TargetModpack = CurrentModpack;
             IsLaunching = true;
             LaunchProgress = 0;
 
@@ -743,204 +830,101 @@ public partial class MainViewModel : ViewModelBase
             var modpackDir = _launcherService.GetModpackPath(CurrentModpack.Name);
             var modsDir = Path.Combine(modpackDir, "mods");
             
-            // Always try to verify/install to ensure file integrity (re-download missing mods/configs)
-            bool attemptsInstall = true;
+            // 1.1 TRY UPDATING (IF PROJECT ID EXISTS)
+            ModpackManifestInfo manifestInfo = null;
+            bool attemptsUpdate = CurrentModpack.ProjectId > 0 && !CurrentModpack.IsCustomProfile;
 
-            if (attemptsInstall)
+            if (attemptsUpdate)
             {
-                bool apiSuccess = false;
-                ModpackManifestInfo manifestInfo = null;
-                Exception? updateError = null;
-                LaunchStatus = "Ověřuji integritu souborů...";
-                
-                // Debug.WriteLine($"[PlayModpack] ProjectId: {CurrentModpack.ProjectId}, FileId: {CurrentModpack.CurrentVersion?.FileId}");
-                
-                // Check if we need to install/update
-                bool needsUpdate = true;
-                
-                // Load currently installed version info
-                ModpackManifestInfo installedManifest = ModpackInstaller.LoadManifestInfo(modpackDir);
-                
-                int fileId = 0;
-                
-                // Try to resolve target FileId
-                var latestKnownVersion = CurrentModpack.Versions?.FirstOrDefault();
+                try
+                {
+                    LaunchStatus = "Ověřuji aktualizace...";
+                    ModpackManifestInfo installedManifest = ModpackInstaller.LoadManifestInfo(modpackDir);
+                    
+                    int fileId = 0;
+                    if (int.TryParse(CurrentModpack.CurrentVersion?.FileId, out var parsedId)) 
+                        fileId = parsedId;
 
-                // If update is available, always target latest known version
-                if (CurrentModpack.IsUpdateAvailable && int.TryParse(latestKnownVersion?.FileId, out var latestParsedId) && latestParsedId > 0)
-                {
-                    fileId = latestParsedId;
-                }
-                else if (int.TryParse(CurrentModpack.CurrentVersion?.FileId, out var parsedId) && parsedId > 0)
-                {
-                    fileId = parsedId;
-                }
-                else if (CurrentModpack.ProjectId > 0)
-                {
-                    // FileId missing (custom or API error), try fetch latest
-                     try
-                        {
-                            LaunchStatus = "Načítám nejnovější verzi...";
-                            var filesJson = await _curseForgeApi.GetModpackFilesAsync(CurrentModpack.ProjectId);
-                            var filesNode = JsonNode.Parse(filesJson);
-                            var files = filesNode?["data"]?.AsArray();
-                            
-                            if (files != null && files.Count > 0)
-                            {
-                                // Get latest file by date
-                                var latestFile = files.OrderByDescending(f => f?["fileDate"]?.ToString()).FirstOrDefault();
-                                var latestFileId = latestFile?["id"]?.ToString();
-                                var latestFileName = latestFile?["displayName"]?.ToString();
-                                
-                                if (int.TryParse(latestFileId, out fileId) && fileId > 0)
-                                {
-                                    // Update CurrentModpack with latest version
-                                    CurrentModpack.CurrentVersion = new ModpackVersion
-                                    {
-                                        Name = latestFileName ?? "Latest",
-                                        FileId = latestFileId,
-                                        ReleaseDate = latestFile?["fileDate"]?.ToString() ?? ""
-                                    };
-                                    Debug.WriteLine($"[PlayModpack] Fetched latest FileId: {fileId}");
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            LogService.Error("[PlayModpack] Failed to fetch latest version", ex);
-                        }
-                }
-                
-                // COMPARE VERSIONS
-                if (installedManifest != null && fileId > 0 && installedManifest.FileId == fileId)
-                {
-                    LaunchStatus = "Verze je aktuální. Přeskakuji instalaci.";
-                    manifestInfo = installedManifest;
-                    needsUpdate = false;
-                    apiSuccess = true; // Mark as success since we are good to go
-                }
-                
-                if (needsUpdate && CurrentModpack.ProjectId > 0 && fileId > 0)
-                {
-                        try 
-                        {
-                            LaunchStatus = $"Získávám informace o modpacku...";
-                            
-                            // 2. Get Download URL
-                            var fileJson = await _curseForgeApi.GetModFileAsync(CurrentModpack.ProjectId, fileId);
-                            var node = JsonNode.Parse(fileJson);
-                            var dataNode = node?["data"];
-                            var downloadUrl = dataNode?["downloadUrl"]?.ToString();
-                            var fileName = dataNode?["fileName"]?.ToString() ?? "modpack.zip";
-                            
-                            // CurseForge often returns null downloadUrl, construct CDN URL as fallback
-                            if (string.IsNullOrEmpty(downloadUrl) && !string.IsNullOrEmpty(fileName))
-                            {
-                                // CurseForge CDN pattern: https://edge.forgecdn.net/files/{first 4 digits}/{last digits}/{filename}
-                                var fileIdStr = fileId.ToString();
-                                if (fileIdStr.Length >= 4)
-                                {
-                                    var part1 = fileIdStr.Substring(0, 4);
-                                    var part2 = fileIdStr.Substring(4);
-                                    downloadUrl = $"https://edge.forgecdn.net/files/{part1}/{part2}/{fileName}";
-                                }
-                            }
-
-                            if (!string.IsNullOrEmpty(downloadUrl))
-                            {
-                                LaunchStatus = "Stahuji manifest...";
-                                var tempZipPath = Path.Combine(Path.GetTempPath(), fileName);
-                                
-                                using (var response = await _httpClient.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead))
-                                {
-                                    response.EnsureSuccessStatusCode();
-                                    var data = await response.Content.ReadAsByteArrayAsync();
-                                    await File.WriteAllBytesAsync(tempZipPath, data);
-                                }
-
-                                LaunchStatus = "Ověřuji mody...";
-                                // This checks for missing files and re-downloads them
-                                manifestInfo = await _modpackInstaller.InstallOrUpdateAsync(tempZipPath, modpackDir, fileId);
-                                apiSuccess = true;
-                                SaveModpacks();
-                                
-                                try { File.Delete(tempZipPath); } catch {}
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            updateError = ex;
-                            LogService.Error("[PlayModpack] Update/install failed", ex);
-                            LaunchStatus = $"Chyba aktualizace: {ex.Message} (Pokračuji offline)";
-                            // Removed delay
-                        }
-                }
-
-                if (!apiSuccess && needsUpdate)
-                {
-                     // Try local backups or cached manifest checking
-                    var downloadsDir = Path.Combine(_launcherService.BasePath, "downloads");
-                    if (Directory.Exists(downloadsDir))
+                    // Fetch latest if update available
+                    if (CurrentModpack.IsUpdateAvailable)
                     {
-                        var possibleZips = Directory.GetFiles(downloadsDir, "*.zip");
-                        var localZip = possibleZips.FirstOrDefault(); 
-                        if (!string.IsNullOrEmpty(localZip))
+                        var filesJson = await _curseForgeApi.GetModpackFilesAsync(CurrentModpack.ProjectId);
+                        var latestFile = JsonNode.Parse(filesJson)?["data"]?.AsArray()
+                            .OrderByDescending(f => f?["fileDate"]?.ToString()).FirstOrDefault();
+                        
+                        if (int.TryParse(latestFile?["id"]?.ToString(), out var latestId))
+                            fileId = latestId;
+                    }
+
+                    int currentModCount = Directory.Exists(Path.Combine(modpackDir, "mods")) 
+                        ? Directory.GetFiles(Path.Combine(modpackDir, "mods"), "*.jar").Length 
+                        : 0;
+                        
+                    bool isBrokenGTNH = IsGTNHModpack(CurrentModpack.Name, modpackDir) && 
+                                       (currentModCount < 100 || !Directory.GetFiles(Path.Combine(modpackDir, "mods"), "GTNewHorizonsCoreMod*", SearchOption.TopDirectoryOnly).Any());
+
+                    if (installedManifest == null || installedManifest.FileId != fileId || isBrokenGTNH)
+                    {
+                        if (isBrokenGTNH) LogService.Log($"GTNH installation appears broken (Mods: {currentModCount}). Force repair.", "WARN");
+                        var fileJson = await _curseForgeApi.GetModFileAsync(CurrentModpack.ProjectId, fileId);
+                        var dataNode = JsonNode.Parse(fileJson)?["data"];
+                        var downloadUrl = dataNode?["downloadUrl"]?.ToString();
+                        var fileName = dataNode?["fileName"]?.ToString() ?? "modpack.zip";
+
+                        if (string.IsNullOrEmpty(downloadUrl) && !string.IsNullOrEmpty(fileName))
                         {
-                             LaunchStatus = "Instaluji z lokální zálohy...";
-                             manifestInfo = await _modpackInstaller.InstallOrUpdateAsync(localZip, modpackDir, fileId);
-                             apiSuccess = manifestInfo != null;
+                            var idStr = fileId.ToString();
+                            if (idStr.Length >= 4)
+                                downloadUrl = $"https://edge.forgecdn.net/files/{idStr.Substring(0, 4)}/{idStr.Substring(4)}/{fileName}";
+                        }
+
+                        if (!string.IsNullOrEmpty(downloadUrl))
+                        {
+                            LaunchStatus = "Stahuji aktualizaci...";
+                            var tempZip = Path.Combine(Path.GetTempPath(), fileName);
+                            var data = await _httpClient.GetByteArrayAsync(downloadUrl);
+                            await File.WriteAllBytesAsync(tempZip, data);
+
+                            LaunchStatus = "Instaluji aktualizaci...";
+                            manifestInfo = await _modpackInstaller.InstallOrUpdateAsync(tempZip, modpackDir, fileId);
+                            try { File.Delete(tempZip); } catch {}
                         }
                     }
-                }
-
-                // If update was required but not fully completed, STOP launch to avoid mixed/mod-broken state
-                if (needsUpdate)
-                {
-                    var updateCompleted = manifestInfo != null && fileId > 0 && manifestInfo.FileId == fileId;
-                    if (!updateCompleted)
+                    else
                     {
-                        var reason = updateError?.Message ?? "Nepodařilo se dokončit aktualizaci modpacku.";
-                        LaunchStatus = $"Aktualizace selhala: {reason}";
-                        Greeting = "Aktualizace modpacku nebyla dokončena. Hra nebyla spuštěna, aby nedošlo k pádu.";
-                        IsLaunching = false;
-                        return;
+                        manifestInfo = installedManifest;
                     }
                 }
-                
-                // If installation/verification failed (e.g. offline), try to load cached manifest info from disk
-                if (manifestInfo == null)
+                catch (Exception ex)
                 {
-                    LaunchStatus = "Načítám kached informace...";
-                    manifestInfo = VoidCraftLauncher.Services.ModpackInstaller.LoadManifestInfo(modpackDir);
+                    LogService.Error("Update check failed", ex);
+                    LaunchStatus = "Aktualizace selhala (Pokračuji s tím, co je nainstalováno...)";
+                    await Task.Delay(1000);
                 }
+            }
 
-                // Store manifest info for launch
-                if (manifestInfo != null)
-                {
-                    _lastManifestInfo = manifestInfo;
+            // 1.2 LOAD LOCAL CACHE IF NEEDED (For Modrinth or Custom or Failed Update)
+            if (manifestInfo == null)
+            {
+                manifestInfo = ModpackInstaller.LoadManifestInfo(modpackDir);
+            }
 
-                    if (manifestInfo.FileId > 0)
-                    {
-                        var installedFileId = manifestInfo.FileId.ToString();
-                        var matchedVersion = CurrentModpack.Versions?.FirstOrDefault(v => v.FileId == installedFileId);
+            // 1.3 VALIDATION
+            if (manifestInfo == null && !CurrentModpack.IsCustomProfile)
+            {
+                LaunchStatus = "Chyba: Modpack není korektně nainstalován.";
+                await Task.Delay(3000);
+                IsLaunching = false;
+                TargetModpack = null;
+                return;
+            }
 
-                        CurrentModpack.CurrentVersion = matchedVersion ?? new ModpackVersion
-                        {
-                            Name = CurrentModpack.CurrentVersion?.Name ?? $"File {installedFileId}",
-                            FileId = installedFileId,
-                            ReleaseDate = CurrentModpack.CurrentVersion?.ReleaseDate ?? ""
-                        };
-
-                        SaveModpacks();
-                    }
-                }
-                else
-                {
-                     LaunchStatus = "Chyba: Nepodařilo se načíst informace o verzi (Offline a žádná cache).";
-                     await Task.Delay(3000); // Keep this delay so user can see the error
-                     IsLaunching = false;
-                     return;
-                }
+            // Store for launch
+            _lastManifestInfo = manifestInfo;
+            if (manifestInfo != null && manifestInfo.FileId > 0 && CurrentModpack.ProjectId > 0)
+            {
+                CurrentModpack.CurrentVersion = new ModpackVersion { FileId = manifestInfo.FileId.ToString(), Name = "Installed" };
+                SaveModpacks();
             }
             
             LaunchStatus = "Spouštím hru...";
@@ -948,6 +932,17 @@ public partial class MainViewModel : ViewModelBase
             // Get Minecraft version from manifest (dynamically)
             var mcVersion = _lastManifestInfo?.MinecraftVersion ?? "1.21.1";
             var modLoaderId = _lastManifestInfo?.ModLoaderId ?? "";
+
+            // DETECT JAVA VERSION FOR DYNAMIC FLAGS
+            LaunchStatus = "Detekuji Javu...";
+            
+            int? requiredJava = null;
+            // Removed hard force for Java 17 to allow the GTNH integrated installer to run on Java 8 if needed.
+            // Adoptium 8 is recommended if Java 17 fails to bootstrap the skeleton pack.
+
+            var javaPath = await _launcherService.GetJavaPathAsync(_lastManifestInfo?.MinecraftVersion ?? mcVersion, requiredJava);
+            int javaVersion = _launcherService.GetJavaVersion(javaPath ?? "");
+            Debug.WriteLine($"[JavaDetection] Detected Java {javaVersion} at {javaPath}");
             
             var jvmArgs = new List<string>();
 
@@ -971,11 +966,16 @@ public partial class MainViewModel : ViewModelBase
 
                 if (effectiveGc == Models.GcType.ZGC)
                 {
-                    // Experimental High-Performance ZGC (Java 21+)
+                    // Experimental High-Performance ZGC
                     jvmArgs.Add("-XX:+UseZGC");
-                    jvmArgs.Add("-XX:+ZGenerational");
+                    
+                    // Generational ZGC (Java 21+)
+                    if (javaVersion >= 21)
+                    {
+                        jvmArgs.Add("-XX:+ZGenerational");
+                    }
                 }
-                else
+                else if (effectiveGc == Models.GcType.G1GC)
                 {
                     // Default: BruceTheMoose Universal G1GC (Stable)
                     jvmArgs.Add("-XX:+UseG1GC");
@@ -993,6 +993,46 @@ public partial class MainViewModel : ViewModelBase
                     jvmArgs.Add("-XX:SurvivorRatio=32");
                     jvmArgs.Add("-XX:MaxTenuringThreshold=1");
                 }
+                // If None, do not add any GC flags (Manual Control)
+            }
+
+            // --- GTNH Detection: auto-add --add-opens JVM flags and fix 403 errors ---
+            if (IsGTNHModpack(CurrentModpack.Name, modpackDir))
+            {
+                // GLOBAL USER-AGENT FIX: Fixes 403 errors in the internal GTNH mod downloader (txloader)
+                jvmArgs.Add("-Dhttp.agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+                jvmArgs.Add("-Dfile.encoding=UTF-8");
+
+                // Only add --add-opens if we are using Java 9+ (to avoid error with Java 8)
+                if (javaVersion >= 9)
+                {
+                    LaunchStatus = $"Detekován GTNH s Java {javaVersion} – aplikuji kompatibilní argumenty...";
+                    jvmArgs.AddRange(new[] {
+                        "--add-opens", "java.base/jdk.internal.loader=ALL-UNNAMED",
+                        "--add-opens", "java.base/java.net=ALL-UNNAMED",
+                        "--add-opens", "java.base/java.nio=ALL-UNNAMED",
+                        "--add-opens", "java.base/java.io=ALL-UNNAMED",
+                        "--add-opens", "java.base/java.lang=ALL-UNNAMED",
+                        "--add-opens", "java.base/java.lang.reflect=ALL-UNNAMED",
+                        "--add-opens", "java.base/java.util=ALL-UNNAMED",
+                        "--add-opens", "java.base/java.util.concurrent=ALL-UNNAMED",
+                        "--add-opens", "java.base/sun.nio.ch=ALL-UNNAMED",
+                        "--add-opens", "java.base/sun.security.ssl=ALL-UNNAMED",
+                        "--add-opens", "java.base/sun.security.util=ALL-UNNAMED",
+                        "--add-opens", "java.base/sun.net.www.protocol.jar=ALL-UNNAMED",
+                        "--add-opens", "java.desktop/sun.awt=ALL-UNNAMED",
+                        "--add-opens", "java.desktop/sun.font=ALL-UNNAMED",
+                        "--add-opens", "java.desktop/sun.java2d=ALL-UNNAMED",
+                        "--add-opens", "jdk.naming.dns/com.sun.jndi.dns=ALL-UNNAMED",
+                        "-Djava.security.manager=allow"
+                    });
+                }
+            }
+
+            // Append per-instance custom JVM arguments if any
+            if (overrideConfig?.CustomJvmArguments != null && overrideConfig.CustomJvmArguments.Length > 0)
+            {
+                jvmArgs.AddRange(overrideConfig.CustomJvmArguments);
             }
 
             // Append user custom arguments from global config if any
@@ -1026,6 +1066,7 @@ public partial class MainViewModel : ViewModelBase
                 modpackDir,
                 modLoaderId,
                 jvmArgs.ToArray(),
+                requiredJava,
                 (status) => Avalonia.Threading.Dispatcher.UIThread.Post(() => LaunchStatus = status),
                 (percent) => Avalonia.Threading.Dispatcher.UIThread.Post(() => LaunchProgress = percent),
                 (file) => Avalonia.Threading.Dispatcher.UIThread.Post(() => LaunchStatus = $"Stahuji: {file}")
@@ -1055,8 +1096,10 @@ public partial class MainViewModel : ViewModelBase
 
             IsLaunching = false;
             IsGameRunning = true;
-            RunningModpack = CurrentModpack;
+            RunningModpack = TargetModpack ?? CurrentModpack;
+            _discordRpcService.SetPlayingState(RunningModpack?.Name ?? "Minecraft");
             LaunchProgress = 100;
+            TargetModpack = null; // Clear so progress bar disappears from card after launch success
             
             // Wait for game to exit in background
             _ = Task.Run(async () => 
@@ -1078,6 +1121,7 @@ public partial class MainViewModel : ViewModelBase
             LaunchStatus = $"Chyba: {ex.Message}";
             await Task.Delay(3000);
             IsLaunching = false;
+            TargetModpack = null;
             RunningModpack = null;
         }
     }
@@ -1089,6 +1133,7 @@ public partial class MainViewModel : ViewModelBase
         IsGameRunning = false;
         RunningModpack = null;
         Greeting = "Hra ukončena.";
+        UpdateDiscordPresence();
     }
 
     [RelayCommand]
@@ -1280,8 +1325,7 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     public void OpenLoginModal()
     {
-        if (IsLoggedIn) return;
-        IsLoginModalVisible = true;
+        // Allow opening login modal even when logged in (to add additional accounts)
         IsLoginModalVisible = true;
         LoginStatus = "";
         ManualLoginCode = "";
@@ -1341,6 +1385,31 @@ public partial class MainViewModel : ViewModelBase
             IsWebviewVisible = false;
             OnPropertyChanged(nameof(PlayerSkinUrl));
             Greeting = $"Vítejte, {session.Username}!";
+
+            // Add to multi-account profiles
+            var msalId = await _authService.GetLastMsalAccountIdAsync();
+            var existingProfile = Accounts.FirstOrDefault(a => a.Type == AccountType.Microsoft && a.MsalAccountId == msalId);
+            if (existingProfile != null)
+            {
+                existingProfile.DisplayName = session.Username;
+                existingProfile.Uuid = session.UUID;
+                existingProfile.LastUsed = DateTime.UtcNow;
+                ActiveAccount = existingProfile;
+            }
+            else
+            {
+                var newProfile = new AccountProfile
+                {
+                    DisplayName = session.Username,
+                    Uuid = session.UUID,
+                    Type = AccountType.Microsoft,
+                    MsalAccountId = msalId,
+                    LastUsed = DateTime.UtcNow
+                };
+                Accounts.Add(newProfile);
+                ActiveAccount = newProfile;
+            }
+            SaveAccountProfiles();
         }
         catch (System.Exception ex)
         {
@@ -1400,7 +1469,26 @@ public partial class MainViewModel : ViewModelBase
             OnPropertyChanged(nameof(PlayerSkinUrl));
             // Save username
             Config.LastOfflineUsername = OfflineUsername;
-            _launcherService.SaveConfig(Config);
+
+            // Add to multi-account profiles
+            var existingProfile = Accounts.FirstOrDefault(a => a.Type == AccountType.Offline && a.DisplayName == OfflineUsername);
+            if (existingProfile != null)
+            {
+                existingProfile.LastUsed = DateTime.UtcNow;
+                ActiveAccount = existingProfile;
+            }
+            else
+            {
+                var newProfile = new AccountProfile
+                {
+                    DisplayName = OfflineUsername,
+                    Type = AccountType.Offline,
+                    LastUsed = DateTime.UtcNow
+                };
+                Accounts.Add(newProfile);
+                ActiveAccount = newProfile;
+            }
+            SaveAccountProfiles();
 
             Greeting = $"Vítejte, {UserSession.Username} (Offline)!";
         }
@@ -1415,10 +1503,16 @@ public partial class MainViewModel : ViewModelBase
     {
         try 
         {
-            await _authService.LogoutAsync();
+            // Remove active account's MSAL tokens if MS
+            if (ActiveAccount?.Type == AccountType.Microsoft && !string.IsNullOrEmpty(ActiveAccount.MsalAccountId))
+            {
+                await _authService.RemoveAccountAsync(ActiveAccount.MsalAccountId);
+            }
             
             // Clear persistent session
             Config.LastOfflineUsername = null;
+            ActiveAccount = null;
+            Config.ActiveAccountId = null;
             _launcherService.SaveConfig(Config);
 
             UserSession = MSession.CreateOfflineSession("Guest");
@@ -1430,6 +1524,116 @@ public partial class MainViewModel : ViewModelBase
         {
             Greeting = $"Chyba při odhlašování: {ex.Message}";
         }
+    }
+
+    // ===== MULTI-ACCOUNT COMMANDS =====
+
+    [RelayCommand]
+    public async Task SwitchAccount(AccountProfile profile)
+    {
+        if (profile == null) return;
+
+        try
+        {
+            MSession? session = null;
+
+            if (profile.Type == AccountType.Microsoft)
+            {
+                Greeting = $"Přepínám na {profile.DisplayName}...";
+                session = await _authService.TrySilentLoginForAccountAsync(profile.MsalAccountId!);
+                if (session == null)
+                {
+                    Greeting = $"Token pro {profile.DisplayName} expiroval. Přihlas se znovu.";
+                    return;
+                }
+            }
+            else
+            {
+                session = _authService.LoginOffline(profile.DisplayName);
+            }
+
+            UserSession = session;
+            IsLoggedIn = true;
+            ActiveAccount = profile;
+            profile.LastUsed = DateTime.UtcNow;
+            IsAccountPickerOpen = false;
+            OnPropertyChanged(nameof(PlayerSkinUrl));
+            SaveAccountProfiles();
+
+            var suffix = profile.Type == AccountType.Offline ? " (Offline)" : "";
+            Greeting = $"Přepnuto na {session.Username}{suffix}!";
+        }
+        catch (Exception ex)
+        {
+            Greeting = $"Chyba přepnutí: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    public async Task RemoveAccount(AccountProfile profile)
+    {
+        if (profile == null) return;
+
+        // Remove from MSAL cache if MS account
+        if (profile.Type == AccountType.Microsoft && !string.IsNullOrEmpty(profile.MsalAccountId))
+        {
+            await _authService.RemoveAccountAsync(profile.MsalAccountId);
+        }
+
+        Accounts.Remove(profile);
+
+        // If removed the active account, switch to first available or logout
+        if (ActiveAccount?.Id == profile.Id)
+        {
+            var nextAccount = Accounts.FirstOrDefault();
+            if (nextAccount != null)
+            {
+                await SwitchAccount(nextAccount);
+            }
+            else
+            {
+                ActiveAccount = null;
+                UserSession = MSession.CreateOfflineSession("Guest");
+                IsLoggedIn = false;
+                OnPropertyChanged(nameof(PlayerSkinUrl));
+                Greeting = "Všechny účty odebrány.";
+            }
+        }
+
+        SaveAccountProfiles();
+    }
+
+    [RelayCommand]
+    public void ToggleAccountPicker()
+    {
+        IsAccountPickerOpen = !IsAccountPickerOpen;
+    }
+
+    private void SaveAccountProfiles()
+    {
+        Config.Accounts = new List<AccountProfile>(Accounts);
+        Config.ActiveAccountId = ActiveAccount?.Id;
+        _launcherService.SaveConfig(Config);
+    }
+
+    // ===== GTNH DETECTION =====
+
+    private static bool IsGTNHModpack(string name, string modpackDir)
+    {
+        // Strictly check for GTNH name or specific marker
+        if (name.Contains("GT New Horizons", StringComparison.OrdinalIgnoreCase) ||
+            name.Equals("GTNH", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        // Also check for .gtnh marker file or specific GTNH core mod
+        var modsDir = Path.Combine(modpackDir, "mods");
+        if (Directory.Exists(modsDir))
+        {
+            return File.Exists(Path.Combine(modpackDir, ".gtnh")) || 
+                   Directory.GetFiles(modsDir, "GTNewHorizonsCoreMod*", SearchOption.TopDirectoryOnly).Length > 0;
+        }
+
+        return false;
     }
 
 
@@ -1483,18 +1687,22 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     public void GoToBrowser()
     {
-        CurrentRightView = RightViewType.Browser;
+        CurrentMainView = MainViewType.Discover;
+        if (BrowserResults.Count == 0 && !IsSearching)
+        {
+            SearchModpacksCommand.Execute(null);
+        }
     }
     [RelayCommand]
     public void GoToSettings()
     {
-        CurrentRightView = RightViewType.GlobalSettings;
+        CurrentMainView = MainViewType.Settings;
     }
 
     [RelayCommand]
     public void GoToHome()
     {
-        CurrentRightView = RightViewType.Home;
+        CurrentMainView = MainViewType.Library;
     }
 
     [ObservableProperty]
@@ -1529,7 +1737,7 @@ public partial class MainViewModel : ViewModelBase
         }
 
         ReloadOptionsPresets();
-        CurrentRightView = RightViewType.ModpackSettings;
+        CurrentMainView = MainViewType.InstanceDetail;
     }
 
     private void ReloadOptionsPresets()
@@ -1710,13 +1918,29 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     private bool _isSearching = false;
 
+    // Pagination properties
+    [ObservableProperty]
+    private int _currentBrowserPage = 0;
+
+    [ObservableProperty]
+    private bool _hasMoreResults = false;
+
+    [RelayCommand]
+    public async Task SetBrowserSource(string source)
+    {
+        BrowserSource = source;
+        IsSearching = false; 
+        BrowserResults.Clear(); // Immediate clear for feedback
+        await SearchModpacks();
+    }
+
     [RelayCommand]
     public void OpenBrowser(string source)
     {
         BrowserSource = source;
         BrowserSearchQuery = "";
         BrowserResults.Clear();
-        CurrentRightView = RightViewType.Browser;
+        CurrentMainView = MainViewType.Discover;
         
         // Populate with popular modpacks initially
         SearchModpacksCommand.Execute(null);
@@ -1728,17 +1952,11 @@ public partial class MainViewModel : ViewModelBase
         if (IsSearching) return;
         IsSearching = true;
         BrowserResults.Clear();
+        CurrentBrowserPage = 0; // Reset na prvni stranku
 
         try
         {
-            if (BrowserSource == "CurseForge")
-            {
-                await SearchCurseForge();
-            }
-            else
-            {
-                await SearchModrinth();
-            }
+            await FetchModpacksPage(CurrentBrowserPage);
         }
         catch (Exception ex)
         {
@@ -1750,19 +1968,56 @@ public partial class MainViewModel : ViewModelBase
         }
     }
 
-    private async Task SearchCurseForge()
+    [RelayCommand]
+    public async Task LoadMoreModpacks()
     {
+        if (IsSearching || !HasMoreResults) return;
+        IsSearching = true;
+
+        try
+        {
+            CurrentBrowserPage++;
+            await FetchModpacksPage(CurrentBrowserPage);
+        }
+        catch (Exception ex)
+        {
+            Greeting = $"Chyba při načítání dalších výsledků: {ex.Message}";
+            CurrentBrowserPage--; // Vrátíme zpět při chybě
+        }
+        finally
+        {
+            IsSearching = false;
+        }
+    }
+
+    private async Task FetchModpacksPage(int page)
+    {
+        if (BrowserSource == "CurseForge")
+        {
+            await SearchCurseForge(page);
+        }
+        else
+        {
+            await SearchModrinth(page);
+        }
+    }
+
+    private async Task SearchCurseForge(int page)
+    {
+        int offset = page * 50; 
         string json;
         if (string.IsNullOrWhiteSpace(BrowserSearchQuery))
-            json = await _curseForgeApi.SearchModpacksAsync(""); // Popular
+            json = await _curseForgeApi.SearchModpacksAsync("", offset); // Popular
         else
-            json = await _curseForgeApi.SearchModpacksAsync(BrowserSearchQuery);
+            json = await _curseForgeApi.SearchModpacksAsync(BrowserSearchQuery, offset);
 
          var root = JsonNode.Parse(json);
          var data = root?["data"]?.AsArray();
 
          if (data != null)
          {
+             HasMoreResults = data.Count == 50; // Předpoklad pro pagination CF
+
              foreach (var item in data)
              {
                  var mp = new ModpackItem
@@ -1779,17 +2034,27 @@ public partial class MainViewModel : ViewModelBase
                  BrowserResults.Add(mp);
              }
          }
+         else
+         {
+             HasMoreResults = false;
+         }
     }
 
-    private async Task SearchModrinth()
+    private async Task SearchModrinth(int page)
     {
-        string json = await _modrinthApi.SearchModpacksAsync(BrowserSearchQuery); // Modrinth handles empty query as generic search
+        int offset = page * 50;
+        string json = await _modrinthApi.SearchModpacksAsync(BrowserSearchQuery, offset); // Modrinth handles empty query as generic search
 
         var root = JsonNode.Parse(json);
         var hits = root?["hits"]?.AsArray();
+        
+        // Modrinth vrací i property total_hits
+        var totalHits = root?["total_hits"]?.GetValue<int>() ?? 0;
 
         if (hits != null)
         {
+            HasMoreResults = (offset + hits.Count) < totalHits;
+
             foreach (var item in hits)
             {
                 var mp = new ModpackItem
@@ -1806,6 +2071,10 @@ public partial class MainViewModel : ViewModelBase
                 BrowserResults.Add(mp);
             }
         }
+        else
+        {
+             HasMoreResults = false;
+        }
     }
     
     [RelayCommand]
@@ -1819,6 +2088,7 @@ public partial class MainViewModel : ViewModelBase
     public async Task SelectAndPlay(ModpackInfo modpack)
     {
         CurrentModpack = modpack;
+        TargetModpack = modpack; // Set target immediately for progress bar
         await PlayModpack();
     }
 
@@ -1827,6 +2097,7 @@ public partial class MainViewModel : ViewModelBase
     {
         CurrentModpack = modpack;
         GoToModpackSettings(); // This properly initializes CurrentModpackConfig
+        LoadInstalledMods(); // Pre-load installed mods for Custom Profiles
     }
 
     [RelayCommand]
@@ -1843,7 +2114,11 @@ public partial class MainViewModel : ViewModelBase
             Name = item.Name,
             LogoUrl = item.IconUrl,
             Description = item.Description,
-            ProjectId = 0 // Will be updated if CF
+            Author = item.Author,
+            WebLink = item.WebLink,
+            Source = item.Source,
+            ModrinthId = item.Source == "Modrinth" ? item.Id : "",
+            ProjectId = item.Source == "CurseForge" ? (int.TryParse(item.Id, out var id) ? id : 0) : 0
         };
         
                 CurrentModpack = newModpack;
@@ -1969,7 +2244,11 @@ public partial class MainViewModel : ViewModelBase
                         {
                             Name = safeName, // Match folder name
                             ProjectId = item.Source == "CurseForge" ? int.Parse(item.Id) : 0,
+                            Source = item.Source,
+                            ModrinthId = item.Source == "Modrinth" ? item.Id : "",
                             LogoUrl = item.IconUrl,
+                            Author = item.Author,
+                            WebLink = item.WebLink,
                             Description = item.Description,
                             CurrentVersion = versionInfo
                         };
@@ -2064,15 +2343,567 @@ public partial class MainViewModel : ViewModelBase
         }
     }
 
+
+    // ===== CONTEXT MENU COMMANDS =====
+
     [RelayCommand]
-    public void SetAutoJava()
+    public async Task ReinstallModpackContext(ModpackInfo modpack)
     {
-        if (Config != null)
+        if (modpack == null) return;
+
+        var modpackPath = _launcherService.GetModpackPath(modpack.Name);
+        
+        try
         {
-            Config.JavaPath = "";
-            _launcherService.SaveConfig(Config);
-            Greeting = "Java nastavena na Automaticky.";
+            Greeting = $"Přeinstalovávám {modpack.Name}...";
+            IsLaunching = true;
+            LaunchStatus = $"Mažu starý obsah {modpack.Name}...";
+            LaunchProgress = 0;
+            TargetModpack = modpack;
+            
+            // 1. Delete instance directory contents
+            if (Directory.Exists(modpackPath))
+            {
+                Directory.Delete(modpackPath, true);
+                Directory.CreateDirectory(modpackPath);
+            }
+
+            LaunchStatus = "Starý obsah smazán. Spouštím reinstalaci...";
+            LaunchProgress = 10;
+
+            // 2. Reset version info to force fresh install
+            modpack.CurrentVersion = new ModpackVersion { Name = "-", FileId = "0" };
+
+            // 3. Trigger PlayModpack which will detect missing files and reinstall
+            IsLaunching = false;
+            await PlayModpack();
+        }
+        catch (Exception ex)
+        {
+            Greeting = $"Chyba reinstalace: {ex.Message}";
+            IsLaunching = false;
+            TargetModpack = null;
+        }
+    }
+
+    // ===== CUSTOM PROFILE =====
+
+    [ObservableProperty]
+    private bool _isCreateProfileModalVisible = false;
+
+    [ObservableProperty]
+    private string _newProfileName = "";
+
+    [ObservableProperty]
+    private string _newProfileMcVersion = "1.21.1";
+    
+    partial void OnNewProfileMcVersionChanged(string value)
+    {
+        _ = FetchModLoaderVersionsAsync();
+    }
+
+    [ObservableProperty]
+    private string _newProfileModLoader = "fabric";
+    
+    partial void OnNewProfileModLoaderChanged(string value)
+    {
+        _ = FetchModLoaderVersionsAsync();
+    }
+    
+    [ObservableProperty]
+    private string _newProfileModLoaderVersion = "";
+
+    [ObservableProperty]
+    private ObservableCollection<string> _availableMcVersions = new();
+
+    [ObservableProperty]
+    private ObservableCollection<string> _availableModLoaderVersions = new();
+
+    [RelayCommand]
+    public void OpenCreateProfileModal()
+    {
+        NewProfileName = "";
+        NewProfileMcVersion = "1.21.1";
+        NewProfileModLoader = "fabric";
+        IsCreateProfileModalVisible = true;
+        
+        if (AvailableMcVersions.Count == 0)
+        {
+            _ = FetchMcVersionsAsync();
+        }
+        else
+        {
+            _ = FetchModLoaderVersionsAsync();
+        }
+    }
+
+    [RelayCommand]
+    public void CloseCreateProfileModal()
+    {
+        IsCreateProfileModalVisible = false;
+    }
+
+    [RelayCommand]
+    public void CreateCustomProfile()
+    {
+        if (string.IsNullOrWhiteSpace(NewProfileName))
+        {
+            Greeting = "Zadej název profilu!";
+            return;
+        }
+
+        var sanitizedName = string.Join("_", NewProfileName.Split(Path.GetInvalidFileNameChars()));
+        
+        // We cannot use _launcherService.GetModpackPath because it auto-creates the directory
+        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        var instancePath = Path.Combine(localAppData, "VoidCraftLauncher", "Instances", sanitizedName);
+
+        if (Directory.Exists(instancePath) && Directory.GetFileSystemEntries(instancePath).Length > 0)
+        {
+            Greeting = "Profil s tímto názvem už existuje!";
+            return;
+        }
+
+        Directory.CreateDirectory(instancePath);
+        Directory.CreateDirectory(Path.Combine(instancePath, "mods"));
+
+        var newProfile = new ModpackInfo
+        {
+            Name = sanitizedName,
+            IsCustomProfile = true,
+            CustomMcVersion = NewProfileMcVersion,
+            CustomModLoader = NewProfileModLoader,
+            // Include specific loader version if selected
+            CustomModLoaderVersion = NewProfileModLoaderVersion 
+        };
+
+        InstalledModpacks.Add(newProfile);
+        SaveModpacks();
+
+        Greeting = $"Vlastní profil '{sanitizedName}' vytvořen.";
+        CloseCreateProfileModal();
+        
+        CurrentModpack = newProfile;
+        CurrentMainView = MainViewType.InstanceDetail;
+    }
+    
+    // Fetching versions for Custom Profile creation
+    private async Task FetchMcVersionsAsync()
+    {
+        try
+        {
+            using var client = new HttpClient();
+            var json = await client.GetStringAsync("https://launchermeta.mojang.com/mc/game/version_manifest.json");
+            var versions = JsonNode.Parse(json)?["versions"]?.AsArray();
+            if (versions != null)
+            {
+                var releases = versions.Where(v => v?["type"]?.ToString() == "release")
+                                       .Select(v => v?["id"]?.ToString())
+                                       .Where(v => v != null)
+                                       .ToList();
+                
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    AvailableMcVersions.Clear();
+                    foreach(var ver in releases.Take(50)) // Top 50 releases
+                    {
+                        AvailableMcVersions.Add(ver!);
+                    }
+                    if (!AvailableMcVersions.Contains(NewProfileMcVersion))
+                        NewProfileMcVersion = AvailableMcVersions.FirstOrDefault() ?? "1.21.1";
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            LogService.Error("Failed to fetch MC versions", ex);
+        }
+    }
+
+    private async Task FetchModLoaderVersionsAsync()
+    {
+        if (string.IsNullOrEmpty(NewProfileMcVersion) || string.IsNullOrEmpty(NewProfileModLoader)) return;
+        
+        var mcVer = NewProfileMcVersion;
+        var loader = NewProfileModLoader.ToLower();
+        
+        try
+        {
+            using var client = new HttpClient();
+            List<string> versions = new();
+            
+            if (loader == "fabric")
+            {
+                var json = await client.GetStringAsync($"https://meta.fabricmc.net/v2/versions/loader/{mcVer}");
+                var array = JsonArray.Parse(json)?.AsArray();
+                if (array != null)
+                {
+                    versions = array.Select(x => x?["loader"]?["version"]?.ToString())
+                                    .Where(x => x != null)
+                                    .Cast<string>()
+                                    .ToList();
+                }
+            }
+            else if (loader == "neoforge")
+            {
+                var json = await client.GetStringAsync($"https://maven.neoforged.net/api/maven/versions/releases/net/neoforged/neoforge");
+                var obj = JsonNode.Parse(json);
+                var allVersions = obj?["versions"]?.AsArray();
+                if (allVersions != null)
+                {
+                    // NeoForge versions are usually of format "21.1.X" for MC 1.21.1
+                    // Let's filter by exact prefix matching the short version + "." to avoid 1.21.1 matching 1.21.11
+                    var shortMcVer = mcVer.StartsWith("1.") ? mcVer.Substring(2) : mcVer;
+                    var precisePrefix = shortMcVer + ".";
+                    
+                    versions = allVersions.Select(x => x?.ToString())
+                                          .Where(x => x != null && (x.StartsWith(precisePrefix) || x == shortMcVer))
+                                          .Cast<string>()
+                                          .Reverse() // newest first
+                                          .ToList();
+                }
+            }
+            else if (loader == "forge")
+            {
+                var json = await client.GetStringAsync("https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json");
+                var obj = JsonNode.Parse(json);
+                var promos = obj?["promos"]?.AsObject();
+                if (promos != null)
+                {
+                    // Usually "version-latest" and "version-recommended"
+                    var latest = promos[$"{mcVer}-latest"]?.ToString();
+                    var recommended = promos[$"{mcVer}-recommended"]?.ToString();
+                    
+                    if (recommended != null) versions.Add(recommended);
+                    if (latest != null && latest != recommended) versions.Add(latest);
+                }
+            }
+            
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                AvailableModLoaderVersions.Clear();
+                foreach(var v in versions.Take(20))
+                {
+                    AvailableModLoaderVersions.Add(v);
+                }
+                
+                if (AvailableModLoaderVersions.Count > 0)
+                {
+                    NewProfileModLoaderVersion = AvailableModLoaderVersions.First();
+                }
+                else
+                {
+                    NewProfileModLoaderVersion = "Nenalezeny verze";
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            LogService.Error($"Failed to fetch {loader} versions for {mcVer}", ex);
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                AvailableModLoaderVersions.Clear();
+                NewProfileModLoaderVersion = "";
+            });
+        }
+    }    [ObservableProperty]
+    private ObservableCollection<ModpackItem> _profileModSearchResults = new();
+
+    [ObservableProperty]
+    private ObservableCollection<ModpackItem> _installedMods = new();
+
+    [ObservableProperty]
+    private string _profileModSearchQuery = "";
+
+    [RelayCommand]
+    public async Task SearchModsForProfile()
+    {
+        if (CurrentModpack == null || !CurrentModpack.IsCustomProfile) return;
+        if (string.IsNullOrWhiteSpace(ProfileModSearchQuery)) return;
+
+        ProfileModSearchResults.Clear();
+        Greeting = $"Hledám mody: {ProfileModSearchQuery}...";
+
+        try
+        {
+            // Search CurseForge
+            var cfJson = await _curseForgeApi.SearchModsAsync(
+                ProfileModSearchQuery, 
+                CurrentModpack.CustomMcVersion,
+                CurrentModpack.CustomModLoader);
+            
+            var cfData = JsonNode.Parse(cfJson)?["data"]?.AsArray();
+            if (cfData != null)
+            {
+                foreach (var mod in cfData)
+                {
+                    ProfileModSearchResults.Add(new ModpackItem
+                    {
+                        Id = mod?["id"]?.ToString() ?? "",
+                        Name = mod?["name"]?.ToString() ?? "",
+                        Description = mod?["summary"]?.ToString() ?? "",
+                        IconUrl = mod?["logo"]?["url"]?.ToString() ?? "",
+                        Author = mod?["authors"]?.AsArray()?.FirstOrDefault()?["name"]?.ToString() ?? "",
+                        DownloadCount = mod?["downloadCount"]?.GetValue<long>() ?? 0,
+                        Source = "CurseForge"
+                    });
+                }
+            }
+
+            // Search Modrinth
+            var mrJson = await _modrinthApi.SearchModsAsync(
+                ProfileModSearchQuery,
+                CurrentModpack.CustomMcVersion,
+                CurrentModpack.CustomModLoader);
+
+            var mrData = JsonNode.Parse(mrJson)?["hits"]?.AsArray();
+            if (mrData != null)
+            {
+                foreach (var mod in mrData)
+                {
+                    ProfileModSearchResults.Add(new ModpackItem
+                    {
+                        Id = mod?["project_id"]?.ToString() ?? "",
+                        Name = mod?["title"]?.ToString() ?? "",
+                        Description = mod?["description"]?.ToString() ?? "",
+                        IconUrl = mod?["icon_url"]?.ToString() ?? "",
+                        Author = mod?["author"]?.ToString() ?? "",
+                        DownloadCount = mod?["downloads"]?.GetValue<long>() ?? 0,
+                        Source = "Modrinth"
+                    });
+                }
+            }
+
+            // Check installed mods in the directory
+            if (CurrentModpack != null && CurrentModpack.IsCustomProfile)
+            {
+                var modsDir = Path.Combine(_launcherService.GetModpackPath(CurrentModpack.Name), "mods");
+                if (Directory.Exists(modsDir))
+                {
+                    var existingFiles = Directory.GetFiles(modsDir, "*.jar").Select(Path.GetFileName).ToList();
+                    foreach (var mod in ProfileModSearchResults)
+                    {
+                        // Basic heuristic: if any jar file contains the mod name (ignoring case/symbols)
+                        var safeModName = new string(mod.Name.Where(char.IsLetterOrDigit).ToArray()).ToLowerInvariant();
+                        var match = existingFiles.FirstOrDefault(f => 
+                            new string(f.Where(char.IsLetterOrDigit).ToArray()).ToLowerInvariant().Contains(safeModName));
+                        
+                        if (match != null)
+                        {
+                            mod.IsInstalled = true;
+                            mod.InstalledFileName = match;
+                        }
+                    }
+                }
+            }
+
+            Greeting = $"Nalezeno {ProfileModSearchResults.Count} modů.";
+        }
+        catch (Exception ex)
+        {
+            Greeting = $"Chyba hledání: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    public async Task AddModToProfile(ModpackItem mod)
+    {
+        if (mod == null || CurrentModpack == null || !CurrentModpack.IsCustomProfile) return;
+
+        var modsDir = Path.Combine(_launcherService.GetModpackPath(CurrentModpack.Name), "mods");
+        Directory.CreateDirectory(modsDir);
+
+        try
+        {
+            Greeting = $"Stahuji mod: {mod.Name}...";
+
+            if (mod.Source == "CurseForge")
+            {
+                var modId = int.Parse(mod.Id);
+                var filesJson = await _curseForgeApi.GetModFilesAsync(modId, CurrentModpack.CustomMcVersion);
+                var files = JsonNode.Parse(filesJson)?["data"]?.AsArray();
+                var latestFile = files?.FirstOrDefault();
+                
+                if (latestFile == null)
+                {
+                    Greeting = $"Žádný soubor pro {mod.Name} a MC {CurrentModpack.CustomMcVersion}.";
+                    return;
+                }
+
+                var downloadUrl = latestFile["downloadUrl"]?.ToString();
+                var fileName = latestFile["fileName"]?.ToString() ?? $"{mod.Name}.jar";
+                
+                if (string.IsNullOrEmpty(downloadUrl))
+                {
+                    // CurseForge sometimes hides direct download – try CDN pattern
+                    var fileId = latestFile["id"]?.GetValue<int>() ?? 0;
+                    downloadUrl = $"https://edge.forgecdn.net/files/{fileId / 1000}/{fileId % 1000}/{Uri.EscapeDataString(fileName)}";
+                }
+
+                var data = await _httpClient.GetByteArrayAsync(downloadUrl);
+                await File.WriteAllBytesAsync(Path.Combine(modsDir, fileName), data);
+                
+                // Save metadata
+                await SaveModMetadata(fileName, mod);
+                
+                mod.IsInstalled = true;
+                mod.InstalledFileName = fileName;
+                OnPropertyChanged(nameof(ProfileModSearchResults)); 
+            }
+            else // Modrinth
+            {
+                var versionsJson = await _modrinthApi.GetProjectVersionsAsync(mod.Id);
+                var versions = JsonNode.Parse(versionsJson)?.AsArray();
+                
+                // Find version matching MC version and loader
+                var matchingVersion = versions?.FirstOrDefault(v =>
+                {
+                    var gameVersions = v?["game_versions"]?.AsArray();
+                    var loaders = v?["loaders"]?.AsArray();
+                    bool mcMatch = gameVersions?.Any(gv => gv?.ToString() == CurrentModpack.CustomMcVersion) ?? false;
+                    bool loaderMatch = loaders?.Any(l => l?.ToString()?.Equals(CurrentModpack.CustomModLoader, StringComparison.OrdinalIgnoreCase) ?? false) ?? false;
+                    return mcMatch && loaderMatch;
+                }) ?? versions?.FirstOrDefault();
+
+                if (matchingVersion == null)
+                {
+                    Greeting = $"Žádná verze pro {mod.Name} a MC {CurrentModpack.CustomMcVersion}.";
+                    return;
+                }
+
+                var fileObj = matchingVersion["files"]?.AsArray()?.FirstOrDefault(f => f?["primary"]?.GetValue<bool>() == true)
+                              ?? matchingVersion["files"]?.AsArray()?.FirstOrDefault();
+                
+                var downloadUrl = fileObj?["url"]?.ToString();
+                var fileName = fileObj?["filename"]?.ToString() ?? $"{mod.Name}.jar";
+
+                if (string.IsNullOrEmpty(downloadUrl))
+                {
+                    Greeting = "Download URL nenalezena.";
+                    return;
+                }
+
+                var data = await _httpClient.GetByteArrayAsync(downloadUrl);
+                await File.WriteAllBytesAsync(Path.Combine(modsDir, fileName), data);
+
+                // Save metadata
+                await SaveModMetadata(fileName, mod);
+                
+                mod.IsInstalled = true;
+                mod.InstalledFileName = fileName;
+                OnPropertyChanged(nameof(ProfileModSearchResults)); 
+            }
+
+            Greeting = $"Mod {mod.Name} nainstalován do {CurrentModpack.Name}!";
+            LoadInstalledMods(); 
+        }
+        catch (Exception ex)
+        {
+            Greeting = $"Chyba instalace modu: {ex.Message}";
+            LogService.Error($"AddModToProfile failed for {mod.Name}", ex);
+        }
+    }
+
+    private async Task SaveModMetadata(string fileName, ModpackItem mod)
+    {
+        try
+        {
+            var modpackPath = _launcherService.GetModpackPath(CurrentModpack.Name);
+            var metaPath = Path.Combine(modpackPath, "mods_metadata.json");
+            var metadata = new List<ModMetadata>();
+            
+            if (File.Exists(metaPath))
+            {
+                var existingJson = await File.ReadAllTextAsync(metaPath);
+                metadata = JsonSerializer.Deserialize<List<ModMetadata>>(existingJson) ?? new();
+            }
+
+            // Remove existing entry for this filename
+            metadata.RemoveAll(m => m.FileName == fileName);
+
+            metadata.Add(new ModMetadata
+            {
+                FileName = fileName,
+                Name = mod.Name,
+                Slug = mod.Id,
+                Summary = mod.Description,
+                Categories = new List<string>(),
+                IconUrl = mod.IconUrl,
+                WebLink = mod.WebLink
+            });
+
+            var json = JsonSerializer.Serialize(metadata, new JsonSerializerOptions { WriteIndented = true });
+            await File.WriteAllTextAsync(metaPath, json);
+        }
+        catch (Exception ex)
+        {
+            LogService.Error($"Failed to save manual mod metadata for {mod.Name}", ex);
+        }
+    }
+
+    [RelayCommand]
+    public void RemoveModFromProfile(ModpackItem mod)
+    {
+        if (CurrentModpack == null || mod == null || string.IsNullOrEmpty(mod.InstalledFileName)) return;
+
+        var modsDir = Path.Combine(_launcherService.GetModpackPath(CurrentModpack.Name), "mods");
+        var filePath = Path.Combine(modsDir, mod.InstalledFileName);
+        
+        if (File.Exists(filePath))
+        {
+            File.Delete(filePath);
+            Greeting = $"Mod {mod.Name} odebrán.";
+        }
+        else
+        {
+            Greeting = $"Soubor {mod.InstalledFileName} nenalezen, ale odebírám ze seznamu.";
+        }
+
+        mod.IsInstalled = false;
+        mod.InstalledFileName = "";
+        
+        LoadInstalledMods(); // Refresh the manual list
+    }
+
+    private void LoadInstalledMods()
+    {
+        InstalledMods.Clear();
+        if (CurrentModpack == null) return;
+
+        var modpackPath = _launcherService.GetModpackPath(CurrentModpack.Name);
+        var modsDir = Path.Combine(modpackPath, "mods");
+        
+        // Load metadata if exists
+        var metadata = new List<ModMetadata>();
+        var metaPath = Path.Combine(modpackPath, "mods_metadata.json");
+        if (File.Exists(metaPath))
+        {
+            try 
+            { 
+                var json = File.ReadAllText(metaPath);
+                metadata = JsonSerializer.Deserialize<List<ModMetadata>>(json) ?? new(); 
+            } 
+            catch {}
+        }
+
+        if (Directory.Exists(modsDir))
+        {
+            var files = Directory.GetFiles(modsDir, "*.jar");
+            foreach (var file in files)
+            {
+                var fileName = Path.GetFileName(file);
+                var meta = metadata.FirstOrDefault(m => m.FileName == fileName);
+
+                InstalledMods.Add(new ModpackItem
+                {
+                    Name = meta?.Name ?? Path.GetFileNameWithoutExtension(file),
+                    InstalledFileName = fileName,
+                    IsInstalled = true,
+                    Source = meta != null ? "CurseForge" : "Stáhnuto z aplikace",
+                    IconUrl = meta?.IconUrl ?? "",
+                    WebLink = meta?.WebLink ?? ""
+                });
+            }
         }
     }
 }
-

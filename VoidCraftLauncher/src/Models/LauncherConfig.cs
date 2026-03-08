@@ -1,12 +1,11 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace VoidCraftLauncher.Models;
 
 public partial class LauncherConfig : ObservableObject
 {
-    [ObservableProperty]
-    private string? _javaPath;
     
     // Default 12GB
     [ObservableProperty]
@@ -24,17 +23,24 @@ public partial class LauncherConfig : ObservableObject
     [ObservableProperty]
     private GcType _selectedGc = GcType.G1GC;
 
-    public System.Collections.Generic.Dictionary<string, InstanceConfig> InstanceOverrides { get; set; } = new();
+    public Dictionary<string, InstanceConfig> InstanceOverrides { get; set; } = new();
 
     // Global options.txt presets (Name -> File Content)
-    public System.Collections.Generic.Dictionary<string, string> OptionsPresets { get; set; } = new();
+    public Dictionary<string, string> OptionsPresets { get; set; } = new();
 
     [ObservableProperty]
     private string? _lastOfflineUsername;
+
+    // Multi-account support
+    public List<AccountProfile> Accounts { get; set; } = new();
+
+    [ObservableProperty]
+    private string? _activeAccountId;
 }
 
 public enum GcType
 {
     G1GC,
-    ZGC
+    ZGC,
+    None
 }

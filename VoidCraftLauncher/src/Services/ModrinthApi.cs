@@ -16,21 +16,62 @@ namespace VoidCraftLauncher.Services
             _httpClient.DefaultRequestHeaders.Add("User-Agent", "VoidCraftLauncher/2.0 (admin@void-craft.eu)");
         }
 
-        public async Task<string> SearchModpacksAsync(string query)
+        public async Task<string> SearchModpacksAsync(string query, int offset = 0)
         {
             // Facet for project_type=modpack: [["project_type:modpack"]]
-            // Encoded: %5B%5B%22project_type%3Amodpack%22%5D%5D
             var facets = Uri.EscapeDataString("[[\"project_type:modpack\"]]");
-            var q = Uri.EscapeDataString(query);
+            var url = $"search?facets={facets}&index=downloads&limit=50&offset={offset}";
             
-            // Sort by downloads by default for popularity
-            var response = await _httpClient.GetAsync($"search?query={q}&facets={facets}&index=downloads");
+            if (!string.IsNullOrWhiteSpace(query))
+                url += $"&query={Uri.EscapeDataString(query)}";
+            
+            // Sort by downloads by default for popularity and fetch up to 50 results
+            var response = await _httpClient.GetAsync(url);
             
             if (!response.IsSuccessStatusCode)
             {
                  throw new Exception($"Modrinth API error: {response.StatusCode}");
             }
             
+            return await response.Content.ReadAsStringAsync();
+        }
+
+        public async Task<string> GetProjectDescriptionAsync(string projectId)
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync($"project/{projectId}");
+                if (!response.IsSuccessStatusCode) return "";
+
+                var json = await response.Content.ReadAsStringAsync();
+                using var doc = System.Text.Json.JsonDocument.Parse(json);
+                if (doc.RootElement.TryGetProperty("body", out var bodyElement))
+                {
+                    return bodyElement.GetString() ?? "";
+                }
+            }
+            catch { }
+            return "";
+        }
+
+        /// <summary>
+        /// Search for individual mods on Modrinth for custom profile mod browser.
+        /// </summary>
+        public async Task<string> SearchModsAsync(string query, string? gameVersion = null, string? modLoader = null)
+        {
+            // Build facets: [["project_type:mod"]]
+            var facetParts = new System.Collections.Generic.List<string> { "[\"project_type:mod\"]" };
+            if (!string.IsNullOrEmpty(gameVersion))
+                facetParts.Add($"[\"versions:{gameVersion}\"]");
+            if (!string.IsNullOrEmpty(modLoader))
+                facetParts.Add($"[\"categories:{modLoader.ToLowerInvariant()}\"]");
+            
+            var facets = Uri.EscapeDataString("[" + string.Join(",", facetParts) + "]");
+            var q = Uri.EscapeDataString(query);
+            
+            var response = await _httpClient.GetAsync($"search?query={q}&facets={facets}&index=downloads&limit=50");
+            if (!response.IsSuccessStatusCode)
+                throw new Exception($"Modrinth API error: {response.StatusCode}");
             return await response.Content.ReadAsStringAsync();
         }
 

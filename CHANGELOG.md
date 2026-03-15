@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.1.0 - 2026-03-15
+
+### 🧠 Chytrý Update Configů
+- **Hash-based config update**: Při aktualizaci modpacku se config soubory porovnávají pomocí SHA256 hashů. Přepíšou se pouze ty, které autor modpacku skutečně změnil — uživatelské úpravy zůstanou zachovány.
+- **config_hashes.json**: Nový tracking soubor pro porovnání configů mezi verzemi.
+- **Podpora CurseForge i Modrinth**: Smart config update funguje pro oba formáty modpacků.
+- **Fix**: Config soubory se už neresetují při updatu modpacku.
+
+---
+
 ## 1.2.8
 
 ### 🔧 Rychlé Opravy (Hotfix)

@@ -2,7 +2,7 @@
 
 ## 1) Project Snapshot
 - **Name**: VoidCraft Launcher
-- **Current version**: **1.2.8**
+- **Current version**: **2.1.0**
 - **Stack**: .NET 9 + Avalonia UI 11.3 + CommunityToolkit.Mvvm 8.4
 - **MC Core**: CmlLib.Core 4.0.6
 - **Auth**: Microsoft.Identity.Client (MSAL) + custom Xbox/XSTS/MC token chain
@@ -72,7 +72,7 @@ Documents/.voidcraft/
 3. Batch-resolve mod download URLs via CF API
 4. Smart update: delete old mods (tracked via `installed_files.json`), skip existing
 5. Category-aware routing: mods → `mods/`, resource packs → `resourcepacks/`, shaders → `shaderpacks/`
-6. Extract overrides with protected paths (options.txt, servers.dat, saves/, shaderpacks/)
+6. Extract overrides with protected paths (options.txt, servers.dat, saves/, shaderpacks/) + hash-based smart config update (config/ files only overwritten if modpack author changed them, tracked via `config_hashes.json`)
 7. Save `manifest_info.json` for subsequent launches
 8. Save `mods_metadata.json` for mod manager display
 

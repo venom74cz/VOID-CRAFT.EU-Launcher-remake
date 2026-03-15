@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Threading;
 using VoidCraftLauncher.Models;
@@ -294,12 +295,16 @@ namespace VoidCraftLauncher.Services
                 }
 
                 // 4. Extract Overrides (Configs, Scripts, etc.)
-                // "Smart Update": Preserve configs if they exist. Overwrite others?
+                // Smart Config Update: compare hashes to detect modpack-changed configs
                 StatusChanged?.Invoke("Aplikuji nastavení (overrides)...");
                 var overridesPath = (manifest.Overrides ?? "overrides").Replace('\\', '/');
                 var overridesPrefix = overridesPath + "/";
                 
                 debugLog.WriteLine($"Overrides Logic: Path='{overridesPath}', Prefix='{overridesPrefix}'");
+                
+                // Load previous config hashes for smart config update
+                var configHashes = LoadConfigHashes(installPath);
+                var newConfigHashes = new Dictionary<string, string>();
                 
                 int extractedCount = 0;
                 foreach (var entry in archive.Entries)
@@ -330,15 +335,53 @@ namespace VoidCraftLauncher.Services
                         // It is a file
                         debugLog.WriteLine($"MATCH Overrides File: {entryFullName}");
 
-                        // PROTECTED PATHS check
+                        var normalizedPath = relativePath.Replace('\\', '/').ToLowerInvariant();
+                        bool isConfigFile = normalizedPath.StartsWith("config/");
+
+                        if (isConfigFile)
+                        {
+                            // Smart config update: hash-based comparison
+                            byte[] fileData;
+                            using (var entryStream = entry.Open())
+                            using (var ms = new MemoryStream())
+                            {
+                                await entryStream.CopyToAsync(ms);
+                                fileData = ms.ToArray();
+                            }
+                            
+                            var incomingHash = ComputeHashFromBytes(fileData);
+                            newConfigHashes[relativePath] = incomingHash;
+                            
+                            if (File.Exists(targetPath))
+                            {
+                                if (configHashes.TryGetValue(relativePath, out var prevHash) && prevHash == incomingHash)
+                                {
+                                    // Modpack author didn't change this file → preserve user's version
+                                    debugLog.WriteLine($"CONFIG SKIP (unchanged): {relativePath}");
+                                    continue;
+                                }
+                                debugLog.WriteLine($"CONFIG UPDATE (hash changed): {relativePath}");
+                            }
+                            else
+                            {
+                                debugLog.WriteLine($"CONFIG NEW: {relativePath}");
+                            }
+                            
+                            Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
+                            await File.WriteAllBytesAsync(targetPath, fileData);
+                            extractedCount++;
+                            continue;
+                        }
+
+                        // PROTECTED PATHS check (options.txt, saves/, shaderpacks/ etc.)
                         if (IsProtected(relativePath))
                         {
                             // If file exists, SKIPPING to preserve user data
                             if (File.Exists(targetPath)) continue;
                         }
                         
-                        // For non-protected files (like mods, scripts, core configs), we should OVERWRITE
-                        // to ensure the modpack is up to date (and to fix corrupt/empty files).
+                        // For non-protected files (like mods, scripts), we should OVERWRITE
+                        // to ensure the modpack is up to date.
                         
                         // Ensure directory exists (in case directory entry was missing)
                         Directory.CreateDirectory(Path.GetDirectoryName(targetPath));
@@ -371,6 +414,11 @@ namespace VoidCraftLauncher.Services
                         }
                     }
                 }
+                
+                // Save updated config hashes
+                foreach (var kv in newConfigHashes)
+                    configHashes[kv.Key] = kv.Value;
+                SaveConfigHashes(installPath, configHashes);
             }
             
             // Save manifest info to instance folder for future launches
@@ -406,6 +454,90 @@ namespace VoidCraftLauncher.Services
             await File.WriteAllBytesAsync(path, data);
         }
 
+        /// <summary>
+        /// Backs up user-modified config files before update.
+        /// Returns the backup directory path.
+        /// </summary>
+        public static string BackupUserConfigs(string installPath)
+        {
+            var backupDir = Path.Combine(installPath, ".config_backup_" + DateTime.Now.ToString("yyyyMMdd_HHmmss"));
+            var protectedPaths = new[] { "config", "saves", "shaderpacks", "options.txt", "servers.dat" };
+            
+            foreach (var rel in protectedPaths)
+            {
+                var src = Path.Combine(installPath, rel);
+                var dst = Path.Combine(backupDir, rel);
+                
+                if (File.Exists(src))
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(dst)!);
+                    File.Copy(src, dst, true);
+                }
+                else if (Directory.Exists(src))
+                {
+                    CopyDirectoryRecursive(src, dst);
+                }
+            }
+
+            return backupDir;
+        }
+
+        /// <summary>
+        /// Restores user-modified config files after update, keeping modpack defaults for new files.
+        /// </summary>
+        public static void RestoreUserConfigs(string backupDir, string installPath)
+        {
+            if (!Directory.Exists(backupDir)) return;
+
+            foreach (var file in Directory.GetFiles(backupDir, "*", SearchOption.AllDirectories))
+            {
+                var relativePath = Path.GetRelativePath(backupDir, file);
+                var targetPath = Path.Combine(installPath, relativePath);
+                
+                Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
+                File.Copy(file, targetPath, true);
+            }
+
+            // Clean up backup
+            try { Directory.Delete(backupDir, true); } catch { }
+        }
+
+        private static void CopyDirectoryRecursive(string sourceDir, string targetDir)
+        {
+            Directory.CreateDirectory(targetDir);
+            foreach (var file in Directory.GetFiles(sourceDir))
+                File.Copy(file, Path.Combine(targetDir, Path.GetFileName(file)), true);
+            foreach (var dir in Directory.GetDirectories(sourceDir))
+                CopyDirectoryRecursive(dir, Path.Combine(targetDir, Path.GetFileName(dir)));
+        }
+
+        private static string ComputeHashFromBytes(byte[] data)
+        {
+            var hash = SHA256.HashData(data);
+            return Convert.ToHexString(hash);
+        }
+
+        private static Dictionary<string, string> LoadConfigHashes(string installPath)
+        {
+            var path = Path.Combine(installPath, "config_hashes.json");
+            if (File.Exists(path))
+            {
+                try
+                {
+                    var json = File.ReadAllText(path);
+                    return JsonSerializer.Deserialize<Dictionary<string, string>>(json) ?? new();
+                }
+                catch { }
+            }
+            return new();
+        }
+
+        private static void SaveConfigHashes(string installPath, Dictionary<string, string> hashes)
+        {
+            var path = Path.Combine(installPath, "config_hashes.json");
+            File.WriteAllText(path, JsonSerializer.Serialize(hashes, new JsonSerializerOptions { WriteIndented = true }));
+        }
+
         private bool IsProtected(string relativePath)
         {
             // Normalize path separators
@@ -415,7 +547,7 @@ namespace VoidCraftLauncher.Services
             if (path == "servers.dat") return true;
             if (path.StartsWith("saves/")) return true;
             if (path.StartsWith("shaderpacks/")) return true;
-            // config/ folder removed to allow updates
+            // config/ is handled separately by hash-based smart update
             
             return false;
         }
@@ -488,13 +620,47 @@ namespace VoidCraftLauncher.Services
                 }
             }
 
-            // Extract Overrides
+            // Extract Overrides with smart config update
+            var mrConfigHashes = LoadConfigHashes(installPath);
+            var mrNewConfigHashes = new Dictionary<string, string>();
+            
             foreach (var entry in archive.Entries)
             {
                 if (entry.FullName.StartsWith("overrides/") && !entry.FullName.EndsWith("/"))
                 {
                     var relativePath = entry.FullName.Substring("overrides/".Length);
                     var targetPath = Path.Combine(installPath, relativePath);
+                    
+                    var normalizedPath = relativePath.Replace('\\', '/').ToLowerInvariant();
+                    bool isConfigFile = normalizedPath.StartsWith("config/");
+                    
+                    if (isConfigFile)
+                    {
+                        // Smart config update: hash-based comparison
+                        byte[] fileData;
+                        using (var entryStream = entry.Open())
+                        using (var ms = new MemoryStream())
+                        {
+                            await entryStream.CopyToAsync(ms);
+                            fileData = ms.ToArray();
+                        }
+                        
+                        var incomingHash = ComputeHashFromBytes(fileData);
+                        mrNewConfigHashes[relativePath] = incomingHash;
+                        
+                        if (File.Exists(targetPath))
+                        {
+                            if (mrConfigHashes.TryGetValue(relativePath, out var prevHash) && prevHash == incomingHash)
+                            {
+                                // Modpack author didn't change this file → preserve user's version
+                                continue;
+                            }
+                        }
+                        
+                        Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
+                        await File.WriteAllBytesAsync(targetPath, fileData);
+                        continue;
+                    }
                     
                     if (IsProtected(relativePath) && File.Exists(targetPath)) continue;
                     
@@ -522,6 +688,11 @@ namespace VoidCraftLauncher.Services
                     }
                 }
             }
+            
+            // Save updated config hashes
+            foreach (var kv in mrNewConfigHashes)
+                mrConfigHashes[kv.Key] = kv.Value;
+            SaveConfigHashes(installPath, mrConfigHashes);
             
             // Save manifest info
             var manifestInfoPath = Path.Combine(installPath, "manifest_info.json");

@@ -2,6 +2,22 @@
 
 Všechny důležité změny v projektu jsou dokumentovány v tomto souboru.
 
+## [2.1.0] - 2026-03-15
+### 🧠 Chytrý Update Configů
+
+### Přidáno
+- **Hash-based config update**: Při aktualizaci modpacku se config soubory porovnávají pomocí SHA256 hashů. Přepíšou se pouze ty, které autor modpacku skutečně změnil — uživatelské úpravy zůstanou zachovány.
+- **config_hashes.json**: Nový soubor v každé instanci, který uchovává hashe configů z poslední instalace pro porovnání při updatu.
+- **Podpora pro oba formáty**: Smart config update funguje jak pro CurseForge, tak pro Modrinth modpacky.
+
+### Opraveno
+- **Config soubory se už neresetují při updatu**: Opraven problém, kdy update modpacku přepsal všechny uživatelské konfigurace (např. VOID-BOX 2).
+
+### Změněno
+- **config/ složka vyňata z IsProtected()**: Config soubory se už neblokují plošně, ale řeší se individuálně přes hash porovnání.
+
+---
+
 ## [2.0.0] - 2026-03-08
 ### 🚀 Velká Aktualizace: Modernizace & Social
 Tato verze představuje kompletní facelift launcheru a přidání důležitých komunitních funkcí.

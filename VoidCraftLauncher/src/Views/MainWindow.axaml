@@ -139,7 +139,7 @@
 
                         <Button Content="🌐  Void-Craft Web" Command="{Binding OpenUrlCommand}" CommandParameter="https://void-craft.eu/"
                                 Classes="nav" FontSize="12"/>
-                        <Button Content="💬  Discord" Command="{Binding OpenUrlCommand}" CommandParameter="https://discord.com/invite/8rjhkck9w4"
+                        <Button Content="💬  Discord" Command="{Binding OpenUrlCommand}" CommandParameter="https://discord.gg/cFvCaC2KDh"
                                 Classes="nav" FontSize="12"/>
                         <Button Content="🎬  YouTube" Command="{Binding OpenUrlCommand}" CommandParameter="https://www.youtube.com/@void-craft-eu"
                                 Classes="nav" FontSize="12"/>

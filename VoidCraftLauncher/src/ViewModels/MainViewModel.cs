@@ -219,6 +219,9 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     private string _appVersion = "v1.0.0"; // Placeholder
 
+    [ObservableProperty]
+    private ObservableCollection<ChangelogEntry> _changelogEntries = new();
+
     // Multi-Account
     [ObservableProperty]
     private ObservableCollection<AccountProfile> _accounts = new();
@@ -314,6 +317,9 @@ public partial class MainViewModel : ViewModelBase
 
         // Spustíme načítání na pozadí
         Task.Run(LoadModpackData);
+
+        // Načtení changelogu z GitHub repa (live)
+        Task.Run(LoadChangelogAsync);
 
         // Kontrola aktualizací modpacků: hned při startu a pak každých 5s
         Task.Run(ModpackUpdateLoop);
@@ -698,6 +704,72 @@ public partial class MainViewModel : ViewModelBase
         catch
         {
             Avalonia.Threading.Dispatcher.UIThread.Post(() => Greeting = "Vítejte ve VOID-CRAFT Launcheru!");
+        }
+    }
+
+    private async Task LoadChangelogAsync()
+    {
+        const string changelogUrl = "https://raw.githubusercontent.com/venom74cz/VOID-CRAFT.EU-Launcher-remake/main/CHANGELOG.md";
+
+        try
+        {
+            var response = await _httpClient.GetAsync(changelogUrl);
+            if (!response.IsSuccessStatusCode)
+            {
+                LogService.Error($"[LoadChangelog] GitHub returned {response.StatusCode}");
+                return;
+            }
+
+            var content = await response.Content.ReadAsStringAsync();
+            var lines = content.Split('\n');
+            var entries = new List<ChangelogEntry>();
+            ChangelogEntry? current = null;
+
+            foreach (var line in lines)
+            {
+                // Match version headers like "## 2.1.0 - 2026-03-15" or "## [2.1.0] - 2026-03-15" or "## 1.2.8"
+                var versionMatch = Regex.Match(line, @"^##\s+\[?(\d+\.\d+\.\d+)\]?\s*(?:-\s*(.+))?$");
+                if (versionMatch.Success)
+                {
+                    current = new ChangelogEntry
+                    {
+                        Version = versionMatch.Groups[1].Value,
+                        Date = versionMatch.Groups[2].Success ? versionMatch.Groups[2].Value.Trim() : ""
+                    };
+                    entries.Add(current);
+                    continue;
+                }
+
+                if (current == null) continue;
+
+                // Match section titles like "### 🧠 Chytrý Update Configů"
+                var sectionMatch = Regex.Match(line, @"^###\s+(.+)$");
+                if (sectionMatch.Success)
+                {
+                    if (string.IsNullOrEmpty(current.Title))
+                        current.Title = sectionMatch.Groups[1].Value.Trim();
+                    continue;
+                }
+
+                // Match bullet items like "- **Something**: Description"
+                var itemMatch = Regex.Match(line, @"^-\s+(.+)$");
+                if (itemMatch.Success)
+                {
+                    // Clean markdown bold
+                    var text = Regex.Replace(itemMatch.Groups[1].Value, @"\*\*([^*]+)\*\*", "$1");
+                    current.Items.Add(text);
+                }
+            }
+
+            // Take only the last few entries for the UI
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                ChangelogEntries = new ObservableCollection<ChangelogEntry>(entries.Take(5));
+            });
+        }
+        catch (Exception ex)
+        {
+            LogService.Error("[LoadChangelog] Failed to fetch changelog from GitHub", ex);
         }
     }
 
@@ -1100,6 +1172,9 @@ public partial class MainViewModel : ViewModelBase
             _discordRpcService.SetPlayingState(RunningModpack?.Name ?? "Minecraft");
             LaunchProgress = 100;
             TargetModpack = null; // Clear so progress bar disappears from card after launch success
+
+            // Minimize to tray while game is running
+            App.MinimizeToTray();
             
             // Wait for game to exit in background
             _ = Task.Run(async () => 
@@ -1113,6 +1188,9 @@ public partial class MainViewModel : ViewModelBase
                     IsGameRunning = false;
                     RunningModpack = null;
                     Greeting = $"Minecraft ukončen (ExitCode: {exitCode}). Viz game_log.txt";
+
+                    // Restore window from tray
+                    App.RestoreMainWindow();
                 });
             });
         }

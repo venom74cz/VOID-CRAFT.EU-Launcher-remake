@@ -2,6 +2,30 @@
 
 Všechny důležité změny v projektu jsou dokumentovány v tomto souboru.
 
+## [2.1.1] - 2026-03-20
+
+### 🧹 Vyčištění UI
+
+### Přidáno
+- **Odstraněny nefunkční záložky**: Falešné filtrační taby v Knihovně, Objevování, Detailu instance a Nastavení byly odstraněny pro čistší UI.
+- **Opravený Instance Detail TabControl**: Obsah jednotlivých tabů (Obsah/Přehled/Nastavení/Galerie) je nyní správně uvnitř TabItemů.
+
+### 📰 Živé novinky z changelogu
+
+### Přidáno
+- **Novinky z GitHubu**: Panel „Novinky" stahuje CHANGELOG.md živě z GitHub repozitáře.
+- **Rozbalovací záznamy**: Changelog záznamy jsou kliknutím rozbalovací/sbalovací.
+- **Shrnutí a detail**: Sbalený stav zobrazí 3 položky + počet dalších, rozbalený kompletní výpis.
+
+### 🔽 Minimalizace do systémové lišty
+
+### Přidáno
+- **Auto-minimize při hře**: Launcher se minimalizuje do tray po spuštění Minecraftu.
+- **Auto-restore po hře**: Po ukončení Minecraftu se launcher automaticky obnoví.
+- **Tray ikona**: Kliknutím na ikonu v tray lze launcher kdykoli obnovit.
+
+---
+
 ## [2.1.0] - 2026-03-15
 ### 🧠 Chytrý Update Configů
 

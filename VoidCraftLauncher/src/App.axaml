@@ -7,6 +7,15 @@
     <Application.DataTemplates>
         <local:ViewLocator/>
     </Application.DataTemplates>
+
+    <TrayIcon.Icons>
+        <TrayIcons>
+            <TrayIcon Icon="avares://VoidCraftLauncher/src/Assets/icon.ico"
+                      ToolTipText="VOID-CRAFT Launcher"
+                      IsVisible="{Binding IsTrayIconVisible, Source={x:Static local:App.TrayState}}"
+                      Command="{Binding RestoreWindowCommand, Source={x:Static local:App.TrayState}}" />
+        </TrayIcons>
+    </TrayIcon.Icons>
   
     <Application.Styles>
         <FluentTheme />
@@ -101,7 +110,7 @@
             <Setter Property="Background" Value="#F04F52"/>
         </Style>
 
-        <!-- ===== NAV BUTTONS ===== -->
+        <!-- ===== NAV BUTTONS (Legacy wide) ===== -->
         <Style Selector="Button.nav">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="#8892B0"/>
@@ -123,6 +132,38 @@
         </Style>
         <Style Selector="Button.nav.active /template/ ContentPresenter">
             <Setter Property="Background" Value="#1E2030"/>
+        </Style>
+
+        <!-- ===== NAV ICON BUTTONS (Modrinth narrow sidebar) ===== -->
+        <Style Selector="Button.navIcon">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Width" Value="48"/>
+            <Setter Property="Height" Value="48"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Opacity" Value="0.6"/>
+        </Style>
+        <Style Selector="Button.navIcon:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#1E2030"/>
+        </Style>
+        <Style Selector="Button.navIcon:pointerover">
+            <Setter Property="Opacity" Value="1"/>
+        </Style>
+        <Style Selector="Button.navIcon.active">
+            <Setter Property="Background" Value="#1E2030"/>
+            <Setter Property="Opacity" Value="1"/>
+        </Style>
+        <Style Selector="Button.navIcon.active /template/ ContentPresenter">
+            <Setter Property="Background" Value="#1E2030"/>
+        </Style>
+        <!-- Green left accent bar for active nav -->
+        <Style Selector="Button.navIcon.active">
+            <Setter Property="BorderBrush" Value="#1BD96A"/>
+            <Setter Property="BorderThickness" Value="3,0,0,0"/>
         </Style>
 
         <!-- ===== TEXT INPUTS ===== -->

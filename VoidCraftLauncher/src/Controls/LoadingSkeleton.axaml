@@ -1,0 +1,51 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="VoidCraftLauncher.Controls.LoadingSkeleton">
+
+    <!-- ╔══════════════════════════════════════════════════════════════╗ -->
+    <!-- ║  LOADING SKELETON — reusable shimmer placeholder            ║ -->
+    <!-- ║  Shows a card-shaped skeleton while content is loading.     ║ -->
+    <!-- ║  Usage: <controls:LoadingSkeleton IsVisible="{Binding IsLoading}"/> ║ -->
+    <!-- ╚══════════════════════════════════════════════════════════════╝ -->
+
+    <StackPanel Spacing="16" Margin="0,4">
+
+        <!-- Card skeleton -->
+        <Border Classes="skeleton-card" Padding="20">
+            <StackPanel Spacing="12">
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <Border Classes="skeleton-circle"/>
+                    <StackPanel Spacing="6" VerticalAlignment="Center">
+                        <Border Classes="skeleton-line" Width="160"/>
+                        <Border Classes="skeleton-line" Width="100" Opacity="0.35"/>
+                    </StackPanel>
+                </StackPanel>
+                <Border Classes="skeleton-line" Width="280"/>
+                <Border Classes="skeleton-line" Width="220" Opacity="0.35"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Second card skeleton (shorter) -->
+        <Border Classes="skeleton-card" Padding="20" Opacity="0.4">
+            <StackPanel Spacing="12">
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <Border Classes="skeleton-circle"/>
+                    <StackPanel Spacing="6" VerticalAlignment="Center">
+                        <Border Classes="skeleton-line" Width="140"/>
+                        <Border Classes="skeleton-line" Width="80" Opacity="0.35"/>
+                    </StackPanel>
+                </StackPanel>
+                <Border Classes="skeleton-line" Width="200"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Third card skeleton (faded) -->
+        <Border Classes="skeleton-card" Padding="20" Opacity="0.25">
+            <StackPanel Spacing="12">
+                <Border Classes="skeleton-line" Width="180"/>
+                <Border Classes="skeleton-line" Width="120" Opacity="0.35"/>
+            </StackPanel>
+        </Border>
+
+    </StackPanel>
+</UserControl>

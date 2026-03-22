@@ -1,0 +1,163 @@
+{
+  "format": 1,
+  "restore": {
+    "C:\\Users\\adamj\\Documents\\GitHub\\TESTLAUNCHER3\\VoidCraftLauncher\\VoidCraftLauncher.csproj": {}
+  },
+  "projects": {
+    "C:\\Users\\adamj\\Documents\\GitHub\\TESTLAUNCHER3\\VoidCraftLauncher\\VoidCraftLauncher.csproj": {
+      "version": "2.1.1",
+      "restore": {
+        "projectUniqueName": "C:\\Users\\adamj\\Documents\\GitHub\\TESTLAUNCHER3\\VoidCraftLauncher\\VoidCraftLauncher.csproj",
+        "projectName": "VoidCraftLauncher",
+        "projectPath": "C:\\Users\\adamj\\Documents\\GitHub\\TESTLAUNCHER3\\VoidCraftLauncher\\VoidCraftLauncher.csproj",
+        "packagesPath": "C:\\Users\\adamj\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\adamj\\Documents\\GitHub\\TESTLAUNCHER3\\VoidCraftLauncher\\obj-validation\\\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\adamj\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net9.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net9.0": {
+            "targetAlias": "net9.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.100"
+      },
+      "frameworks": {
+        "net9.0": {
+          "targetAlias": "net9.0",
+          "dependencies": {
+            "AsyncImageLoader.Avalonia": {
+              "target": "Package",
+              "version": "[3.5.0, )"
+            },
+            "Avalonia": {
+              "target": "Package",
+              "version": "[11.3.10, )"
+            },
+            "Avalonia.Desktop": {
+              "target": "Package",
+              "version": "[11.3.10, )"
+            },
+            "Avalonia.Diagnostics": {
+              "target": "Package",
+              "version": "[11.3.10, )"
+            },
+            "Avalonia.Fonts.Inter": {
+              "target": "Package",
+              "version": "[11.3.10, )"
+            },
+            "Avalonia.Themes.Fluent": {
+              "target": "Package",
+              "version": "[11.3.10, )"
+            },
+            "CmlLib.Core": {
+              "target": "Package",
+              "version": "[4.0.6, )"
+            },
+            "CmlLib.Core.Installer.Forge": {
+              "target": "Package",
+              "version": "[1.1.1, )"
+            },
+            "CmlLib.Core.Installer.NeoForge": {
+              "target": "Package",
+              "version": "[4.0.0, )"
+            },
+            "CommunityToolkit.Mvvm": {
+              "target": "Package",
+              "version": "[8.4.0, )"
+            },
+            "DiscordRichPresence": {
+              "target": "Package",
+              "version": "[1.6.1.70, )"
+            },
+            "HtmlAgilityPack": {
+              "target": "Package",
+              "version": "[1.12.4, )"
+            },
+            "Microsoft.Identity.Client": {
+              "target": "Package",
+              "version": "[4.79.2, )"
+            },
+            "RestSharp": {
+              "target": "Package",
+              "version": "[113.0.0, )"
+            },
+            "System.Security.Cryptography.ProtectedData": {
+              "target": "Package",
+              "version": "[9.0.3, )"
+            },
+            "WebView.Avalonia": {
+              "target": "Package",
+              "version": "[11.0.0.1, )"
+            },
+            "XboxAuthNet.Game": {
+              "target": "Package",
+              "version": "[1.4.1, )"
+            },
+            "XboxAuthNet.Game.Msal": {
+              "target": "Package",
+              "version": "[0.1.3, )"
+            },
+            "fNbt": {
+              "target": "Package",
+              "version": "[1.0.0, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[9.0.11, 9.0.11]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Host.win-x64",
+              "version": "[9.0.11, 9.0.11]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Ref",
+              "version": "[9.0.11, 9.0.11]"
+            },
+            {
+              "name": "Microsoft.WindowsDesktop.App.Ref",
+              "version": "[9.0.11, 9.0.11]"
+            }
+          ],
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.100/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

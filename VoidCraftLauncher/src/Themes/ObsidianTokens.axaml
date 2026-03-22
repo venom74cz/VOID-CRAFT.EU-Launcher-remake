@@ -1,0 +1,88 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ╔══════════════════════════════════════════════════════════════╗ -->
+    <!-- ║              OBSIDIAN DESIGN TOKENS                          ║ -->
+    <!-- ║  Single source of truth for every colour, brush and scalar  ║ -->
+    <!-- ╚══════════════════════════════════════════════════════════════╝ -->
+
+    <!-- ===== BACKGROUND SCALE ===== -->
+    <Color x:Key="BgCanvas">#07070b</Color>
+    <Color x:Key="BgShell">#0d0d14</Color>
+    <Color x:Key="BgPanel">#141420</Color>
+    <Color x:Key="BgElevated">#1b1b29</Color>
+    <Color x:Key="BgInteractive">#242437</Color>
+
+    <!-- ===== STROKE / BORDER ===== -->
+    <Color x:Key="StrokeSoft">#2d2d42</Color>
+    <Color x:Key="StrokeStrong">#3a3a55</Color>
+
+    <!-- ===== TEXT ===== -->
+    <Color x:Key="TextPrimary">#f5f7ff</Color>
+    <Color x:Key="TextSecondary">#bfc4e6</Color>
+    <Color x:Key="TextMuted">#8086ab</Color>
+
+    <!-- ===== PRIMARY (purple) ===== -->
+    <Color x:Key="PrimaryA">#5b4ecc</Color>
+    <Color x:Key="PrimaryB">#7c6fff</Color>
+    <Color x:Key="PrimaryGlow">#a89cff</Color>
+
+    <!-- ===== ACCENT / SEMANTIC ===== -->
+    <Color x:Key="AccentTeal">#00d4aa</Color>
+    <Color x:Key="Success">#4bffb0</Color>
+    <Color x:Key="Warning">#ffb347</Color>
+    <Color x:Key="Danger">#ff4b6b</Color>
+
+    <!-- ===== NAMED BRUSHES (for direct binding) ===== -->
+    <SolidColorBrush x:Key="BgCanvasBrush"      Color="{StaticResource BgCanvas}"/>
+    <SolidColorBrush x:Key="BgShellBrush"        Color="{StaticResource BgShell}"/>
+    <SolidColorBrush x:Key="BgPanelBrush"        Color="{StaticResource BgPanel}"/>
+    <SolidColorBrush x:Key="BgElevatedBrush"     Color="{StaticResource BgElevated}"/>
+    <SolidColorBrush x:Key="BgInteractiveBrush"  Color="{StaticResource BgInteractive}"/>
+    <SolidColorBrush x:Key="StrokeSoftBrush"     Color="{StaticResource StrokeSoft}"/>
+    <SolidColorBrush x:Key="StrokeStrongBrush"   Color="{StaticResource StrokeStrong}"/>
+    <SolidColorBrush x:Key="TextPrimaryBrush"    Color="{StaticResource TextPrimary}"/>
+    <SolidColorBrush x:Key="TextSecondaryBrush"  Color="{StaticResource TextSecondary}"/>
+    <SolidColorBrush x:Key="TextMutedBrush"      Color="{StaticResource TextMuted}"/>
+    <SolidColorBrush x:Key="PrimaryABrush"       Color="{StaticResource PrimaryA}"/>
+    <SolidColorBrush x:Key="PrimaryBBrush"       Color="{StaticResource PrimaryB}"/>
+    <SolidColorBrush x:Key="PrimaryGlowBrush"    Color="{StaticResource PrimaryGlow}"/>
+    <SolidColorBrush x:Key="AccentTealBrush"     Color="{StaticResource AccentTeal}"/>
+    <SolidColorBrush x:Key="SuccessBrush"        Color="{StaticResource Success}"/>
+    <SolidColorBrush x:Key="WarningBrush"        Color="{StaticResource Warning}"/>
+    <SolidColorBrush x:Key="DangerBrush"         Color="{StaticResource Danger}"/>
+
+    <!-- ===== LEGACY COMPAT (old names still work) ===== -->
+    <SolidColorBrush x:Key="VoidPrimary"      Color="{StaticResource PrimaryB}"/>
+    <SolidColorBrush x:Key="VoidPulseDeep"    Color="{StaticResource PrimaryA}"/>
+    <SolidColorBrush x:Key="VoidPulseGlow"    Color="{StaticResource PrimaryGlow}"/>
+    <SolidColorBrush x:Key="VoidCrystalEdge"  Color="{StaticResource AccentTeal}"/>
+    <SolidColorBrush x:Key="VoidBg0"          Color="{StaticResource BgCanvas}"/>
+    <SolidColorBrush x:Key="VoidBg1"          Color="{StaticResource BgShell}"/>
+    <SolidColorBrush x:Key="VoidBg2"          Color="{StaticResource BgPanel}"/>
+    <SolidColorBrush x:Key="VoidBg3"          Color="{StaticResource BgInteractive}"/>
+    <SolidColorBrush x:Key="VoidBorder"       Color="{StaticResource StrokeSoft}"/>
+    <SolidColorBrush x:Key="VoidText"         Color="{StaticResource TextPrimary}"/>
+    <SolidColorBrush x:Key="VoidMuted"        Color="{StaticResource TextSecondary}"/>
+    <SolidColorBrush x:Key="VoidDimmed"       Color="{StaticResource TextMuted}"/>
+    <SolidColorBrush x:Key="VoidDanger"       Color="{StaticResource Danger}"/>
+    <SolidColorBrush x:Key="VoidWarning"      Color="{StaticResource Warning}"/>
+    <SolidColorBrush x:Key="VoidSuccess"      Color="{StaticResource Success}"/>
+
+    <!-- ===== RADII ===== -->
+    <CornerRadius x:Key="RadiusShell">20</CornerRadius>
+    <CornerRadius x:Key="RadiusCard">16</CornerRadius>
+    <CornerRadius x:Key="RadiusControl">12</CornerRadius>
+    <CornerRadius x:Key="RadiusSmall">8</CornerRadius>
+    <CornerRadius x:Key="RadiusPill">999</CornerRadius>
+
+    <!-- ===== SPACING (as Thickness for Margin / Padding) ===== -->
+    <Thickness x:Key="SpaceXs">4</Thickness>
+    <Thickness x:Key="SpaceSm">8</Thickness>
+    <Thickness x:Key="SpaceMd">12</Thickness>
+    <Thickness x:Key="SpaceLg">16</Thickness>
+    <Thickness x:Key="SpaceXl">24</Thickness>
+    <Thickness x:Key="Space2xl">32</Thickness>
+    <Thickness x:Key="Space3xl">48</Thickness>
+
+</ResourceDictionary>

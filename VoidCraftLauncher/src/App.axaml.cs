@@ -4,6 +4,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using VoidCraftLauncher.Services;
 using VoidCraftLauncher.ViewModels;
 using VoidCraftLauncher.Views;
 
@@ -34,10 +35,34 @@ namespace VoidCraftLauncher
         {
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
-                desktop.MainWindow = new MainWindow
+                // Initialize DI container before creating the ViewModel
+                var services = ServiceLocator.Initialize();
+                var themeEngine = new ThemeEngine(this);
+                services.Register(themeEngine);
+                var launcherService = services.Resolve<LauncherService>();
+                var localizationService = services.Resolve<LocalizationService>();
+                Models.LauncherConfig config;
+
+                try
+                {
+                    config = launcherService.LoadConfig();
+                    localizationService.ApplyConfiguredLanguage(config.PreferredLanguageCode);
+                    themeEngine.ApplyTheme(config.CurrentThemeId);
+                }
+                catch
+                {
+                    config = new Models.LauncherConfig();
+                    localizationService.ApplyConfiguredLanguage(LocalizationService.SystemLanguageCode);
+                    themeEngine.ApplyTheme("obsidian");
+                }
+
+                var mainWindow = new MainWindow
                 {
                     DataContext = new MainViewModel()
                 };
+
+                themeEngine.ApplyMotionPreference(config.MotionPreference, mainWindow);
+                desktop.MainWindow = mainWindow;
                 desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;
             }
 

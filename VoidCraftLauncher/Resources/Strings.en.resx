@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Shell.Title.Dashboard" xml:space="preserve"><value>Dashboard</value></data>
+  <data name="Shell.Title.Library" xml:space="preserve"><value>Modpack Library</value></data>
+  <data name="Shell.Title.Discover" xml:space="preserve"><value>Browse Modpacks ({0})</value></data>
+  <data name="Shell.Title.Settings" xml:space="preserve"><value>Settings</value></data>
+  <data name="Shell.Title.InstanceDetailFallback" xml:space="preserve"><value>Modpack Detail</value></data>
+  <data name="Shell.Title.SkinStudio" xml:space="preserve"><value>Skin Studio</value></data>
+  <data name="Shell.Title.Achievements" xml:space="preserve"><value>Achievement Hub</value></data>
+  <data name="Shell.Title.ServerHub" xml:space="preserve"><value>Server Hub</value></data>
+  <data name="Shell.Title.News" xml:space="preserve"><value>News</value></data>
+  <data name="Shell.Title.Streaming" xml:space="preserve"><value>Creator Studio</value></data>
+  <data name="Shell.Title.Future" xml:space="preserve"><value>Future</value></data>
+  <data name="Shell.Title.Themes" xml:space="preserve"><value>Themes</value></data>
+  <data name="Shell.Title.Localization" xml:space="preserve"><value>Language</value></data>
+  <data name="Shell.Title.Default" xml:space="preserve"><value>VoidCraft Launcher</value></data>
+  <data name="Localization.Header.Title" xml:space="preserve"><value>Language</value></data>
+  <data name="Localization.Header.Subtitle" xml:space="preserve"><value>Choose the launcher language. Changes apply immediately.</value></data>
+  <data name="Localization.Runtime.Ready" xml:space="preserve"><value>Localization is active. Translated strings update immediately after switching.</value></data>
+  <data name="Localization.Runtime.Coverage" xml:space="preserve"><value>Language switching covers all main launcher screens.</value></data>
+  <data name="Localization.Card.Runtime" xml:space="preserve"><value>Current runtime state</value></data>
+  <data name="Localization.Card.ActiveLanguage" xml:space="preserve"><value>Active language</value></data>
+  <data name="Localization.Card.SystemLanguage" xml:space="preserve"><value>System culture</value></data>
+  <data name="Localization.Card.SelectLanguage" xml:space="preserve"><value>Launcher language</value></data>
+  <data name="Localization.Card.SelectLanguageHint" xml:space="preserve"><value>The choice is saved in launcher config and applied immediately.</value></data>
+  <data name="Localization.Card.Infrastructure" xml:space="preserve"><value>Localization support</value></data>
+  <data name="Localization.Card.Infrastructure.Item1" xml:space="preserve"><value>Translation resource system</value></data>
+  <data name="Localization.Card.Infrastructure.Item2" xml:space="preserve"><value>Language switch without restart</value></data>
+  <data name="Localization.Card.Infrastructure.Item3" xml:space="preserve"><value>Language choice saved automatically</value></data>
+  <data name="Localization.Card.Infrastructure.Item4" xml:space="preserve"><value>Translated titles and data screens</value></data>
+  <data name="Localization.Card.Diagnostics" xml:space="preserve"><value>Environment diagnostics</value></data>
+  <data name="Localization.Card.DiagnosticsHint" xml:space="preserve"><value>Overview of the current language settings.</value></data>
+  <data name="Localization.Button.CopyReport" xml:space="preserve"><value>Copy report</value></data>
+  <data name="Localization.Report.Title" xml:space="preserve"><value>VOID-CRAFT Localization Report</value></data>
+  <data name="Localization.Report.Status" xml:space="preserve"><value>Status: {0}</value></data>
+  <data name="Localization.Toast.Title" xml:space="preserve"><value>Localization</value></data>
+  <data name="Localization.Toast.ClipboardUnavailable" xml:space="preserve"><value>Clipboard is not available.</value></data>
+  <data name="Localization.Toast.ReportCopied" xml:space="preserve"><value>The diagnostic report was copied to the clipboard.</value></data>
+  <data name="Localization.Toast.LanguageChanged" xml:space="preserve"><value>Launcher language switched to {0}.</value></data>
+  <data name="Achievements.Header.Title" xml:space="preserve"><value>Achievement Hub</value></data>
+  <data name="Achievements.Header.Filter" xml:space="preserve"><value>Filter</value></data>
+  <data name="Achievements.Header.Completed" xml:space="preserve"><value>{0} / {1} unlocked</value></data>
+  <data name="Achievements.Source.Title" xml:space="preserve"><value>Seasonal achievement system</value></data>
+  <data name="Achievements.Source.Body" xml:space="preserve"><value>Achievement badges are based on your quest statistics on the VOID-CRAFT server. If the backend is unavailable, the last stored snapshot is shown.</value></data>
+  <data name="Achievements.Source.Meta" xml:space="preserve"><value>Season: {0} • data from {1}</value></data>
+  <data name="Achievements.Button.Refresh" xml:space="preserve"><value>Refresh</value></data>
+  <data name="Achievements.Summary.Player" xml:space="preserve"><value>Active player</value></data>
+  <data name="Achievements.Summary.Rank" xml:space="preserve"><value>Rank</value></data>
+  <data name="Achievements.Summary.Progress" xml:space="preserve"><value>Quest progress</value></data>
+  <data name="Achievements.Summary.Team" xml:space="preserve"><value>Team</value></data>
+  <data name="Achievements.Summary.NotRanked" xml:space="preserve"><value>Unranked</value></data>
+  <data name="Achievements.Summary.NoTeam" xml:space="preserve"><value>No team</value></data>
+  <data name="Achievements.Summary.Playtime" xml:space="preserve"><value>Playtime: {0}</value></data>
+  <data name="Achievements.Summary.CompletedQuests" xml:space="preserve"><value>{0} / {1} quests</value></data>
+  <data name="Achievements.Leaderboard.Title" xml:space="preserve"><value>Season leaderboard</value></data>
+  <data name="Achievements.Leaderboard.Subtitle" xml:space="preserve"><value>Top players by current quest progress in the active season.</value></data>
+  <data name="Achievements.Empty.Title" xml:space="preserve"><value>No seasonal progress for the active account yet</value></data>
+  <data name="Achievements.Empty.Subtitle" xml:space="preserve"><value>Sign in with the same Minecraft account you use on VOID-CRAFT, or wait for the next backend snapshot.</value></data>
+  <data name="Achievements.NoData.Title" xml:space="preserve"><value>No achievement snapshot available</value></data>
+  <data name="Achievements.NoData.Subtitle" xml:space="preserve"><value>The seasonal backend did not return usable data and no cached snapshot is available.</value></data>
+  <data name="Achievements.Filter.All" xml:space="preserve"><value>All</value></data>
+  <data name="Achievements.Filter.Progress" xml:space="preserve"><value>Progress</value></data>
+  <data name="Achievements.Filter.Mastery" xml:space="preserve"><value>Mastery</value></data>
+  <data name="Achievements.Filter.Social" xml:space="preserve"><value>Social</value></data>
+  <data name="Achievements.Category.Progress" xml:space="preserve"><value>Season progress</value></data>
+  <data name="Achievements.Category.Mastery" xml:space="preserve"><value>Mastery</value></data>
+  <data name="Achievements.Category.Social" xml:space="preserve"><value>Social &amp; team</value></data>
+  <data name="Achievements.Status.Unlocked" xml:space="preserve"><value>Unlocked</value></data>
+  <data name="Achievements.Status.Locked" xml:space="preserve"><value>In progress</value></data>
+  <data name="Achievements.Status.NoPlayer" xml:space="preserve"><value>No data</value></data>
+  <data name="Achievements.Rule.FirstQuest.Title" xml:space="preserve"><value>First move</value></data>
+  <data name="Achievements.Rule.FirstQuest.Description" xml:space="preserve"><value>Complete at least 1 quest in the active season.</value></data>
+  <data name="Achievements.Rule.Quarter.Title" xml:space="preserve"><value>Quarter season</value></data>
+  <data name="Achievements.Rule.Quarter.Description" xml:space="preserve"><value>Reach 25% quest progress.</value></data>
+  <data name="Achievements.Rule.Halfway.Title" xml:space="preserve"><value>Halfway there</value></data>
+  <data name="Achievements.Rule.Halfway.Description" xml:space="preserve"><value>Reach 50% quest progress.</value></data>
+  <data name="Achievements.Rule.HighTier.Title" xml:space="preserve"><value>Void Vanguard</value></data>
+  <data name="Achievements.Rule.HighTier.Description" xml:space="preserve"><value>Reach 75% quest progress.</value></data>
+  <data name="Achievements.Rule.Completionist.Title" xml:space="preserve"><value>Completionist</value></data>
+  <data name="Achievements.Rule.Completionist.Description" xml:space="preserve"><value>Finish the season at 100%.</value></data>
+  <data name="Achievements.Rule.VoidiumRank.DescriptionHours" xml:space="preserve"><value>Spend at least {0} hours on VOID-CRAFT.</value></data>
+  <data name="Achievements.Rule.VoidiumRank.DescriptionComposite" xml:space="preserve"><value>Spend at least {0} hours and complete {1}.</value></data>
+  <data name="Achievements.Rule.VoidiumScout.Title" xml:space="preserve"><value>Voidium Scout</value></data>
+  <data name="Achievements.Rule.VoidiumScout.Description" xml:space="preserve"><value>Spend at least 10 hours on VOID-CRAFT.</value></data>
+  <data name="Achievements.Rule.VoidiumVeteran.Title" xml:space="preserve"><value>Voidium Veteran</value></data>
+  <data name="Achievements.Rule.VoidiumVeteran.Description" xml:space="preserve"><value>Spend at least 50 hours on VOID-CRAFT.</value></data>
+  <data name="Achievements.Rule.VoidiumLegend.Title" xml:space="preserve"><value>Voidium Legend</value></data>
+  <data name="Achievements.Rule.VoidiumLegend.Description" xml:space="preserve"><value>Spend at least 100 hours on VOID-CRAFT and hit a higher rank milestone.</value></data>
+  <data name="Achievements.Rule.Podium.Title" xml:space="preserve"><value>Podium finish</value></data>
+  <data name="Achievements.Rule.Podium.Description" xml:space="preserve"><value>Reach the top 3 players of the active season.</value></data>
+  <data name="Achievements.Rule.Teamplay.Title" xml:space="preserve"><value>Team player</value></data>
+  <data name="Achievements.Rule.Teamplay.Description" xml:space="preserve"><value>Have a team assigned in seasonal stats.</value></data>
+  <data name="Achievements.Rule.OnlineNow.Title" xml:space="preserve"><value>Online now</value></data>
+  <data name="Achievements.Rule.OnlineNow.Description" xml:space="preserve"><value>Appear in the latest snapshot as an online player.</value></data>
+  <data name="Achievements.Progress.Percent" xml:space="preserve"><value>{0}% / {1}%</value></data>
+  <data name="Achievements.Progress.Quests" xml:space="preserve"><value>{0} / {1} quests</value></data>
+  <data name="Achievements.Progress.Hours" xml:space="preserve"><value>{0}h / {1}h</value></data>
+  <data name="Achievements.Progress.VoidiumComposite" xml:space="preserve"><value>{0}h / {1}h • {2}/{3} conditions</value></data>
+  <data name="Achievements.Progress.Rank" xml:space="preserve"><value>{0}. place / top {1}</value></data>
+  <data name="Achievements.Progress.Team" xml:space="preserve"><value>{0}</value></data>
+  <data name="Achievements.Progress.Online" xml:space="preserve"><value>{0}</value></data>
+  <data name="Achievements.Progress.Online.Yes" xml:space="preserve"><value>Online</value></data>
+  <data name="Achievements.Progress.Online.No" xml:space="preserve"><value>Currently offline</value></data>
+  <data name="Achievements.Condition.KILL" xml:space="preserve"><value>{0} kills</value></data>
+  <data name="Achievements.Condition.VISIT" xml:space="preserve"><value>{0} biome visits</value></data>
+  <data name="Achievements.Condition.BREAK" xml:space="preserve"><value>{0} blocks broken</value></data>
+  <data name="Achievements.Condition.PLACE" xml:space="preserve"><value>{0} blocks placed</value></data>
+  <data name="Achievements.Condition.Generic" xml:space="preserve"><value>{0}x {1}</value></data>
+  <data name="Achievements.Leaderboard.TeamBadge" xml:space="preserve"><value>{0} players</value></data>
+  <data name="Common.LastUpdated" xml:space="preserve"><value>Last updated {0}</value></data>
+  <data name="Common.Unknown" xml:space="preserve"><value>Unknown</value></data>
+</root>

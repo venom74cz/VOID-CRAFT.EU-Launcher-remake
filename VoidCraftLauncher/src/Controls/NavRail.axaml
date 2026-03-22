@@ -1,0 +1,124 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:VoidCraftLauncher.ViewModels"
+             xmlns:asyncImage="clr-namespace:AsyncImageLoader;assembly=AsyncImageLoader.Avalonia"
+             x:Class="VoidCraftLauncher.Controls.NavRail"
+             x:DataType="vm:MainViewModel">
+
+    <Border Background="{DynamicResource BgShellBrush}" BorderBrush="{DynamicResource BgInteractiveBrush}" BorderThickness="0,0,1,0">
+        <Grid RowDefinitions="Auto,*,Auto">
+
+            <!-- ══ LOGO ══ -->
+            <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,18,0,8">
+                <Image Source="avares://VoidCraftLauncher/src/Assets/icon.png" Width="36" Height="36"
+                       RenderOptions.BitmapInterpolationMode="HighQuality"/>
+            </StackPanel>
+
+            <!-- ══ NAV ICONS ══ -->
+            <StackPanel Grid.Row="1" Spacing="4" Margin="8,12,8,0">
+                <!-- Dashboard -->
+                <Button Command="{Binding GoToDashboardCommand}" Classes="navIcon"
+                        Classes.active="{Binding IsDashboardView}" ToolTip.Tip="Dashboard">
+                    <TextBlock Text="{StaticResource IconDashboard}" FontSize="20" HorizontalAlignment="Center"/>
+                </Button>
+
+                <!-- Library -->
+                <Button Command="{Binding GoToHomeCommand}" Classes="navIcon"
+                        Classes.active="{Binding IsLibraryView}" ToolTip.Tip="Knihovna">
+                    <TextBlock Text="{StaticResource IconLibrary}" FontSize="20" HorizontalAlignment="Center"/>
+                </Button>
+
+                <!-- Browse / Discover -->
+                <Button Command="{Binding GoToBrowserCommand}" Classes="navIcon"
+                        Classes.active="{Binding IsDiscoverView}" ToolTip.Tip="Procházet">
+                    <TextBlock Text="{StaticResource IconDiscover}" FontSize="20" HorizontalAlignment="Center"/>
+                </Button>
+
+                <Border Height="1" Background="{DynamicResource BgInteractiveBrush}" Margin="4,8"/>
+
+                <!-- Server Hub -->
+                <Button Command="{Binding GoToServerHubCommand}" Classes="navIcon"
+                        Classes.active="{Binding IsServerHubView}" ToolTip.Tip="Server Hub">
+                    <TextBlock Text="{StaticResource IconServerHub}" FontSize="20" HorizontalAlignment="Center"/>
+                </Button>
+
+                <!-- News -->
+                <Button Command="{Binding GoToNewsCommand}" Classes="navIcon"
+                        Classes.active="{Binding IsNewsView}" ToolTip.Tip="Novinky">
+                    <TextBlock Text="{StaticResource IconNews}" FontSize="20" HorizontalAlignment="Center"/>
+                </Button>
+
+                <!-- Achievements -->
+                <Button Command="{Binding GoToAchievementsCommand}" Classes="navIcon"
+                        Classes.active="{Binding IsAchievementsView}" ToolTip.Tip="Achievementy">
+                    <TextBlock Text="{StaticResource IconAchievements}" FontSize="20" HorizontalAlignment="Center"/>
+                </Button>
+
+                <!-- Skin Studio -->
+                <Button Command="{Binding GoToSkinStudioCommand}" Classes="navIcon"
+                        Classes.active="{Binding IsSkinStudioView}" ToolTip.Tip="Skin Studio">
+                    <TextBlock Text="{StaticResource IconSkinStudio}" FontSize="20" HorizontalAlignment="Center"/>
+                </Button>
+
+                <!-- Creator Studio -->
+                <Button Command="{Binding GoToStreamingToolsCommand}" Classes="navIcon"
+                    Classes.active="{Binding IsStreamingToolsView}" ToolTip.Tip="Creator Studio">
+                    <TextBlock Text="{StaticResource IconStreaming}" FontSize="20" HorizontalAlignment="Center"/>
+                </Button>
+
+                <Button Command="{Binding GoToFutureCommand}" Classes="navIcon"
+                        Classes.active="{Binding IsFutureView}" ToolTip.Tip="Future roadmap">
+                    <TextBlock Text="{StaticResource IconFuture}" FontSize="18" HorizontalAlignment="Center"/>
+                </Button>
+
+                <Border Height="1" Background="{DynamicResource BgInteractiveBrush}" Margin="4,8"/>
+
+                <!-- Create New -->
+                <Button Command="{Binding OpenCreateProfileModalCommand}" Classes="navIcon"
+                        ToolTip.Tip="Nová instance">
+                    <TextBlock Text="{StaticResource IconAdd}" FontSize="18" HorizontalAlignment="Center"/>
+                </Button>
+            </StackPanel>
+
+            <!-- ══ BOTTOM ICONS ══ -->
+            <StackPanel Grid.Row="2" Spacing="4" Margin="8,0,8,14">
+                <!-- Refresh / Check Updates -->
+                <Button Command="{Binding CheckForUpdatesCommand}" Classes="navIcon"
+                        ToolTip.Tip="Hledat aktualizace">
+                    <TextBlock Text="{StaticResource IconUpdate}" FontSize="18" HorizontalAlignment="Center"/>
+                </Button>
+
+                <!-- Settings -->
+                <Button Command="{Binding GoToSettingsCommand}" Classes="navIcon"
+                        Classes.active="{Binding IsSettingsView}" ToolTip.Tip="Nastavení">
+                    <TextBlock Text="{StaticResource IconSettings}" FontSize="20" HorizontalAlignment="Center"/>
+                </Button>
+
+                <!-- Theme -->
+                <Button Command="{Binding GoToThemeSwitcherCommand}" Classes="navIcon"
+                        Classes.active="{Binding IsThemeSwitcherView}" ToolTip.Tip="Motivy">
+                    <TextBlock Text="{StaticResource IconTheme}" FontSize="18" HorizontalAlignment="Center"/>
+                </Button>
+
+                <!-- Language -->
+                <Button Command="{Binding GoToLocalizationCommand}" Classes="navIcon"
+                        Classes.active="{Binding IsLocalizationView}" ToolTip.Tip="Jazyk">
+                    <TextBlock Text="{StaticResource IconLanguage}" FontSize="18" HorizontalAlignment="Center"/>
+                </Button>
+
+                <!-- Login -->
+                <Button Command="{Binding OpenLoginModalCommand}" Classes="navIcon"
+                        ToolTip.Tip="{Binding UserSession.Username, FallbackValue='Přihlásit se'}">
+                    <Panel>
+                    <TextBlock Text="{StaticResource IconLogin}" FontSize="18" HorizontalAlignment="Center" IsVisible="{Binding !IsLoggedIn}"/>
+                        <Border Width="32" Height="32" CornerRadius="16" ClipToBounds="True" IsVisible="{Binding IsLoggedIn}"
+                                Background="{DynamicResource BgInteractiveBrush}">
+                            <asyncImage:AdvancedImage Width="32" Height="32"
+                                Source="{Binding PlayerSkinUrl, FallbackValue='https://crafatar.com/avatars/MHF_Steve?size=32&amp;overlay'}"/>
+                        </Border>
+                    </Panel>
+                </Button>
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>

@@ -1,55 +1,74 @@
-# IO - VOID-CRAFT Launcher
+# VOID-CRAFT Launcher
 
-Official custom Minecraft launcher for the **VOID-CRAFT** community. Built with .NET 9 (C#) and Avalonia UI.
+Oficiální vlastní Minecraft launcher pro komunitu **VOID-CRAFT**. Postavený na
+.NET 9 (C#) a Avalonia UI.
 
 ![VOID-CRAFT Logo](https://void-craft.eu/logo.png)
 
-## ✨ Funkce
-- 🚀 **Nativní Výkon**: Startuje rychleji a spotřebovává méně RAM než Electron verze.
-- 🔄 **Smart Updates**: Automatické aktualizace modpacků bez ztráty vlastních módů.
-- 🔐 **Microsoft Login**: Bezpečné přihlášení přes Microsoft účet.
-- 🏴‍☠️ **Offline Mode**: Možnost hraní pro hráče bez originálního účtu (Warez/Offline).
-- 🛠️ **Optimalizace**: Přednastavené JVM argumenty pro maximální FPS (G1GC, ZGC).
-- 📁 **Centrální Data**: Všechny instance jsou uloženy v `Dokumenty/.voidcraft`.
+> [!IMPORTANT]
+> Tento repozitář je veřejný kvůli transparentnosti a schválené spolupráci.
+> Nejde o **open-source software**.
+> Jakékoli použití, kopírování, úpravy, redistribuce, nasazení nebo odvozené
+> dílo vyžaduje předchozí písemné povolení držitele autorských práv.
+> Plné podmínky jsou v [LICENSE](LICENSE).
 
-## 📦 Instalace
+## Funkce
 
-### Windows 🪟
-1. Stáhněte si **VoidCraftLauncher_Setup.exe** z [Releases](https://github.com/venom74cz/void-craft.eu-Launcher/releases).
-2. Spusťte instalátor. Ten vytvoří zástupce na ploše a v nabídce Start.
-3. **Automatické Aktualizace**: Launcher se sám aktualizuje při každém spuštění.
+- Nativní desktopový výkon bez Electron stacku
+- Chytré aktualizace modpacku bez mazání schváleného uživatelského obsahu
+- Přihlášení přes Microsoft účet
+- Centralizovaná data launcheru v `Documents/.voidcraft`
+- Instalační a release flow pro oficiální distribuci VOID-CRAFT Launcheru
 
-### Linux 🐧
-1. Stáhněte si **VoidCraftLauncher-Linux-x64.AppImage**.
-2. Nastavte souboru právo pro spuštění (`chmod +x VoidCraftLauncher-Linux-x64.AppImage`).
-3. Spusťte.
+## Instalace
 
-*Pro pokročilé uživatele je k dispozici i čistá binárka.*
+### Windows
 
-## 🛠️ Sestavení (Build)
-Pro vývojáře, kteří chtějí launcher upravit nebo sestavit sami.
+1. Stáhni si nejnovější `VoidCraftLauncher_Setup.exe` z release sekce repa.
+2. Spusť instalátor. Vytvoří zástupce v nabídce Start a na ploše.
+3. Spusť aplikaci. Oficiální build si kontroluje aktualizace automaticky.
 
-**Požadavky:**
+### Linux
+
+1. Stáhni si nejnovější `VoidCraftLauncher-Linux-x64.AppImage`.
+2. Nastav mu právo ke spuštění pomocí `chmod +x VoidCraftLauncher-Linux-x64.AppImage`.
+3. Spusť AppImage.
+
+## Build
+
+Tahle sekce je určená jen pro schválené spolupracovníky nebo interní vývoj
+VOID-CRAFT.
+
+Požadavky:
+
 - [.NET 9.0 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
 
-**Příkazy:**
+Příkazy:
+
 ```powershell
-# Klonování repozitáře
-git clone https://github.com/venom74cz/void-craft.eu-Launcher.git
-cd void-craft.eu-Launcher
+git clone https://github.com/venom74cz/VOID-CRAFT.EU-Launcher-remake.git
+cd VOID-CRAFT.EU-Launcher-remake
 
-# Spuštění (Debug)
 dotnet run --project VoidCraftLauncher
-
-# Sestavení (Release)
 dotnet publish VoidCraftLauncher -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true
 ```
 
-## 🐛 Řešení Problémů
-Logy aplikace najdete ve složce:
-`%userprofile%\Documents\.voidcraft\launcher.log`
+## Řešení problémů
 
-Tento soubor přiložte k hlášení chyby na Discordu.
+Logy launcheru najdeš v:
 
-## 📄 Licence
-Tento projekt je určen výhradně pro potřeby serveru Void-Craft.eu.
+`%USERPROFILE%\Documents\.voidcraft\launcher.log`
+
+Tento soubor přilož při hlášení chyby přes oficiální VOID-CRAFT support kanály.
+
+## Licence
+
+Licenční model: **source-available / všechna práva vyhrazena**
+
+- Repo je veřejně viditelné, ale neposkytuje open-source práva k použití.
+- Bez předchozího písemného souhlasu nesmíš launcher ani jeho části používat,
+  kopírovat, upravovat, šířit, rebrandovat, nasazovat ani znovu využívat.
+- Závislosti třetích stran zůstávají pod svými vlastními licencemi.
+
+Závazné podmínky jsou v [LICENSE](LICENSE) a pravidla pro spolupráci v
+[CONTRIBUTING.md](CONTRIBUTING.md).

@@ -1,0 +1,217 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:VoidCraftLauncher.ViewModels"
+             xmlns:models="using:VoidCraftLauncher.Models"
+             xmlns:controls="using:VoidCraftLauncher.Controls"
+             x:Class="VoidCraftLauncher.Controls.AchievementsView"
+             x:DataType="vm:MainViewModel"
+             x:Name="AchievementsRoot">
+
+    <Grid RowDefinitions="Auto,*">
+        <Border Grid.Row="0" Background="{DynamicResource BgShellBrush}" Padding="24,16"
+                BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="0,0,0,1">
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <TextBlock Text="{StaticResource IconAchievements}" FontSize="20" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding AchievementHeaderTitle}" FontSize="18" FontWeight="ExtraBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding AchievementFilterLabel}" FontSize="12" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center"/>
+                    <ComboBox ItemsSource="{Binding AchievementFilterOptions}"
+                              SelectedItem="{Binding SelectedAchievementFilter}"
+                              MinWidth="160">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="models:SelectionOption">
+                                <TextBlock Text="{Binding Label}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </StackPanel>
+
+                <Button Grid.Column="2"
+                        Command="{Binding RefreshAchievementSnapshotCommand}"
+                        Classes="secondary"
+                        Padding="14,8"
+                        Content="{Binding AchievementRefreshLabel}"/>
+
+                <Border Grid.Column="3" Background="{DynamicResource PrimaryBBrush}" Opacity="0.12"
+                        CornerRadius="{DynamicResource RadiusPill}" Padding="14,7">
+                    <TextBlock Text="{Binding AchievementCompletionLabel}" FontSize="12" FontWeight="Bold"
+                               Foreground="{DynamicResource PrimaryBBrush}"/>
+                </Border>
+            </Grid>
+        </Border>
+
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Spacing="24" Margin="32,28,32,60" MaxWidth="900">
+                <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="{DynamicResource RadiusControl}"
+                        Padding="20" BorderBrush="{DynamicResource AccentTealBrush}" BorderThickness="1">
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
+                        <TextBlock Text="{StaticResource IconServerHub}" FontSize="24" VerticalAlignment="Center"/>
+                        <StackPanel Grid.Column="1" Spacing="4">
+                            <TextBlock Text="{Binding AchievementSourceTitle}" FontWeight="Bold" FontSize="14"
+                                       Foreground="{DynamicResource AccentTealBrush}"/>
+                            <TextBlock Text="{Binding AchievementSourceBody}" FontSize="12"
+                                       Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" LineHeight="18"/>
+                            <TextBlock Text="{Binding AchievementSourceMeta}" FontSize="11"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        </StackPanel>
+                        <Border Grid.Column="2" Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusPill}"
+                                Padding="12,6" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding AchievementSummaryProgressValue}" FontSize="12" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <Grid ColumnDefinitions="*,16,*,16,*,16,*">
+                    <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="{DynamicResource RadiusCard}"
+                            BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" Padding="20">
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="{Binding AchievementSummaryPlayerTitle}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                            <TextBlock Text="{Binding AchievementSummaryPlayerName}" FontSize="20" FontWeight="ExtraBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                            <TextBlock Text="{Binding AchievementSummaryPlayerMeta}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                            <TextBlock Text="{Binding AchievementSummaryPlaytime}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="2" Background="{DynamicResource BgPanelBrush}" CornerRadius="{DynamicResource RadiusCard}"
+                            BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" Padding="20">
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="{Binding AchievementSummaryRankTitle}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                            <TextBlock Text="{Binding AchievementSummaryRankValue}" FontSize="20" FontWeight="ExtraBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                            <TextBlock Text="{Binding AchievementLeaderboardTitle}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="4" Background="{DynamicResource BgPanelBrush}" CornerRadius="{DynamicResource RadiusCard}"
+                            BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" Padding="20">
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="{Binding AchievementSummaryProgressTitle}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                            <TextBlock Text="{Binding AchievementSummaryProgressValue}" FontSize="20" FontWeight="ExtraBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                            <ProgressBar Minimum="0" Maximum="100" Value="{Binding AchievementCurrentPlayer.QuestProgress}" Height="8" IsVisible="{Binding HasAchievementPlayer}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="6" Background="{DynamicResource BgPanelBrush}" CornerRadius="{DynamicResource RadiusCard}"
+                            BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" Padding="20">
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="{Binding AchievementSummaryTeamTitle}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                            <TextBlock Text="{Binding AchievementSummaryTeamValue}" FontSize="20" FontWeight="ExtraBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                            <TextBlock Text="{Binding AchievementSourceMeta}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="{DynamicResource RadiusCard}"
+                        BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" Padding="24">
+                    <StackPanel Spacing="14">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="{Binding AchievementLeaderboardTitle}" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                            <TextBlock Text="{Binding AchievementLeaderboardSubtitle}" FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                        </StackPanel>
+
+                        <controls:EmptyState Icon="TOP"
+                                             Title="{Binding AchievementEmptyTitle}"
+                                             Subtitle="{Binding AchievementEmptySubtitle}">
+                            <controls:EmptyState.IsVisible>
+                                <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                    <Binding Path="!HasAchievementLeaderboard"/>
+                                    <Binding Path="!IsAchievementLoading"/>
+                                </MultiBinding>
+                            </controls:EmptyState.IsVisible>
+                        </controls:EmptyState>
+
+                        <ItemsControl ItemsSource="{Binding AchievementLeaderboard}" IsVisible="{Binding HasAchievementLeaderboard}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="models:AchievementLeaderboardEntry">
+                                    <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="14,12" Margin="0,0,0,8">
+                                        <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="12">
+                                            <TextBlock Text="{Binding Rank, StringFormat='#{0}'}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource PrimaryBBrush}" VerticalAlignment="Center"/>
+                                            <StackPanel Grid.Column="1" Spacing="2">
+                                                <TextBlock Text="{Binding PrimaryLabel}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                                <TextBlock Text="{Binding SecondaryLabel}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" MaxLines="2"/>
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="2" Text="{Binding QuestProgress, StringFormat='{}{0:0.##}%'}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center"/>
+                                            <Border Grid.Column="3" Background="{DynamicResource BgInteractiveBrush}" CornerRadius="{DynamicResource RadiusPill}" Padding="10,4" VerticalAlignment="Center">
+                                                <StackPanel Spacing="1">
+                                                    <TextBlock Text="{Binding BadgeLabel}" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center"/>
+                                                    <TextBlock Text="{Binding CompletedLabel}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" HorizontalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Border>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <controls:LoadingSkeleton IsVisible="{Binding IsAchievementLoading}"/>
+
+                <controls:EmptyState Icon="○"
+                                     Title="{Binding AchievementEmptyTitle}"
+                                     Subtitle="{Binding AchievementEmptySubtitle}">
+                    <controls:EmptyState.IsVisible>
+                        <MultiBinding Converter="{x:Static BoolConverters.And}">
+                            <Binding Path="!HasAchievementPlayer"/>
+                            <Binding Path="!IsAchievementLoading"/>
+                        </MultiBinding>
+                    </controls:EmptyState.IsVisible>
+                </controls:EmptyState>
+
+                <ItemsControl ItemsSource="{Binding FilteredAchievementGroups}" IsVisible="{Binding HasAchievementGroups}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="models:AchievementCategoryGroup">
+                            <StackPanel Spacing="12" Margin="0,0,0,12">
+                                <TextBlock Text="{Binding Title}" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                <ItemsControl ItemsSource="{Binding Items}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel Orientation="Horizontal"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="models:AchievementBadgeCard">
+                                            <Border Background="{Binding CardBackgroundBrush}"
+                                                    BorderBrush="{Binding CardBorderBrush}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="{DynamicResource RadiusCard}"
+                                                    Padding="18"
+                                                    Margin="0,0,16,16"
+                                                    Width="272">
+                                                <StackPanel Spacing="12">
+                                                    <Grid ColumnDefinitions="48,*,Auto" ColumnSpacing="12">
+                                                        <Border Width="44" Height="44" CornerRadius="{DynamicResource RadiusSmall}"
+                                                                Background="{Binding IconBackgroundBrush}">
+                                                            <TextBlock Text="{Binding Icon}" FontSize="16" FontWeight="Bold"
+                                                                       Foreground="{Binding AccentBrush}"
+                                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                        <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                                                            <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                                                            <TextBlock Text="{Binding Description}" FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" LineHeight="18"/>
+                                                        </StackPanel>
+                                                        <Border Grid.Column="2" Background="{Binding StatusBackgroundBrush}"
+                                                                CornerRadius="{DynamicResource RadiusPill}" Padding="10,5" VerticalAlignment="Top">
+                                                            <TextBlock Text="{Binding StatusLabel}" FontSize="10" FontWeight="SemiBold"
+                                                                       Foreground="{Binding StatusForegroundBrush}"/>
+                                                        </Border>
+                                                    </Grid>
+                                                    <ProgressBar Minimum="0" Maximum="{Binding ProgressMaximum}" Value="{Binding ProgressValue}" Height="8"/>
+                                                    <TextBlock Text="{Binding ProgressLabel}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

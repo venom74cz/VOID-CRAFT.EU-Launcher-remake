@@ -1,0 +1,212 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:VoidCraftLauncher.ViewModels"
+             xmlns:asyncImage="clr-namespace:AsyncImageLoader;assembly=AsyncImageLoader.Avalonia"
+             x:Class="VoidCraftLauncher.Controls.ContextDock"
+             x:DataType="vm:MainViewModel">
+
+    <Border Background="{DynamicResource BgShellBrush}" BorderBrush="{DynamicResource BgInteractiveBrush}" BorderThickness="1,0,0,0">
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Spacing="0">
+
+                <!-- ══ Playing As ══ -->
+                <Border Padding="18,18,18,14" BorderBrush="{DynamicResource BgInteractiveBrush}" BorderThickness="0,0,0,1">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="Hraje jako" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource TextMutedBrush}" LetterSpacing="0.5"/>
+
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                            <Border Width="40" Height="40" CornerRadius="8" ClipToBounds="True" Background="{DynamicResource BgInteractiveBrush}">
+                                <asyncImage:AdvancedImage Width="40" Height="40"
+                                    Source="{Binding PlayerSkinUrl, FallbackValue='https://crafatar.com/avatars/MHF_Steve?size=40&amp;overlay'}"/>
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="12,0,0,0">
+                                <TextBlock Text="{Binding UserSession.Username, FallbackValue='Guest'}" FontWeight="Bold" FontSize="14"
+                                           Foreground="{DynamicResource TextPrimaryBrush}" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Text="Minecraft účet" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" IsVisible="{Binding IsLoggedIn}"/>
+                                <TextBlock Text="Nepřihlášen" FontSize="10" Foreground="{DynamicResource DangerBrush}" IsVisible="{Binding !IsLoggedIn}"/>
+                            </StackPanel>
+                            <Button Grid.Column="2" Command="{Binding ToggleAccountPickerCommand}"
+                                    Background="Transparent" Padding="6" VerticalAlignment="Center" Cursor="Hand" CornerRadius="4">
+                                <TextBlock Text="▼" FontSize="9" Foreground="{DynamicResource TextMutedBrush}"/>
+                            </Button>
+                        </Grid>
+
+                        <!-- Account Picker Dropdown -->
+                        <StackPanel IsVisible="{Binding IsAccountPickerOpen}" Spacing="4">
+                            <Border Height="1" Background="{DynamicResource BgInteractiveBrush}" Margin="0,2,0,4"/>
+                            <ItemsControl ItemsSource="{Binding Accounts}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:CompileBindings="False">
+                                        <Border Background="{DynamicResource BgInteractiveBrush}" CornerRadius="6" Padding="8,6" Margin="0,1" Cursor="Hand">
+                                            <Grid ColumnDefinitions="*,Auto,Auto">
+                                                <TextBlock Text="{Binding DisplayName}" FontSize="12" Foreground="{DynamicResource TextPrimaryBrush}"
+                                                           VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                <Button Grid.Column="1"
+                                                        Command="{Binding DataContext.SwitchAccountCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        CommandParameter="{Binding}"
+                                                        Background="Transparent" Foreground="{DynamicResource PrimaryBBrush}" FontSize="11"
+                                                        Padding="6,2" CornerRadius="4" Cursor="Hand">
+                                                    <TextBlock Text="{StaticResource IconSuccess}"/>
+                                                </Button>
+                                                <Button Grid.Column="2"
+                                                        Command="{Binding DataContext.RemoveAccountCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        CommandParameter="{Binding}"
+                                                        Background="Transparent" Foreground="{DynamicResource DangerBrush}" FontSize="11"
+                                                        Padding="4,2" CornerRadius="4" Cursor="Hand">
+                                                    <TextBlock Text="{StaticResource IconClose}"/>
+                                                </Button>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <Button Command="{Binding OpenLoginModalCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                                    Background="{DynamicResource BgInteractiveBrush}" Foreground="{DynamicResource TextSecondaryBrush}"
+                                    FontSize="11" Padding="8,6" CornerRadius="6" Cursor="Hand">
+                                <TextBlock Text="+ Přidat účet"/>
+                            </Button>
+                        </StackPanel>
+
+                        <!-- Quick Login/Logout -->
+                        <StackPanel IsVisible="{Binding !IsAccountPickerOpen}" Spacing="4">
+                            <Button Content="Přihlásit se" Command="{Binding OpenLoginModalCommand}" IsVisible="{Binding !IsLoggedIn}"
+                                    Classes="primary" FontSize="12" Padding="0,8" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                            <Button Content="Odhlásit" Command="{Binding LogoutCommand}" IsVisible="{Binding IsLoggedIn}"
+                                    Classes="ghost" FontSize="11" Padding="0,4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                                    Foreground="{DynamicResource DangerBrush}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- ══ Server Status ══ -->
+                <Border Padding="18,14" BorderBrush="{DynamicResource BgInteractiveBrush}" BorderThickness="0,0,0,1">
+                    <StackPanel Spacing="10">
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                <Panel VerticalAlignment="Center">
+                                    <Border Width="8" Height="8" CornerRadius="4" Background="{DynamicResource PrimaryBBrush}" IsVisible="{Binding IsServerOnline}">
+                                        <Border.Effect><DropShadowEffect BlurRadius="6" Color="#7c6fff" Opacity="0.6"/></Border.Effect>
+                                    </Border>
+                                    <Border Width="8" Height="8" CornerRadius="4" Background="{DynamicResource DangerBrush}" IsVisible="{Binding !IsServerOnline}"/>
+                                </Panel>
+                                <TextBlock Text="VOID-CRAFT.EU" FontWeight="Bold" Foreground="{DynamicResource PrimaryBBrush}" FontSize="11"
+                                           IsVisible="{Binding IsServerOnline}" VerticalAlignment="Center"/>
+                                <TextBlock Text="OFFLINE" FontWeight="Bold" Foreground="{DynamicResource DangerBrush}" FontSize="11"
+                                           IsVisible="{Binding !IsServerOnline}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <Button Grid.Column="2" Command="{Binding CopyIpCommand}" Background="Transparent"
+                                    Foreground="{DynamicResource TextMutedBrush}" FontSize="10" Padding="4,2" CornerRadius="4" Cursor="Hand"
+                                    ToolTip.Tip="Zkopírovat IP">
+                                <TextBlock Text="{StaticResource IconCopy}" FontSize="11"/>
+                            </Button>
+                        </Grid>
+                        <TextBlock Text="{Binding ServerMotd}" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11"
+                                   TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <ProgressBar Value="{Binding ServerPlayerCount}" Maximum="{Binding ServerMaxPlayers}" Height="4" CornerRadius="2"/>
+                            <TextBlock Grid.Column="1" Foreground="{DynamicResource TextMutedBrush}" FontSize="10" Margin="8,0,0,0" VerticalAlignment="Center">
+                                <TextBlock.Text>
+                                    <MultiBinding StringFormat="{}{0}/{1}">
+                                        <Binding Path="ServerPlayerCount"/>
+                                        <Binding Path="ServerMaxPlayers"/>
+                                    </MultiBinding>
+                                </TextBlock.Text>
+                            </TextBlock>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- ══ Community / Links ══ -->
+                <Border Padding="18,14" BorderBrush="{DynamicResource BgInteractiveBrush}" BorderThickness="0,0,0,1">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Komunita" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource TextMutedBrush}" LetterSpacing="0.5" Margin="0,0,0,4"/>
+
+                        <Button Command="{Binding OpenUrlCommand}" CommandParameter="https://void-craft.eu/"
+                                Background="Transparent" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="12" Padding="8,6" CornerRadius="6"
+                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Cursor="Hand">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="{StaticResource IconOpen}" FontSize="13" VerticalAlignment="Center"/>
+                                <TextBlock Text="Void-Craft Web" FontSize="12" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding OpenUrlCommand}" CommandParameter="https://discord.gg/cFvCaC2KDh"
+                                Background="Transparent" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="12" Padding="8,6" CornerRadius="6"
+                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Cursor="Hand">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="{StaticResource IconDiscord}" FontSize="13" VerticalAlignment="Center"/>
+                                <TextBlock Text="Discord" FontSize="12" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding OpenUrlCommand}" CommandParameter="https://www.youtube.com/@void-craft-eu"
+                                Background="Transparent" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="12" Padding="8,6" CornerRadius="6"
+                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Cursor="Hand">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="{StaticResource IconYouTube}" FontSize="13" VerticalAlignment="Center"/>
+                                <TextBlock Text="YouTube" FontSize="12" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Border>
+
+                <!-- ══ News Section ══ -->
+                <Border Padding="18,14">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Novinky" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource TextMutedBrush}" LetterSpacing="0.5" Margin="0,0,0,4"/>
+
+                        <!-- Current version card -->
+                        <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="10" Padding="14"
+                                BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="VOID-CRAFT Launcher" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="13"/>
+                                <TextBlock Text="{Binding Greeting}" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11"
+                                           TextWrapping="Wrap" LineHeight="16"/>
+                                <TextBlock Text="{Binding AppVersion}" Foreground="{DynamicResource TextMutedBrush}" FontSize="10"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Changelog entries from CHANGELOG.md -->
+                        <ItemsControl ItemsSource="{Binding ChangelogEntries}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:CompileBindings="False">
+                                    <Button Command="{Binding ToggleExpandCommand}" Background="Transparent" BorderThickness="0" Padding="0"
+                                            Margin="0,0,0,4" Cursor="Hand" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                                        <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="10" Padding="12"
+                                                BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                                            <Border.Styles>
+                                                <Style Selector="Border:pointerover">
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource StrokeStrongBrush}"/>
+                                                </Style>
+                                            </Border.Styles>
+                                            <StackPanel Spacing="6">
+                                                <Grid ColumnDefinitions="*,Auto">
+                                                    <TextBlock Text="{Binding Version, StringFormat='v{0}'}" FontWeight="Bold"
+                                                               Foreground="{DynamicResource PrimaryBBrush}" FontSize="13"/>
+                                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding Date}" Foreground="{DynamicResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="▼" Foreground="{DynamicResource TextMutedBrush}" FontSize="8" VerticalAlignment="Center"
+                                                                   IsVisible="{Binding !IsExpanded}"/>
+                                                        <TextBlock Text="▲" Foreground="{DynamicResource TextMutedBrush}" FontSize="8" VerticalAlignment="Center"
+                                                                   IsVisible="{Binding IsExpanded}"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                                <TextBlock Text="{Binding Title}" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="11"
+                                                           FontWeight="SemiBold" TextWrapping="Wrap" IsVisible="{Binding Title.Length}"/>
+                                                <!-- Collapsed: summary -->
+                                                <TextBlock Text="{Binding Summary}" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="10"
+                                                           TextWrapping="Wrap" LineHeight="14" MaxLines="4" TextTrimming="CharacterEllipsis"
+                                                           IsVisible="{Binding !IsExpanded}"/>
+                                                <!-- Expanded: full text -->
+                                                <TextBlock Text="{Binding FullText}" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="10"
+                                                           TextWrapping="Wrap" LineHeight="14" IsVisible="{Binding IsExpanded}"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </Border>
+</UserControl>

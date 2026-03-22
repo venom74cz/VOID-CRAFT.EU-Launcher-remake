@@ -2,6 +2,31 @@
 
 Všechny důležité změny v projektu jsou dokumentovány v tomto souboru.
 
+## [3.0.0] - 2026-03-22
+
+### ✨ Kompletní redesign launcheru
+
+### Přidáno
+- **Nový shell launcheru**: Ikonový `NavRail`, nový `Dashboard`, `Context Dock` a page transitions místo starého monolitického layoutu.
+- **Nové hlavní surfaces**: `Server Hub`, `Achievement Hub`, `Skin Studio`, `Creator Studio`, `Themes`, `Localization` a `Future` roadmap stránka načítaná živě z GitHub `future.md`.
+- **Instance Workspace**: Detail instance je nově rozdělený na produkční workspace s galerií, performance, snapshoty, export/import flow a server bindings.
+- **Community content feed**: `Novinky` a dashboard sjednocují Discord, YouTube a official Minecraft feed do jednoho launcherového surface.
+- **Prémiové overlay flow**: Nový login sheet, create profile wizard, backup prompt, crash drawer a toast host.
+
+### Změněno
+- **Creator Studio**: Původní dekorativní streaming panel se změnil na reálný instance workbench s editací souborů a ukládáním zpět do instance.
+- **Server Quick Connect**: Flow má nově launch feedback, přípravu `servers.dat`, legacy `--server/--port` parametry i quick-play kompatibilní argumenty.
+- **Achievement Hub**: Achievementy jsou sezonně strukturované, napojené na backend snapshot a `Podium finish` už patří do sezonního progresu.
+- **Theme a localization runtime**: Motivy i jazyk se přepínají okamžitě bez restartu a běží nad novým token/resource systémem.
+
+### Technicky
+- **Architektura**: `MainViewModel` je rozdělený do samostatných oblastí, přidaný `NavigationService`, DI/service composition, structured logging a secure storage vrstva.
+- **UX systém**: Nasazené loading skeletony, empty states, nový icon system, motion preference režimy a sjednocené produkční copy napříč launcherem.
+- **Social feed resilience**: Feed má cache, timeout izolaci per zdroj a fallback na direct `Minecraft.net` články při problému backendu.
+
+### Opraveno
+- **Build blocker**: SDK už nebere validační `obj-*` a `bin-*` artefakty do hlavního buildu, takže `Debug` i `Release` znovu čistě procházejí.
+
 ## [2.1.1] - 2026-03-20
 
 ### 🧹 Vyčištění UI

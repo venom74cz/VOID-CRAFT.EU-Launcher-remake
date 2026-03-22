@@ -19,6 +19,7 @@ namespace VoidCraftLauncher.Services
         private readonly string _basePath;
         private readonly string _sharedPath;
         private readonly string _instancesPath;
+        private readonly string _backupsPath;
         private readonly MinecraftPath _mcPath;
         private Process _gameProcess;
         private readonly string _configPath;
@@ -31,11 +32,13 @@ namespace VoidCraftLauncher.Services
             _basePath = Path.Combine(documents, ".voidcraft");
             _sharedPath = Path.Combine(_basePath, "shared");
             _instancesPath = Path.Combine(_basePath, "instances");
+            _backupsPath = Path.Combine(_basePath, "backups");
             _configPath = Path.Combine(_basePath, "launcher_config.json");
             
             // Create folder structure
             Directory.CreateDirectory(_sharedPath);
             Directory.CreateDirectory(_instancesPath);
+            Directory.CreateDirectory(_backupsPath);
             
             // MinecraftPath points to shared folder - assets, versions, libraries are shared
             _mcPath = new MinecraftPath(_sharedPath);
@@ -46,6 +49,7 @@ namespace VoidCraftLauncher.Services
         public string BasePath => _basePath;
         public string SharedPath => _sharedPath;
         public string InstancesPath => _instancesPath;
+        public string BackupsPath => _backupsPath;
 
         public LauncherConfig LoadConfig()
         {
@@ -92,6 +96,7 @@ namespace VoidCraftLauncher.Services
             string gameDirectory,
             string modLoaderId,
             string[]? jvmArguments,
+            string[]? gameArguments,
             int? requiredJavaVersion,
             Action<string> statusCallback,
             Action<double> progressCallback,
@@ -282,6 +287,14 @@ namespace VoidCraftLauncher.Services
                 throw;
             }
 
+            if (gameArguments != null && gameArguments.Length > 0)
+            {
+                var appendedArguments = string.Join(" ", gameArguments.Select(QuoteArgument));
+                _gameProcess.StartInfo.Arguments = string.IsNullOrWhiteSpace(_gameProcess.StartInfo.Arguments)
+                    ? appendedArguments
+                    : $"{_gameProcess.StartInfo.Arguments} {appendedArguments}";
+            }
+
             statusCallback("Spouštím hru...");
             LogService.Log($"[Launch] Process building complete. StartInfo: {_gameProcess.StartInfo.FileName} {_gameProcess.StartInfo.Arguments}");
             progressCallback(100);
@@ -377,6 +390,12 @@ namespace VoidCraftLauncher.Services
             if (OperatingSystem.IsLinux()) return "linux-x64";
             if (OperatingSystem.IsMacOS()) return "mac-os-arm64"; // Defaulting to arm64 for modern macs
             return "windows-x64"; // Default fallback
+        }
+
+        private static string QuoteArgument(string argument)
+        {
+            if (string.IsNullOrWhiteSpace(argument)) return "\"\"";
+            return argument.Contains(' ') ? $"\"{argument.Replace("\"", "\\\"")}\"" : argument;
         }
     }
 }

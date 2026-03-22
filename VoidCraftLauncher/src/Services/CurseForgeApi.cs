@@ -139,6 +139,22 @@ namespace VoidCraftLauncher.Services
             return await response.Content.ReadAsStringAsync();
         }
 
+        public async Task<string?> GetFileDownloadUrlAsync(int modId, int fileId)
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync($"v1/mods/{modId}/files/{fileId}/download-url");
+                if (response.IsSuccessStatusCode)
+                {
+                    var json = await response.Content.ReadAsStringAsync();
+                    var node = System.Text.Json.Nodes.JsonNode.Parse(json);
+                    return node?["data"]?.ToString();
+                }
+            }
+            catch { }
+            return null;
+        }
+
         public async Task<string> GetFilesAsync(IEnumerable<int> fileIds)
         {
             var json = JsonSerializer.Serialize(new { fileIds = fileIds });

@@ -1,5 +1,35 @@
 # Changelog
 
+## 3.0.0 - 2026-03-22
+
+### Kompletní redesign launcheru
+- Úplně nový shell launcheru: ikonový `NavRail`, produkční `Dashboard`, živý `Context Dock`, page transitions a sjednocený design systém místo původního monolitického layoutu.
+- Přepracované hlavní surfaces: modernější `Knihovna`, `Discover`, detail instance jako `Instance Workspace` a obsahově oddělený home/dashboard.
+- Nové produktové moduly: `Server Hub`, `Achievement Hub`, `Skin Studio`, `Creator Studio`, `Themes`, `Localization` a nová `Future` stránka načítaná živě z GitHub `future.md`.
+
+### Komunitní a content vrstva
+- `Server Hub` s pinned VOID-CRAFT serverem, custom/community servery, vazbou server → modpack, quick connect flow a viditelným launch feedbackem.
+- `Novinky` a dashboard feed sjednocené přes Discord, YouTube a official Minecraft článek, včetně cache, timeout izolace a fallbacku při výpadku zdroje.
+- `Achievement Hub` napojený na sezonní backend snapshoty s leaderboardem, progres badge a lokální cache vrstvou pro fallback scénáře.
+- `Skin Studio` navázané na identitu účtu, UUID, veřejnou historii skinů a account tooling místo placeholder surface.
+
+### Instance workflow a release tooling
+- `Instance Workspace` teď řeší přehled, obsah, galerii, performance, uložené snapshoty, export/import a server bindings v jednom produkčním flow.
+- `Creator Studio` se změnilo z dekorativního panelu na instance workbench s výběrem upravitelných souborů, editorem obsahu a uložením zpět do instance.
+- Přidané prémiové overlay flow: nový login sheet, create profile wizard, backup prompt, crash drawer a toast host.
+- Quick Connect připravuje auto-connect přes `servers.dat`, legacy server argumenty a kompatibilní quick-play parametry.
+
+### UX, theming a architektura
+- Runtime `Theme Engine` s více built-in motivy, motion preference režimy a rozšířitelným token systémem.
+- Runtime CZ/EN lokalizace přes `.resx` zdroje a okamžité přepnutí bez restartu.
+- Nasazené loading skeletony, empty states, nový icon system, lepší responsive layout a konzistentní produkční copy napříč launcherem.
+- Rozdělení `MainViewModel` do samostatných oblastí, zavedení `NavigationService`, DI/service composition, structured logging a secure storage základu.
+
+### Opravy před veřejným releasem
+- Opraven build blocker v launcher projektu: SDK už nekompiluje validační `obj-*` a `bin-*` artefakty do hlavního buildu.
+- Znovu ověřené `Debug` i `Release` buildy po redesign a runtime fix passu.
+- `Podium finish` přesunuto do sezonního progresu, aby achievement surface odpovídal reálnému produktovému významu.
+
 ## 2.1.1 - 2026-03-20
 
 ### 🧹 Vyčištění UI

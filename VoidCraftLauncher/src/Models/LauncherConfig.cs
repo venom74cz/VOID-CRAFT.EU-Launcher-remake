@@ -34,6 +34,18 @@ public partial class LauncherConfig : ObservableObject
     // Multi-account support
     public List<AccountProfile> Accounts { get; set; } = new();
 
+    // User-defined custom servers for Server Hub
+    public List<ServerInfo> CustomServers { get; set; } = new();
+
+    [ObservableProperty]
+    private string _currentThemeId = "obsidian";
+
+    [ObservableProperty]
+    private string _preferredLanguageCode = "system";
+
+    [ObservableProperty]
+    private string _motionPreference = "system";
+
     [ObservableProperty]
     private string? _activeAccountId;
 }

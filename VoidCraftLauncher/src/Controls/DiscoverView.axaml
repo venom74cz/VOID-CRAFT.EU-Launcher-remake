@@ -1,0 +1,233 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:VoidCraftLauncher.ViewModels"
+             xmlns:controls="using:VoidCraftLauncher.Controls"
+             xmlns:converters="using:VoidCraftLauncher.Converters"
+             xmlns:asyncImage="clr-namespace:AsyncImageLoader;assembly=AsyncImageLoader.Avalonia"
+             x:Class="VoidCraftLauncher.Controls.DiscoverView"
+             x:DataType="vm:MainViewModel"
+             x:Name="DiscoverRoot">
+
+    <UserControl.Resources>
+        <converters:ObjectEqualityConverter x:Key="ObjectEqualityConverter"/>
+    </UserControl.Resources>
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Top nav bar -->
+        <Border Grid.Row="0" Background="{DynamicResource BgShellBrush}"
+                BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="0,0,0,1">
+            <StackPanel>
+                <!-- Navigation bar -->
+                <Grid Margin="24,14,24,0" ColumnDefinitions="Auto,*">
+                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <TextBlock Text="←" FontSize="18" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="→" FontSize="18" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,12,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Procházet obsah" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Search Bar -->
+                <Grid Margin="24,14,24,14" ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                    <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusControl}"
+                            BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                            <TextBlock Text="{StaticResource IconSearch}" VerticalAlignment="Center" Margin="14,0,8,0" Foreground="{DynamicResource TextMutedBrush}" FontSize="15"/>
+                            <TextBox Grid.Column="1" Text="{Binding BrowserSearchQuery}" Watermark="Hledat modpacky..."
+                                     BorderThickness="0" Background="Transparent" FontSize="13" Padding="4,10">
+                                <TextBox.KeyBindings>
+                                    <KeyBinding Gesture="Enter" Command="{Binding SearchModpacksCommand}"/>
+                                </TextBox.KeyBindings>
+                            </TextBox>
+                            <Button Grid.Column="2" Command="{Binding SearchModpacksCommand}" IsEnabled="{Binding !IsSearching}"
+                                    Background="Transparent" Foreground="{DynamicResource TextMutedBrush}" FontSize="16" Padding="12,0" Cursor="Hand">
+                                <TextBlock Text="↵"/>
+                            </Button>
+                        </Grid>
+                    </Border>
+
+                    <!-- Source Toggle (CurseForge / Modrinth) -->
+                    <Border Grid.Column="1" Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusControl}"
+                            Padding="4" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <Button Command="{Binding SetBrowserSourceCommand}" CommandParameter="CurseForge"
+                                    CornerRadius="{DynamicResource RadiusSmall}" Padding="14,8" Cursor="Hand">
+                                <Classes.active>
+                                    <MultiBinding Converter="{StaticResource ObjectEqualityConverter}">
+                                        <Binding Path="BrowserSource"/>
+                                        <Binding><Binding.Source>CurseForge</Binding.Source></Binding>
+                                    </MultiBinding>
+                                </Classes.active>
+                                <Button.Styles>
+                                    <Style Selector="Button"><Setter Property="Background" Value="Transparent"/><Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/></Style>
+                                    <Style Selector="Button.active"><Setter Property="Background" Value="#F16436"/><Setter Property="Foreground" Value="White"/></Style>
+                                </Button.Styles>
+                                <TextBlock Text="CurseForge" FontWeight="Bold" FontSize="12"/>
+                            </Button>
+                            <Button Command="{Binding SetBrowserSourceCommand}" CommandParameter="Modrinth"
+                                    CornerRadius="{DynamicResource RadiusSmall}" Padding="14,8" Cursor="Hand">
+                                <Classes.active>
+                                    <MultiBinding Converter="{StaticResource ObjectEqualityConverter}">
+                                        <Binding Path="BrowserSource"/>
+                                        <Binding><Binding.Source>Modrinth</Binding.Source></Binding>
+                                    </MultiBinding>
+                                </Classes.active>
+                                <Button.Styles>
+                                    <Style Selector="Button"><Setter Property="Background" Value="Transparent"/><Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/></Style>
+                                    <Style Selector="Button.active"><Setter Property="Background" Value="{DynamicResource PrimaryBBrush}"/><Setter Property="Foreground" Value="{DynamicResource BgCanvasBrush}"/></Style>
+                                </Button.Styles>
+                                <TextBlock Text="Modrinth" FontWeight="Bold" FontSize="12"/>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!-- Sort / View controls row -->
+                <Grid Margin="24,0,24,12" ColumnDefinitions="Auto,Auto,*,Auto">
+                    <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}"
+                            Padding="10,6" Margin="0,0,8,0" Cursor="Hand"
+                            BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="Řadit:" FontSize="12" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="Relevance" FontSize="12" Foreground="{DynamicResource TextPrimaryBrush}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            <TextBlock Text="▼" FontSize="8" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="1" Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}"
+                            Padding="10,6" Cursor="Hand"
+                            BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="Zobrazit:" FontSize="12" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="20" FontSize="12" Foreground="{DynamicResource TextPrimaryBrush}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            <TextBlock Text="▼" FontSize="8" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Pagination -->
+                    <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                        <Border Background="{DynamicResource PrimaryBBrush}" CornerRadius="14" Width="28" Height="28" Cursor="Hand">
+                            <TextBlock Text="1" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource BgCanvasBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="14" Width="28" Height="28" IsVisible="{Binding HasMoreResults}" Cursor="Hand">
+                            <TextBlock Text="2" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="—" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center" IsVisible="{Binding HasMoreResults}"/>
+                        <Button Command="{Binding LoadMoreModpacksCommand}" IsVisible="{Binding HasMoreResults}"
+                                Background="{DynamicResource BgElevatedBrush}" CornerRadius="14"
+                                Width="28" Height="28" Padding="0" Cursor="Hand" HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+                            <TextBlock Text="›" FontSize="16" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <!-- Results List -->
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled">
+            <Border Padding="24,16,24,60">
+                <StackPanel>
+                    <controls:LoadingSkeleton Margin="0,0,0,16">
+                        <controls:LoadingSkeleton.IsVisible>
+                            <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                <Binding Path="IsSearching"/>
+                                <Binding Path="!BrowserResults.Count"/>
+                            </MultiBinding>
+                        </controls:LoadingSkeleton.IsVisible>
+                    </controls:LoadingSkeleton>
+
+                    <ProgressBar IsIndeterminate="True" Margin="0,0,0,16">
+                        <ProgressBar.IsVisible>
+                            <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                <Binding Path="IsSearching"/>
+                                <Binding Path="!!BrowserResults.Count"/>
+                            </MultiBinding>
+                        </ProgressBar.IsVisible>
+                    </ProgressBar>
+
+                    <!-- Empty State -->
+                    <controls:EmptyState Icon="{StaticResource IconSearch}"
+                                         Title="Žádné výsledky"
+                                         Subtitle="Zkuste jiný hledaný výraz"
+                                         Margin="0,20,0,0">
+                        <controls:EmptyState.IsVisible>
+                            <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                <Binding Path="!IsSearching"/>
+                                <Binding Path="!BrowserResults.Count"/>
+                            </MultiBinding>
+                        </controls:EmptyState.IsVisible>
+                    </controls:EmptyState>
+
+                    <!-- Result cards -->
+                    <ItemsControl ItemsSource="{Binding BrowserResults}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:CompileBindings="False">
+                                <Border Background="{DynamicResource BgShellBrush}" BorderBrush="{DynamicResource StrokeSoftBrush}"
+                                        BorderThickness="1" CornerRadius="{DynamicResource RadiusControl}" Padding="16" Margin="0,0,0,10">
+                                    <Border.Styles>
+                                        <Style Selector="Border:pointerover">
+                                            <Setter Property="BorderBrush" Value="{DynamicResource StrokeStrongBrush}"/>
+                                            <Setter Property="Background" Value="{DynamicResource BgElevatedBrush}"/>
+                                        </Style>
+                                    </Border.Styles>
+                                    <Grid ColumnDefinitions="72,*,Auto" ColumnSpacing="16">
+                                        <!-- Icon -->
+                                        <Border Width="72" Height="72" CornerRadius="{DynamicResource RadiusControl}" ClipToBounds="True"
+                                                Background="{DynamicResource BgInteractiveBrush}" VerticalAlignment="Top">
+                                            <asyncImage:AdvancedImage Source="{Binding IconUrl}" Stretch="UniformToFill"/>
+                                        </Border>
+
+                                        <!-- Info -->
+                                        <StackPanel Grid.Column="1" Spacing="4">
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <TextBlock Text="{Binding Name}" FontWeight="ExtraBold" FontSize="16" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                                <TextBlock Text="{Binding Author, StringFormat='od {0}'}" FontSize="12" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,2,0,0"/>
+                                            </StackPanel>
+                                            <TextBlock Text="{Binding Description}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxLines="2" LineHeight="17"/>
+
+                                            <!-- Tags -->
+                                            <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,4,0,0">
+                                                <Border CornerRadius="4" Padding="8,3" Background="{DynamicResource BgElevatedBrush}"
+                                                        BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                                                    <TextBlock Text="{Binding Source}" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}" FontWeight="SemiBold"/>
+                                                </Border>
+                                                <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                                    <TextBlock Text="{StaticResource IconDownload}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                                    <TextBlock Text="{Binding DownloadCount, StringFormat='{}{0:N0}'}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </StackPanel>
+
+                                        <!-- Install Button -->
+                                        <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="4">
+                                            <Button Command="{Binding $parent[Window].DataContext.InstallModpackFromBrowserCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    IsVisible="{Binding !IsInstalled}"
+                                                    Classes="primary" FontSize="12" Padding="16,10" CornerRadius="{DynamicResource RadiusSmall}" Cursor="Hand">
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                    <TextBlock Text="{StaticResource IconDownload}" FontSize="12"/>
+                                                    <TextBlock Text="Instalovat" FontWeight="Bold"/>
+                                                </StackPanel>
+                                            </Button>
+                                            <Button IsVisible="{Binding IsInstalled}" IsEnabled="False"
+                                                    Background="{DynamicResource BgInteractiveBrush}" Foreground="{DynamicResource PrimaryBBrush}"
+                                                    FontWeight="Bold" FontSize="12" Padding="16,10" CornerRadius="{DynamicResource RadiusSmall}">
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                    <TextBlock Text="{StaticResource IconSuccess}"/>
+                                                    <TextBlock Text="Přidáno"/>
+                                                </StackPanel>
+                                            </Button>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- Load More -->
+                    <Button Command="{Binding LoadMoreModpacksCommand}" IsVisible="{Binding HasMoreResults}"
+                            Content="Načíst další" Classes="secondary" FontSize="13" Padding="24,12"
+                            HorizontalAlignment="Center" Margin="0,20,0,0"/>
+                </StackPanel>
+            </Border>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

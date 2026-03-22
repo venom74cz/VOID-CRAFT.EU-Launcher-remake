@@ -1,42 +1,96 @@
+using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Input;
-using VoidCraftLauncher.ViewModels;
-using VoidCraftLauncher.Models;
+using Avalonia.Media;
+using System.ComponentModel;
+using System.Threading.Tasks;
 
 namespace VoidCraftLauncher.Views
 {
     public partial class MainWindow : Window
     {
+        private const double CompactThreshold = 1100;
+        private INotifyPropertyChanged? _observedViewModel;
+        private bool _skipNextMainViewAnimation = true;
+        private bool _isAnimatingMainContent;
+
         public MainWindow()
         {
             InitializeComponent();
+            PropertyChanged += OnWindowPropertyChanged;
+            DataContextChanged += OnWindowDataContextChanged;
         }
 
-        private void PointerPressedHandler(object? sender, PointerPressedEventArgs e)
+        private void OnWindowDataContextChanged(object? sender, System.EventArgs e)
         {
-            var pointerProperties = e.GetCurrentPoint(this).Properties;
-            if (!pointerProperties.IsLeftButtonPressed) return;
-
-            // If the user clicked the Play button or its immediate container, do NOT open settings
-            var source = e.Source as Control;
-            while (source != null)
+            if (_observedViewModel != null)
             {
-                // Explicitly check for play button related elements
-                if (source.Name == "PlayButtonContainer" || (source is Button b && b.Classes.Contains("PlayButton")))
-                {
-                    e.Handled = false; // Let the button handle its own click
-                    return;
-                }
-                if (source == sender) break;
-                source = source.Parent as Control;
+                _observedViewModel.PropertyChanged -= OnViewModelPropertyChanged;
             }
 
-            if (sender is Control control && control.DataContext is ModpackInfo modpack)
+            _observedViewModel = DataContext as INotifyPropertyChanged;
+            if (_observedViewModel != null)
             {
-                if (DataContext is MainViewModel vm)
-                {
-                    vm.SelectAndConfigureCommand.Execute(modpack);
-                }
+                _observedViewModel.PropertyChanged += OnViewModelPropertyChanged;
+            }
+        }
+
+        private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == "CurrentMainView")
+            {
+                AnimateMainContentTransition();
+            }
+        }
+
+        private void OnWindowPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+        {
+            if (e.Property != BoundsProperty) return;
+
+            var width = Bounds.Width;
+            var col2 = RootLayout.ColumnDefinitions[2];
+            var shouldCollapse = width < CompactThreshold;
+
+            if (shouldCollapse && col2.Width != new GridLength(0))
+            {
+                col2.Width = new GridLength(0);
+                ContextDockPanel.IsVisible = false;
+            }
+            else if (!shouldCollapse && col2.Width == new GridLength(0))
+            {
+                col2.Width = new GridLength(280);
+                ContextDockPanel.IsVisible = true;
+            }
+        }
+
+        private async void AnimateMainContentTransition()
+        {
+            if (_skipNextMainViewAnimation)
+            {
+                _skipNextMainViewAnimation = false;
+                return;
+            }
+
+            if (_isAnimatingMainContent || Classes.Contains("reduced-motion"))
+            {
+                return;
+            }
+
+            _isAnimatingMainContent = true;
+            try
+            {
+                MainContentHost.Opacity = 0.9;
+                MainContentHost.RenderTransform = new TranslateTransform(0, 10);
+
+                await Task.Delay(18);
+
+                MainContentHost.Opacity = 1;
+                MainContentHost.RenderTransform = new TranslateTransform(0, 0);
+
+                await Task.Delay(200);
+            }
+            finally
+            {
+                _isAnimatingMainContent = false;
             }
         }
     }

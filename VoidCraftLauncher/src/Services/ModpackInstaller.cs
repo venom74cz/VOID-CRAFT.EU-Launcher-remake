@@ -21,6 +21,7 @@ namespace VoidCraftLauncher.Services
         public string ModLoaderType { get; set; } = ""; // "neoforge", "forge", "fabric"
         public int ModCount { get; set; }
         public int FileId { get; set; } // CurseForge FileID of installed version
+        public string Version { get; set; } = ""; // Generic version string for Modrinth
     }
 
     public class ModpackInstaller
@@ -458,9 +459,12 @@ namespace VoidCraftLauncher.Services
         /// Backs up user-modified config files before update.
         /// Returns the backup directory path.
         /// </summary>
-        public static string BackupUserConfigs(string installPath)
+        public static string BackupUserConfigs(string installPath, string? backupRoot = null)
         {
-            var backupDir = Path.Combine(installPath, ".config_backup_" + DateTime.Now.ToString("yyyyMMdd_HHmmss"));
+            var snapshotRoot = backupRoot ?? installPath;
+            Directory.CreateDirectory(snapshotRoot);
+
+            var backupDir = Path.Combine(snapshotRoot, ".config_backup_" + DateTime.Now.ToString("yyyyMMdd_HHmmss"));
             var protectedPaths = new[] { "config", "saves", "shaderpacks", "options.txt", "servers.dat" };
             
             foreach (var rel in protectedPaths)

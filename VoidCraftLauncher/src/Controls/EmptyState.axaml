@@ -1,0 +1,47 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="using:VoidCraftLauncher.Controls"
+             x:Class="VoidCraftLauncher.Controls.EmptyState"
+             x:DataType="controls:EmptyState">
+
+    <!-- ╔══════════════════════════════════════════════════════════════╗ -->
+    <!-- ║  EMPTY STATE — reusable "nothing here" placeholder          ║ -->
+    <!-- ║  Shows glyph + title + subtitle when a view has no content. ║ -->
+    <!-- ║  Usage:                                                      ║ -->
+    <!-- ║  <controls:EmptyState Icon="○" Title="Žádné novinky"       ║ -->
+    <!-- ║       Subtitle="Zatím tu nic není." />                       ║ -->
+    <!-- ╚══════════════════════════════════════════════════════════════╝ -->
+
+    <Border HorizontalAlignment="Center"
+            Padding="40,60"
+            Opacity="0.6">
+        <StackPanel Spacing="12" HorizontalAlignment="Center">
+
+            <!-- Icon glyph -->
+            <TextBlock x:Name="IconBlock"
+                       FontSize="48"
+                       HorizontalAlignment="Center"
+                       Opacity="0.5"
+                       Text="{Binding Icon, RelativeSource={RelativeSource AncestorType=controls:EmptyState}}"/>
+
+            <!-- Title -->
+            <TextBlock x:Name="TitleBlock"
+                       FontSize="18"
+                       FontWeight="SemiBold"
+                       HorizontalAlignment="Center"
+                       Foreground="{DynamicResource TextPrimaryBrush}"
+                       Text="{Binding Title, RelativeSource={RelativeSource AncestorType=controls:EmptyState}}"/>
+
+            <!-- Subtitle / hint -->
+            <TextBlock x:Name="SubtitleBlock"
+                       FontSize="13"
+                       HorizontalAlignment="Center"
+                       Foreground="{DynamicResource TextSecondaryBrush}"
+                       TextWrapping="Wrap"
+                       MaxWidth="320"
+                       TextAlignment="Center"
+                       Text="{Binding Subtitle, RelativeSource={RelativeSource AncestorType=controls:EmptyState}}"/>
+
+        </StackPanel>
+    </Border>
+</UserControl>

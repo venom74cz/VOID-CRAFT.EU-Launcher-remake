@@ -1,0 +1,50 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:VoidCraftLauncher.ViewModels"
+             xmlns:models="using:VoidCraftLauncher.Models"
+             x:Class="VoidCraftLauncher.Controls.ToastHost"
+             x:DataType="vm:MainViewModel"
+             IsHitTestVisible="True">
+
+    <ItemsControl ItemsSource="{Binding Toasts}" VerticalAlignment="Bottom" HorizontalAlignment="Right"
+                  Margin="0,0,24,24" MaxWidth="380">
+        <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+                <StackPanel Spacing="8"/>
+            </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="models:ToastItem">
+                <Border Classes="toast-item" CornerRadius="{DynamicResource RadiusControl}" Padding="16,12"
+                        BorderThickness="1" ClipToBounds="True" MinWidth="300"
+                        Background="{Binding BackgroundBrush}" BorderBrush="{Binding BorderBrush}"
+                        BoxShadow="0 8 32 0 #55000000">
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                        <Border Grid.Column="0" Width="24" Height="24" CornerRadius="12"
+                                Background="#22000000" HorizontalAlignment="Center" VerticalAlignment="Top">
+                            <TextBlock Text="{Binding IconGlyph}" FontSize="13" FontWeight="Bold"
+                                       Foreground="{Binding IconBrush}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+
+                        <StackPanel Grid.Column="1" Spacing="2">
+                            <TextBlock Text="{Binding Title}" FontWeight="Bold" FontSize="13"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"/>
+                            <TextBlock Text="{Binding Message}" FontSize="12" TextWrapping="Wrap"
+                                       Foreground="{DynamicResource TextSecondaryBrush}" MaxLines="3"/>
+                        </StackPanel>
+
+                        <Button Grid.Column="2"
+                                Command="{Binding $parent[ItemsControl].((vm:MainViewModel)DataContext).DismissToastCommand}"
+                                CommandParameter="{Binding}"
+                                Background="Transparent" Foreground="{DynamicResource TextMutedBrush}"
+                                FontSize="12" Padding="4" Cursor="Hand" VerticalAlignment="Top"
+                                CornerRadius="{DynamicResource RadiusSmall}">
+                            <TextBlock Text="{StaticResource IconClose}"/>
+                        </Button>
+                    </Grid>
+                </Border>
+            </DataTemplate>
+        </ItemsControl.ItemTemplate>
+    </ItemsControl>
+</UserControl>

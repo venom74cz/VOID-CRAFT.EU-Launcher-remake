@@ -1,9 +1,13 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Platform.Storage;
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace VoidCraftLauncher.ViewModels
 {
@@ -137,7 +141,44 @@ namespace VoidCraftLauncher.ViewModels
             }
         }
 
-        public void AddModsFromPaths(System.Collections.Generic.IEnumerable<string> sourceFiles)
+        [RelayCommand]
+        public async System.Threading.Tasks.Task AddMods()
+        {
+            var storageProvider = (Avalonia.Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)
+                ?.MainWindow?.StorageProvider;
+
+            if (storageProvider == null)
+            {
+                return;
+            }
+
+            var results = await storageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+            {
+                Title = "Vyber mody",
+                AllowMultiple = true,
+                FileTypeFilter = new[]
+                {
+                    new FilePickerFileType("Minecraft Mods")
+                    {
+                        Patterns = new[] { "*.jar", "*.jar.disabled" },
+                        MimeTypes = new[] { "application/java-archive" }
+                    }
+                }
+            });
+
+            var paths = results
+                .Select(file => file.TryGetLocalPath())
+                .Where(path => !string.IsNullOrWhiteSpace(path))
+                .Cast<string>()
+                .ToList();
+
+            if (paths.Count > 0)
+            {
+                AddModsFromPaths(paths);
+            }
+        }
+
+        public void AddModsFromPaths(IEnumerable<string> sourceFiles)
         {
             foreach (var sourceFile in sourceFiles)
             {

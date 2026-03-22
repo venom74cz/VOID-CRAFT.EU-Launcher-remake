@@ -37,5 +37,4 @@ package-lock.json
 /VoidCraftLauncher/IconConverter/
 installed_files.json
 version.json
-/.github/prompts
-.github/copilot-instructions.md
+/.github/prompts/ui-ux-pro-max/

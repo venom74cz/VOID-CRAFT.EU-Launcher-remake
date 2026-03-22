@@ -1,0 +1,239 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ╔══════════════════════════════════════════════════════════════╗ -->
+    <!-- ║              OBSIDIAN MOTION TOKENS                          ║ -->
+    <!-- ║  Shared transitions and easings for coherent animation feel ║ -->
+    <!-- ║  M7 — refined timing, reduced-motion, loading skeletons     ║ -->
+    <!-- ╚══════════════════════════════════════════════════════════════╝ -->
+
+    <!-- ═══════════════ CARD HOVER ═══════════════ -->
+    <Style Selector="Border.card-hover">
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition Property="BorderBrush" Duration="0:0:0.16"/>
+                <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.22"/>
+                <BrushTransition Property="Background" Duration="0:0:0.16"/>
+            </Transitions>
+        </Setter>
+    </Style>
+
+    <!-- ═══════════════ SCALE HOVER ═══════════════ -->
+    <Style Selector="Border.scale-hover">
+        <Setter Property="RenderTransform" Value="scale(1)"/>
+        <Setter Property="Transitions">
+            <Transitions>
+                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.18" Easing="CubicEaseOut"/>
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Border.scale-hover:pointerover">
+        <Setter Property="RenderTransform" Value="scale(1.02)"/>
+    </Style>
+    <Style Selector="Border.scale-hover:pressed">
+        <Setter Property="RenderTransform" Value="scale(0.98)"/>
+    </Style>
+
+    <!-- ═══════════════ FADE IN ═══════════════ -->
+    <Style Selector="Border.fade-in">
+        <Setter Property="Opacity" Value="1"/>
+        <Setter Property="Transitions">
+            <Transitions>
+                <DoubleTransition Property="Opacity" Duration="0:0:0.18" Easing="CubicEaseOut"/>
+            </Transitions>
+        </Setter>
+    </Style>
+
+    <!-- ═══════════════ GLOW PULSE ═══════════════ -->
+    <Style Selector="Border.glow-pulse">
+        <Setter Property="BoxShadow" Value="0 0 0 0 Transparent"/>
+        <Setter Property="Transitions">
+            <Transitions>
+                <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.24"/>
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Border.glow-pulse:pointerover">
+        <Setter Property="BoxShadow" Value="0 0 16 0 #447c6fff"/>
+    </Style>
+
+    <!-- ═══════════════ BUTTON FEEDBACK ═══════════════ -->
+    <!-- Smooth background and scale transitions on all styled buttons -->
+    <Style Selector="Button.primary">
+        <Setter Property="RenderTransform" Value="scale(1)"/>
+        <Setter Property="Transitions">
+            <Transitions>
+                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.1" Easing="CubicEaseOut"/>
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Button.primary:pressed">
+        <Setter Property="RenderTransform" Value="scale(0.96)"/>
+    </Style>
+
+    <Style Selector="Button.accent">
+        <Setter Property="RenderTransform" Value="scale(1)"/>
+        <Setter Property="Transitions">
+            <Transitions>
+                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.1" Easing="CubicEaseOut"/>
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Button.accent:pressed">
+        <Setter Property="RenderTransform" Value="scale(0.96)"/>
+    </Style>
+
+    <Style Selector="Button.secondary">
+        <Setter Property="RenderTransform" Value="scale(1)"/>
+        <Setter Property="Transitions">
+            <Transitions>
+                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.1" Easing="CubicEaseOut"/>
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Button.secondary:pressed">
+        <Setter Property="RenderTransform" Value="scale(0.96)"/>
+    </Style>
+
+    <!-- ═══════════════ NAV RAIL ═══════════════ -->
+    <!-- Active indicator glow transition on nav buttons -->
+    <Style Selector="Button.navIcon">
+        <Setter Property="RenderTransform" Value="scale(1)"/>
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.16"/>
+                <BrushTransition Property="Foreground" Duration="0:0:0.16"/>
+                <DoubleTransition Property="Opacity" Duration="0:0:0.16"/>
+                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.12" Easing="CubicEaseOut"/>
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Button.navIcon:pressed">
+        <Setter Property="RenderTransform" Value="scale(0.94)"/>
+    </Style>
+
+    <!-- ═══════════════ VIEW TRANSITIONS ═══════════════ -->
+    <!-- Content area views fade in when becoming visible -->
+    <Style Selector="UserControl.view-panel">
+        <Setter Property="Opacity" Value="1"/>
+        <Setter Property="Transitions">
+            <Transitions>
+                <DoubleTransition Property="Opacity" Duration="0:0:0.16" Easing="CubicEaseOut"/>
+            </Transitions>
+        </Setter>
+    </Style>
+
+    <!-- ═══════════════ MODAL / OVERLAY ═══════════════ -->
+    <!-- Overlays and modal sheets fade + slide in -->
+    <Style Selector="Border.overlay-panel">
+        <Setter Property="Opacity" Value="1"/>
+        <Setter Property="RenderTransform" Value="translateY(0)"/>
+        <Setter Property="Transitions">
+            <Transitions>
+                <DoubleTransition Property="Opacity" Duration="0:0:0.18" Easing="CubicEaseOut"/>
+                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.22" Easing="CubicEaseOut"/>
+            </Transitions>
+        </Setter>
+    </Style>
+
+    <!-- ═══════════════ TOAST ═══════════════ -->
+    <!-- Toast slide-in from right -->
+    <Style Selector="Border.toast-item">
+        <Setter Property="RenderTransform" Value="translateX(0)"/>
+        <Setter Property="Opacity" Value="1"/>
+        <Setter Property="Transitions">
+            <Transitions>
+                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.22" Easing="CubicEaseOut"/>
+                <DoubleTransition Property="Opacity" Duration="0:0:0.16"/>
+            </Transitions>
+        </Setter>
+    </Style>
+
+    <!-- ═══════════════ PROGRESS BAR ═══════════════ -->
+    <Style Selector="ProgressBar.smooth">
+        <Setter Property="Transitions">
+            <Transitions>
+                <DoubleTransition Property="Value" Duration="0:0:0.25" Easing="CubicEaseOut"/>
+            </Transitions>
+        </Setter>
+    </Style>
+
+    <!-- ═══════════════ LOADING SKELETON ═══════════════ -->
+    <!-- Animated shimmer placeholder for content loading states -->
+    <Style Selector="Border.skeleton">
+        <Setter Property="Background" Value="{DynamicResource BgElevatedBrush}"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Opacity" Value="0.6"/>
+    </Style>
+
+    <Style Selector="Border.skeleton-line">
+        <Setter Property="Background" Value="{DynamicResource BgInteractiveBrush}"/>
+        <Setter Property="CornerRadius" Value="4"/>
+        <Setter Property="Height" Value="14"/>
+        <Setter Property="Opacity" Value="0.5"/>
+    </Style>
+
+    <Style Selector="Border.skeleton-circle">
+        <Setter Property="Background" Value="{DynamicResource BgInteractiveBrush}"/>
+        <Setter Property="Width" Value="40"/>
+        <Setter Property="Height" Value="40"/>
+        <Setter Property="CornerRadius" Value="20"/>
+        <Setter Property="Opacity" Value="0.5"/>
+    </Style>
+
+    <Style Selector="Border.skeleton-card">
+        <Setter Property="Background" Value="{DynamicResource BgPanelBrush}"/>
+        <Setter Property="CornerRadius" Value="16"/>
+        <Setter Property="MinHeight" Value="120"/>
+        <Setter Property="Opacity" Value="0.5"/>
+        <Setter Property="Transitions">
+            <Transitions>
+                <DoubleTransition Property="Opacity" Duration="0:0:0.6" Easing="SineEaseInOut"/>
+            </Transitions>
+        </Setter>
+    </Style>
+
+    <!-- ═══════════════ FOCUS RING ═══════════════ -->
+    <!-- Keyboard focus visible styles for accessibility -->
+    <Style Selector="Button:focus-visible">
+        <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBBrush}"/>
+        <Setter Property="BorderThickness" Value="2"/>
+    </Style>
+
+    <Style Selector="TextBox:focus-visible">
+        <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBBrush}"/>
+        <Setter Property="BorderThickness" Value="2"/>
+    </Style>
+
+    <Style Selector="Border.focusable:focus-visible">
+        <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBBrush}"/>
+        <Setter Property="BorderThickness" Value="2"/>
+    </Style>
+
+    <!-- ═══════════════ CONTRAST HELPERS ═══════════════ -->
+    <!-- High-contrast mode class for improved readability -->
+    <Style Selector="TextBlock.high-contrast">
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+
+    <!-- ═══════════════ REDUCED MOTION ═══════════════ -->
+    <!-- When applied as a class to the root, suppresses all transitions
+         Usage: Add class "reduced-motion" to Window in settings -->
+    <Style Selector="Window.reduced-motion Border">
+        <Setter Property="Transitions" Value="{x:Null}"/>
+    </Style>
+    <Style Selector="Window.reduced-motion Button">
+        <Setter Property="Transitions" Value="{x:Null}"/>
+    </Style>
+    <Style Selector="Window.reduced-motion UserControl">
+        <Setter Property="Transitions" Value="{x:Null}"/>
+    </Style>
+    <Style Selector="Window.reduced-motion Grid">
+        <Setter Property="Transitions" Value="{x:Null}"/>
+    </Style>
+    <Style Selector="Window.reduced-motion ProgressBar">
+        <Setter Property="Transitions" Value="{x:Null}"/>
+    </Style>
+
+</Styles>

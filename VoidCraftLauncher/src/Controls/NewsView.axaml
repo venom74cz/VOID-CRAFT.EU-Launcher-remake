@@ -1,0 +1,218 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:VoidCraftLauncher.ViewModels"
+             xmlns:models="using:VoidCraftLauncher.Models"
+             xmlns:controls="using:VoidCraftLauncher.Controls"
+             xmlns:converters="using:VoidCraftLauncher.Converters"
+             xmlns:asyncImage="clr-namespace:AsyncImageLoader;assembly=AsyncImageLoader.Avalonia"
+             x:Class="VoidCraftLauncher.Controls.NewsView"
+             x:DataType="vm:MainViewModel"
+             x:Name="NewsRoot">
+
+    <UserControl.Resources>
+        <converters:ObjectEqualityConverter x:Key="ObjectEqualityConverter"/>
+    </UserControl.Resources>
+
+    <Grid RowDefinitions="Auto,*">
+
+        <!-- Top Bar -->
+        <Border Grid.Row="0" Background="{DynamicResource BgShellBrush}" Padding="24,16"
+                BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="0,0,0,1">
+            <Grid RowDefinitions="Auto,Auto" RowSpacing="12">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <TextBlock Text="{StaticResource IconNews}" FontSize="20" VerticalAlignment="Center"/>
+                    <TextBlock Text="Novinky" FontSize="18" FontWeight="ExtraBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                    <Border Background="{DynamicResource BgInteractiveBrush}"
+                            CornerRadius="{DynamicResource RadiusPill}" Padding="4"
+                            BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1"
+                            HorizontalAlignment="Left">
+                        <WrapPanel Orientation="Horizontal">
+                        <Button Command="{Binding SetFeedFilterCommand}" CommandParameter="Vše"
+                                CornerRadius="{DynamicResource RadiusPill}" Padding="12,6" Cursor="Hand">
+                            <Classes.active>
+                                <MultiBinding Converter="{StaticResource ObjectEqualityConverter}">
+                                    <Binding Path="ActiveFeedFilter"/>
+                                    <Binding><Binding.Source>Vše</Binding.Source></Binding>
+                                </MultiBinding>
+                            </Classes.active>
+                            <Button.Styles>
+                                <Style Selector="Button"><Setter Property="Background" Value="Transparent"/><Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/></Style>
+                                <Style Selector="Button.active"><Setter Property="Background" Value="{DynamicResource PrimaryBBrush}"/><Setter Property="Foreground" Value="{DynamicResource BgCanvasBrush}"/></Style>
+                            </Button.Styles>
+                            <TextBlock Text="Vše" FontSize="11" FontWeight="Bold"/>
+                        </Button>
+                        <Button Command="{Binding SetFeedFilterCommand}" CommandParameter="Discord"
+                                CornerRadius="{DynamicResource RadiusPill}" Padding="12,6" Cursor="Hand">
+                            <Classes.active>
+                                <MultiBinding Converter="{StaticResource ObjectEqualityConverter}">
+                                    <Binding Path="ActiveFeedFilter"/>
+                                    <Binding><Binding.Source>Discord</Binding.Source></Binding>
+                                </MultiBinding>
+                            </Classes.active>
+                            <Button.Styles>
+                                <Style Selector="Button"><Setter Property="Background" Value="Transparent"/><Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/></Style>
+                                <Style Selector="Button.active"><Setter Property="Background" Value="#5865F2"/><Setter Property="Foreground" Value="White"/></Style>
+                            </Button.Styles>
+                            <TextBlock Text="Discord" FontSize="11" FontWeight="Bold"/>
+                        </Button>
+                        <Button Command="{Binding SetFeedFilterCommand}" CommandParameter="YouTube"
+                                CornerRadius="{DynamicResource RadiusPill}" Padding="12,6" Cursor="Hand">
+                            <Classes.active>
+                                <MultiBinding Converter="{StaticResource ObjectEqualityConverter}">
+                                    <Binding Path="ActiveFeedFilter"/>
+                                    <Binding><Binding.Source>YouTube</Binding.Source></Binding>
+                                </MultiBinding>
+                            </Classes.active>
+                            <Button.Styles>
+                                <Style Selector="Button"><Setter Property="Background" Value="Transparent"/><Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/></Style>
+                                <Style Selector="Button.active"><Setter Property="Background" Value="#FF0000"/><Setter Property="Foreground" Value="White"/></Style>
+                            </Button.Styles>
+                            <TextBlock Text="YouTube" FontSize="11" FontWeight="Bold"/>
+                        </Button>
+                        <Button Command="{Binding SetFeedFilterCommand}" CommandParameter="Minecraft"
+                                CornerRadius="{DynamicResource RadiusPill}" Padding="12,6" Cursor="Hand">
+                            <Classes.active>
+                                <MultiBinding Converter="{StaticResource ObjectEqualityConverter}">
+                                    <Binding Path="ActiveFeedFilter"/>
+                                    <Binding><Binding.Source>Minecraft</Binding.Source></Binding>
+                                </MultiBinding>
+                            </Classes.active>
+                            <Button.Styles>
+                                <Style Selector="Button"><Setter Property="Background" Value="Transparent"/><Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/></Style>
+                                <Style Selector="Button.active"><Setter Property="Background" Value="{DynamicResource AccentTealBrush}"/><Setter Property="Foreground" Value="{DynamicResource BgCanvasBrush}"/></Style>
+                            </Button.Styles>
+                            <TextBlock Text="Minecraft" FontSize="11" FontWeight="Bold"/>
+                        </Button>
+                        </WrapPanel>
+                    </Border>
+
+                    <Button Grid.Column="1" Command="{Binding RefreshNewsFeedCommand}" Background="Transparent"
+                            Foreground="{DynamicResource TextMutedBrush}" FontSize="16" Padding="8"
+                            Cursor="Hand" CornerRadius="{DynamicResource RadiusSmall}" ToolTip.Tip="Obnovit"
+                            VerticalAlignment="Center">
+                        <TextBlock Text="{StaticResource IconRefresh}"/>
+                    </Button>
+                </Grid>
+            </Grid>
+        </Border>
+
+        <!-- Content -->
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Spacing="16" Margin="32,24,32,60" MaxWidth="800">
+
+                <controls:LoadingSkeleton IsVisible="{Binding IsFeedLoading}"/>
+
+                <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="{DynamicResource RadiusControl}"
+                        Padding="20" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                    <Border.IsVisible>
+                        <MultiBinding Converter="{x:Static BoolConverters.And}">
+                            <Binding Path="!HasFeedItems"/>
+                            <Binding Path="!IsFeedLoading"/>
+                        </MultiBinding>
+                    </Border.IsVisible>
+                    <controls:EmptyState Icon="{StaticResource IconNews}"
+                                         Title="Zatím žádné novinky"
+                                         Subtitle="Nepodařilo se načíst žádný obsah. Obnov feed nebo zkontroluj připojení.">
+                        <controls:EmptyState.IsVisible>
+                            <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                <Binding Path="!HasFeedItems"/>
+                                <Binding Path="!IsFeedLoading"/>
+                            </MultiBinding>
+                        </controls:EmptyState.IsVisible>
+                    </controls:EmptyState>
+                </Border>
+
+                <ItemsControl ItemsSource="{Binding FilteredNewsFeed}" IsVisible="{Binding HasFeedItems}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="models:FeedItem">
+                            <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="{DynamicResource RadiusControl}"
+                                    Padding="20" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" Margin="0,0,0,12">
+                                <StackPanel Spacing="12">
+                                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                                        <Border Width="40" Height="40" CornerRadius="20" Background="{DynamicResource BgInteractiveBrush}" ClipToBounds="True">
+                                            <asyncImage:AdvancedImage Source="{Binding AuthorAvatarUrl}" Stretch="UniformToFill"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="1" Spacing="1" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Title}" FontWeight="Bold" FontSize="14"
+                                                       Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <TextBlock Text="{Binding AuthorName, FallbackValue='VOID-CRAFT'}" FontSize="11"
+                                                           Foreground="{DynamicResource TextMutedBrush}"/>
+                                                <Border Background="{DynamicResource BgInteractiveBrush}" CornerRadius="999" Padding="8,2">
+                                                    <TextBlock Text="{Binding Source}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                                </Border>
+                                            </StackPanel>
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="2" Text="{Binding PublishedAt, StringFormat='{}{0:dd.MM.yyyy HH:mm}'}" FontSize="11"
+                                                   Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Top"/>
+                                    </Grid>
+
+                                    <Border Background="{DynamicResource BgShellBrush}" CornerRadius="14" ClipToBounds="True"
+                                            BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1"
+                                            IsVisible="{Binding ThumbnailUrl, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                                        <asyncImage:AdvancedImage Source="{Binding ThumbnailUrl}" Height="220" Stretch="UniformToFill"/>
+                                    </Border>
+
+                                    <TextBlock Text="{Binding Body}" FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}"
+                                               TextWrapping="Wrap" LineHeight="20"/>
+
+                                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                                        <StackPanel Orientation="Horizontal" Spacing="10">
+                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                <TextBlock Text="Zdroj:" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                                <TextBlock Text="{Binding Source}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryBBrush}"/>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                <TextBlock Text="Reakce:" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                                <TextBlock Text="{Binding ReactionCount}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                <TextBlock Text="Zobrazení:" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                                <TextBlock Text="{Binding ViewCount}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                        <Button Grid.Column="2" Command="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).OpenFeedItemCommand}"
+                                                CommandParameter="{Binding}" Classes="secondary" FontSize="11" Padding="12,6">
+                                            <TextBlock Text="Otevřít ↗"/>
+                                        </Button>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Social links -->
+                <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="{DynamicResource RadiusControl}"
+                        Padding="20" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="Sledujte nás" FontWeight="Bold" FontSize="14"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <WrapPanel Orientation="Horizontal">
+                            <Button Command="{Binding OpenUrlCommand}"
+                                    CommandParameter="https://www.facebook.com/share/17i6QGG6jn/"
+                                    Classes="secondary" FontSize="12" Padding="14,8" Margin="0,0,8,8" Cursor="Hand">
+                                <TextBlock Text="Facebook"/>
+                            </Button>
+                            <Button Command="{Binding OpenUrlCommand}"
+                                    CommandParameter="https://www.instagram.com/void_craft.eu"
+                                    Classes="secondary" FontSize="12" Padding="14,8" Margin="0,0,8,8" Cursor="Hand">
+                                <TextBlock Text="Instagram"/>
+                            </Button>
+                            <Button Command="{Binding OpenUrlCommand}"
+                                    CommandParameter="https://www.youtube.com/@void-craft-eu"
+                                    Classes="secondary" FontSize="12" Padding="14,8" Margin="0,0,8,8" Cursor="Hand">
+                                <TextBlock Text="YouTube"/>
+                            </Button>
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

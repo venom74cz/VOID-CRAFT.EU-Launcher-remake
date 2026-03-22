@@ -1,5 +1,6 @@
 ﻿using Avalonia;
 using System;
+using System.Threading.Tasks;
 using VoidCraftLauncher.Services;
 
 namespace VoidCraftLauncher
@@ -24,9 +25,9 @@ namespace VoidCraftLauncher
             try
             {
                 LogService.Log("Launcher starting...");
-                
-                // Register protocol handler on startup
-                ProtocolHandler.RegisterProtocol();
+
+                // Registry registration is low priority; keep cold start focused on bringing up the shell.
+                _ = Task.Run(ProtocolHandler.RegisterProtocol);
 
                 // Check if launched via protocol with auth code
                 var code = ProtocolHandler.ExtractAuthCode(args);

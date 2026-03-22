@@ -1,0 +1,107 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:VoidCraftLauncher.ViewModels"
+             xmlns:models="using:VoidCraftLauncher.Models"
+             x:Class="VoidCraftLauncher.Controls.LocalizationView"
+             x:DataType="vm:MainViewModel">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="32,28,32,60">
+        <StackPanel Spacing="24">
+
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Spacing="4">
+                    <TextBlock Text="{Binding LocalizationHeaderTitle}" FontSize="26" FontWeight="ExtraBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <TextBlock Text="{Binding LocalizationHeaderSubtitle}"
+                               FontSize="13" Foreground="{DynamicResource TextMutedBrush}"/>
+                </StackPanel>
+                <Border Grid.Column="1" Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusPill}"
+                        Padding="14,6" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding LocalizationUiCultureName}" FontSize="11" Foreground="{DynamicResource SuccessBrush}" FontWeight="SemiBold"/>
+                </Border>
+            </Grid>
+
+            <Grid ColumnDefinitions="*,16,*" RowDefinitions="Auto">
+                <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="{DynamicResource RadiusCard}"
+                        BorderBrush="{DynamicResource PrimaryBBrush}" BorderThickness="2" Padding="24">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="{Binding LocalizationRuntimeCardTitle}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <TextBlock Text="{Binding LocalizationRuntimeStatus}" FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" LineHeight="19"/>
+                        <TextBlock Text="{Binding LocalizationCoverageStatus}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" LineHeight="19"/>
+                        <Grid ColumnDefinitions="*,16,*">
+                            <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="16,14">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="{Binding LocalizationActiveLanguageTitle}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                    <TextBlock Text="{Binding LocalizationUiCultureName}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                    <TextBlock Text="{Binding LocalizationUiCultureDisplayName}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Column="2" Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="16,14">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="{Binding LocalizationSystemLanguageTitle}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                    <TextBlock Text="{Binding LocalizationSystemCultureName}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                    <TextBlock Text="{Binding LocalizationSystemCultureDisplayName}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="2" Background="{DynamicResource BgPanelBrush}" CornerRadius="{DynamicResource RadiusCard}"
+                        BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" Padding="20">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="{Binding LocalizationSelectLanguageTitle}" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <TextBlock Text="{Binding LocalizationSelectLanguageHint}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                        <ComboBox ItemsSource="{Binding LanguageOptions}"
+                                  SelectedItem="{Binding SelectedLanguageOption}"
+                                  HorizontalAlignment="Stretch">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="models:SelectionOption">
+                                    <TextBlock Text="{Binding Label}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <Grid ColumnDefinitions="*,16,*">
+                <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="{DynamicResource RadiusCard}"
+                        BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" Padding="20">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="{Binding LocalizationInfrastructureTitle}" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="•" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                            <TextBlock Text="{Binding LocalizationInfrastructureItem1}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="•" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                            <TextBlock Text="{Binding LocalizationInfrastructureItem2}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="•" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                            <TextBlock Text="{Binding LocalizationInfrastructureItem3}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="•" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                            <TextBlock Text="{Binding LocalizationInfrastructureItem4}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="2" Background="{DynamicResource BgPanelBrush}" CornerRadius="{DynamicResource RadiusCard}"
+                        BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" Padding="24">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="{Binding LocalizationDiagnosticsTitle}" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                            <TextBlock Text="{Binding LocalizationDiagnosticsHint}"
+                                       FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" LineHeight="19"/>
+                        </StackPanel>
+                        <Button Grid.Column="1" Content="{Binding LocalizationCopyReportLabel}" Classes="secondary" Padding="16,10"
+                                Command="{Binding CopyLocalizationReportCommand}" VerticalAlignment="Center"/>
+                    </Grid>
+                </Border>
+            </Grid>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

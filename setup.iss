@@ -9,7 +9,7 @@
 ; Get Version from command line or define default. GitHub Action can pass this? 
 ; We'll use a placeholder and let ISCC override it or use a fixed one if complex.
 #ifndef MyAppVersion
-  #define MyAppVersion "2.1.0"
+  #define MyAppVersion "3.0.0"
 #endif
 
 [Setup]
@@ -23,6 +23,7 @@ AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
+LicenseFile=LICENSE
 
 ; Install to LocalAppData to allow auto-updates without Admin rights
 DefaultDirName={localappdata}\VoidCraftLauncher
@@ -48,6 +49,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 ; Ensure "dotnet publish -o publish" is run before this script!
 Source: "publish\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "LICENSE"; DestDir: "{app}"; DestName: "LICENSE.txt"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]

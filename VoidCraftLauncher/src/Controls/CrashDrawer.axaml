@@ -1,0 +1,144 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:VoidCraftLauncher.ViewModels"
+             x:Class="VoidCraftLauncher.Controls.CrashDrawer"
+             x:DataType="vm:MainViewModel">
+
+    <!-- Crash Diagnostics Drawer — slides in from the right after a game crash -->
+    <Grid IsVisible="{Binding IsCrashDrawerOpen}">
+        <!-- Scrim -->
+        <Border Background="{DynamicResource BgCanvasBrush}" Opacity="0.65"
+                HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+
+        <!-- Drawer panel (right-aligned) -->
+        <Border Background="{DynamicResource BgShellBrush}"
+                BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1,0,0,0"
+                HorizontalAlignment="Right" VerticalAlignment="Stretch"
+                Width="520">
+
+            <Grid RowDefinitions="Auto,*,Auto">
+                <!-- Header -->
+                <Border Grid.Row="0" Background="{DynamicResource BgElevatedBrush}" Padding="24,20"
+                        BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="0,0,0,1">
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                        <Border Width="40" Height="40" CornerRadius="20"
+                                Background="{DynamicResource DangerBrush}" Opacity="0.15">
+                            <TextBlock Text="{StaticResource IconCrash}" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                            <TextBlock Text="Hra spadla" FontSize="20" FontWeight="ExtraBold"
+                                       Foreground="{DynamicResource DangerBrush}"/>
+                            <TextBlock Text="{Binding CrashModpackName}" FontSize="12"
+                                       Foreground="{DynamicResource TextMutedBrush}"/>
+                        </StackPanel>
+                        <Button Grid.Column="2" Command="{Binding CloseCrashDrawerCommand}"
+                                Background="Transparent" Foreground="{DynamicResource TextMutedBrush}"
+                                FontSize="16" Padding="6" Cursor="Hand"
+                                CornerRadius="{DynamicResource RadiusSmall}" VerticalAlignment="Top">
+                            <TextBlock Text="{StaticResource IconClose}"/>
+                        </Button>
+                    </Grid>
+                </Border>
+
+                <!-- Body -->
+                <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Spacing="16" Margin="24,20,24,20">
+
+                        <!-- Quick summary card -->
+                        <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="{DynamicResource RadiusSmall}"
+                                Padding="16" BorderBrush="{DynamicResource DangerBrush}" BorderThickness="1" Opacity="0.9">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Souhrn" FontWeight="Bold" FontSize="14"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                <TextBlock Text="{Binding CrashSummary}" FontSize="12" TextWrapping="Wrap"
+                                           Foreground="{DynamicResource TextSecondaryBrush}" LineHeight="18"
+                                           MaxLines="6"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Exit code -->
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                            <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="14">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Exit kód" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                    <TextBlock Text="{Binding CrashExitCode}" FontSize="18" FontWeight="ExtraBold"
+                                               Foreground="{DynamicResource DangerBrush}"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Column="1" Background="{DynamicResource BgPanelBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="14">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Čas běhu" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                    <TextBlock Text="{Binding CrashRuntime}" FontSize="18" FontWeight="ExtraBold"
+                                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <!-- Log snippet -->
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Poslední řádky logu" FontWeight="Bold" FontSize="14"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"/>
+                            <Border Background="{DynamicResource BgCanvasBrush}" CornerRadius="{DynamicResource RadiusSmall}"
+                                    Padding="14" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1"
+                                    MaxHeight="220">
+                                <ScrollViewer HorizontalScrollBarVisibility="Auto">
+                                    <TextBlock Text="{Binding CrashLogTail}" FontFamily="Consolas,monospace"
+                                               FontSize="11" Foreground="{DynamicResource TextMutedBrush}"
+                                               TextWrapping="NoWrap" LineHeight="16"/>
+                                </ScrollViewer>
+                            </Border>
+                        </StackPanel>
+
+                        <!-- Suggestions -->
+                        <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="{DynamicResource RadiusSmall}"
+                                Padding="16" BorderBrush="{DynamicResource WarningBrush}" BorderThickness="1" Opacity="0.9">
+                            <StackPanel Spacing="8">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="{StaticResource IconInfo}" FontSize="14"/>
+                                    <TextBlock Text="Doporučení" FontWeight="Bold" FontSize="14"
+                                               Foreground="{DynamicResource WarningBrush}"/>
+                                </StackPanel>
+                                <StackPanel Spacing="4" Margin="4,0,0,0">
+                                    <TextBlock Text="• Zvyšte RAM v nastavení instance" FontSize="12"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                    <TextBlock Text="• Zkontrolujte kompatibilitu modů" FontSize="12"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                    <TextBlock Text="• Zkuste zapnout Bramborový režim" FontSize="12"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- Footer actions -->
+                <Border Grid.Row="2" Background="{DynamicResource BgElevatedBrush}" Padding="24,16"
+                        BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="0,1,0,0">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Command="{Binding OpenCrashLogCommand}"
+                                Classes="secondary" FontSize="13" Padding="16,10">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <TextBlock Text="{StaticResource IconFolder}"/>
+                                <TextBlock Text="Otevřít log"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding CopyCrashLogCommand}"
+                                Classes="secondary" FontSize="13" Padding="16,10">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <TextBlock Text="{StaticResource IconCopy}"/>
+                                <TextBlock Text="Kopírovat log"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding RestartAfterCrashCommand}"
+                                Classes="primary" FontSize="13" Padding="20,10">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <TextBlock Text="{StaticResource IconRefresh}"/>
+                                <TextBlock Text="Restartovat hru"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

@@ -10,6 +10,11 @@ namespace VoidCraftLauncher.Services
         private const string ApplicationId = "1480215609156435988";
         private DateTime _startTime;
 
+        public bool IsInitialized => _client?.IsInitialized == true;
+        public string CurrentDetails { get; private set; } = "";
+        public string CurrentState { get; private set; } = "";
+        public event Action? PresenceChanged;
+
         public DiscordRpcService()
         {
             _startTime = DateTime.UtcNow;
@@ -34,7 +39,14 @@ namespace VoidCraftLauncher.Services
 
         public void SetState(string details, string state, string largeImageKey = "icon", string largeImageText = "VOID-CRAFT.EU Launcher")
         {
-            if (_client == null || !_client.IsInitialized) return;
+            CurrentDetails = details;
+            CurrentState = state;
+
+            if (_client == null || !_client.IsInitialized)
+            {
+                PresenceChanged?.Invoke();
+                return;
+            }
 
             _client.SetPresence(new RichPresence()
             {
@@ -47,16 +59,25 @@ namespace VoidCraftLauncher.Services
                 },
                 Timestamps = new Timestamps(_startTime)
             });
+
+            PresenceChanged?.Invoke();
         }
 
         public void SetPlayingState(string modpackName)
         {
-            if (_client == null || !_client.IsInitialized) return;
+            CurrentDetails = $"Hraje: {modpackName}";
+            CurrentState = "Ve hře";
+
+            if (_client == null || !_client.IsInitialized)
+            {
+                PresenceChanged?.Invoke();
+                return;
+            }
 
             _client.SetPresence(new RichPresence()
             {
-                Details = $"Hraje: {modpackName}",
-                State = "Ve hře",
+                Details = CurrentDetails,
+                State = CurrentState,
                 Assets = new Assets()
                 {
                     LargeImageKey = "icon",
@@ -64,6 +85,8 @@ namespace VoidCraftLauncher.Services
                 },
                 Timestamps = Timestamps.Now // Reset time for playing
             });
+
+            PresenceChanged?.Invoke();
         }
 
         public void Dispose()

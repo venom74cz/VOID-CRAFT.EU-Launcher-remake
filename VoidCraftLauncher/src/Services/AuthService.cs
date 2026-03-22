@@ -17,17 +17,20 @@ public class AuthService
 {
     // Azure Client ID for VoidCraft Launcher
     private const string ClientId = "a12295b0-3505-46f1-a299-88ae9cc80174";
+    private const string SecureTokenCacheKey = "auth.msal_token_cache";
     private readonly IPublicClientApplication _msalApp;
     private readonly HttpClient _httpClient;
     private readonly JsonSerializerOptions _jsonOptions;
-    private readonly string _tokenCacheFile;
+    private readonly SecureStorageService _secureStorage;
+    private readonly string _legacyTokenCacheFile;
 
-    public AuthService()
+    public AuthService(SecureStorageService secureStorage)
     {
+        _secureStorage = secureStorage;
         var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         var cachePath = Path.Combine(appData, ".voidcraft", "auth_cache");
         Directory.CreateDirectory(cachePath);
-        _tokenCacheFile = Path.Combine(cachePath, "msal_token_cache.bin");
+        _legacyTokenCacheFile = Path.Combine(cachePath, "msal_token_cache.bin");
 
         _msalApp = PublicClientApplicationBuilder.Create(ClientId)
             .WithAuthority("https://login.microsoftonline.com/consumers")
@@ -44,9 +47,26 @@ public class AuthService
 
     private void BeforeAccessNotification(TokenCacheNotificationArgs args)
     {
-        if (File.Exists(_tokenCacheFile))
+        try
         {
-            args.TokenCache.DeserializeMsalV3(File.ReadAllBytes(_tokenCacheFile));
+            var securedCache = _secureStorage.Get(SecureTokenCacheKey);
+            if (!string.IsNullOrWhiteSpace(securedCache))
+            {
+                args.TokenCache.DeserializeMsalV3(Convert.FromBase64String(securedCache));
+                return;
+            }
+
+            if (File.Exists(_legacyTokenCacheFile))
+            {
+                var legacyBytes = File.ReadAllBytes(_legacyTokenCacheFile);
+                args.TokenCache.DeserializeMsalV3(legacyBytes);
+                _secureStorage.Set(SecureTokenCacheKey, Convert.ToBase64String(legacyBytes));
+                File.Delete(_legacyTokenCacheFile);
+            }
+        }
+        catch (Exception ex)
+        {
+            LogService.Error("AuthService: failed to restore token cache", ex);
         }
     }
 
@@ -54,7 +74,20 @@ public class AuthService
     {
         if (args.HasStateChanged)
         {
-            File.WriteAllBytes(_tokenCacheFile, args.TokenCache.SerializeMsalV3());
+            try
+            {
+                var serializedCache = args.TokenCache.SerializeMsalV3();
+                _secureStorage.Set(SecureTokenCacheKey, Convert.ToBase64String(serializedCache));
+
+                if (File.Exists(_legacyTokenCacheFile))
+                {
+                    File.Delete(_legacyTokenCacheFile);
+                }
+            }
+            catch (Exception ex)
+            {
+                LogService.Error("AuthService: failed to persist token cache", ex);
+            }
         }
     }
 
@@ -124,8 +157,8 @@ public class AuthService
                 authResult = await _msalApp.AcquireTokenInteractive(scopes)
                     .WithSystemWebViewOptions(new SystemWebViewOptions
                     {
-                        HtmlMessageSuccess = "<html><head><meta charset='utf-8'></head><body style='font-family:sans-serif;text-align:center;padding:50px;background:#1a1a1a;color:white;'><h1>✅ Přihlášení úspěšné!</h1><p>Můžeš zavřít toto okno a vrátit se do launcheru.</p></body></html>",
-                        HtmlMessageError = "<html><head><meta charset='utf-8'></head><body style='font-family:sans-serif;text-align:center;padding:50px;background:#1a1a1a;color:white;'><h1>❌ Chyba</h1><p>Přihlášení selhalo.</p></body></html>"
+                        HtmlMessageSuccess = "<html><head><meta charset='utf-8'></head><body style='font-family:sans-serif;text-align:center;padding:50px;background:#1a1a1a;color:white;'><h1>Přihlášení úspěšné</h1><p>Můžeš zavřít toto okno a vrátit se do launcheru.</p></body></html>",
+                        HtmlMessageError = "<html><head><meta charset='utf-8'></head><body style='font-family:sans-serif;text-align:center;padding:50px;background:#1a1a1a;color:white;'><h1>Chyba</h1><p>Přihlášení selhalo.</p></body></html>"
                     })
                     .ExecuteAsync();
             }
@@ -324,9 +357,11 @@ public class AuthService
             await _msalApp.RemoveAsync(account);
         }
 
-        if (File.Exists(_tokenCacheFile))
+        _secureStorage.Remove(SecureTokenCacheKey);
+
+        if (File.Exists(_legacyTokenCacheFile))
         {
-            File.Delete(_tokenCacheFile);
+            File.Delete(_legacyTokenCacheFile);
         }
     }
 

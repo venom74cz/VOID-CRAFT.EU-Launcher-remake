@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Shell.Title.Dashboard" xml:space="preserve"><value>Dashboard</value></data>
+  <data name="Shell.Title.Library" xml:space="preserve"><value>Knihovna Modpacků</value></data>
+  <data name="Shell.Title.Discover" xml:space="preserve"><value>Procházet Modpacky ({0})</value></data>
+  <data name="Shell.Title.Settings" xml:space="preserve"><value>Nastavení</value></data>
+  <data name="Shell.Title.InstanceDetailFallback" xml:space="preserve"><value>Detail Modpacku</value></data>
+  <data name="Shell.Title.SkinStudio" xml:space="preserve"><value>Skin Studio</value></data>
+  <data name="Shell.Title.Achievements" xml:space="preserve"><value>Achievementy</value></data>
+  <data name="Shell.Title.ServerHub" xml:space="preserve"><value>Server Hub</value></data>
+  <data name="Shell.Title.News" xml:space="preserve"><value>Novinky</value></data>
+  <data name="Shell.Title.Streaming" xml:space="preserve"><value>Creator Studio</value></data>
+  <data name="Shell.Title.Future" xml:space="preserve"><value>Future</value></data>
+  <data name="Shell.Title.Themes" xml:space="preserve"><value>Motivy</value></data>
+  <data name="Shell.Title.Localization" xml:space="preserve"><value>Jazyk</value></data>
+  <data name="Shell.Title.Default" xml:space="preserve"><value>VoidCraft Launcher</value></data>
+  <data name="Localization.Header.Title" xml:space="preserve"><value>Jazyk / Language</value></data>
+  <data name="Localization.Header.Subtitle" xml:space="preserve"><value>Výběr jazyka launcheru s okamžitým přepnutím.</value></data>
+  <data name="Localization.Runtime.Ready" xml:space="preserve"><value>Lokalizace je aktivní. Překládané texty se aktualizují okamžitě po přepnutí.</value></data>
+  <data name="Localization.Runtime.Coverage" xml:space="preserve"><value>Přepnutí jazyka pokrývá všechny hlavní obrazovky launcheru.</value></data>
+  <data name="Localization.Card.Runtime" xml:space="preserve"><value>Aktuální runtime stav</value></data>
+  <data name="Localization.Card.ActiveLanguage" xml:space="preserve"><value>Aktivní jazyk</value></data>
+  <data name="Localization.Card.SystemLanguage" xml:space="preserve"><value>Systémová culture</value></data>
+  <data name="Localization.Card.SelectLanguage" xml:space="preserve"><value>Vybraný jazyk launcheru</value></data>
+  <data name="Localization.Card.SelectLanguageHint" xml:space="preserve"><value>Volba se ukládá do konfigurace launcheru a aplikuje se okamžitě.</value></data>
+  <data name="Localization.Card.Infrastructure" xml:space="preserve"><value>Podpora lokalizace</value></data>
+  <data name="Localization.Card.Infrastructure.Item1" xml:space="preserve"><value>Systém překladových zdrojů</value></data>
+  <data name="Localization.Card.Infrastructure.Item2" xml:space="preserve"><value>Přepnutí jazyka bez restartu</value></data>
+  <data name="Localization.Card.Infrastructure.Item3" xml:space="preserve"><value>Volba jazyka se ukládá automaticky</value></data>
+  <data name="Localization.Card.Infrastructure.Item4" xml:space="preserve"><value>Přeložené titulky a datové obrazovky</value></data>
+  <data name="Localization.Card.Diagnostics" xml:space="preserve"><value>Diagnostika prostředí</value></data>
+  <data name="Localization.Card.DiagnosticsHint" xml:space="preserve"><value>Přehled aktuálního jazykového nastavení launcheru.</value></data>
+  <data name="Localization.Button.CopyReport" xml:space="preserve"><value>Kopírovat report</value></data>
+  <data name="Localization.Report.Title" xml:space="preserve"><value>VOID-CRAFT Localization Report</value></data>
+  <data name="Localization.Report.Status" xml:space="preserve"><value>Status: {0}</value></data>
+  <data name="Localization.Toast.Title" xml:space="preserve"><value>Lokalizace</value></data>
+  <data name="Localization.Toast.ClipboardUnavailable" xml:space="preserve"><value>Schránka není dostupná.</value></data>
+  <data name="Localization.Toast.ReportCopied" xml:space="preserve"><value>Diagnostický report je ve schránce.</value></data>
+  <data name="Localization.Toast.LanguageChanged" xml:space="preserve"><value>Jazyk launcheru byl přepnut na {0}.</value></data>
+  <data name="Achievements.Header.Title" xml:space="preserve"><value>Achievement Hub</value></data>
+  <data name="Achievements.Header.Filter" xml:space="preserve"><value>Filtr</value></data>
+  <data name="Achievements.Header.Completed" xml:space="preserve"><value>{0} / {1} splněno</value></data>
+  <data name="Achievements.Source.Title" xml:space="preserve"><value>Sezonní achievement systém</value></data>
+  <data name="Achievements.Source.Body" xml:space="preserve"><value>Achievement badge vychází z tvých quest statistik na VOID-CRAFT serveru. Při výpadku backendu se zobrazí poslední uložený stav.</value></data>
+  <data name="Achievements.Source.Meta" xml:space="preserve"><value>Sezóna: {0} • data z {1}</value></data>
+  <data name="Achievements.Button.Refresh" xml:space="preserve"><value>Obnovit</value></data>
+  <data name="Achievements.Summary.Player" xml:space="preserve"><value>Aktivní hráč</value></data>
+  <data name="Achievements.Summary.Rank" xml:space="preserve"><value>Pozice</value></data>
+  <data name="Achievements.Summary.Progress" xml:space="preserve"><value>Quest progress</value></data>
+  <data name="Achievements.Summary.Team" xml:space="preserve"><value>Tým</value></data>
+  <data name="Achievements.Summary.NotRanked" xml:space="preserve"><value>Nezařazeno</value></data>
+  <data name="Achievements.Summary.NoTeam" xml:space="preserve"><value>Bez týmu</value></data>
+  <data name="Achievements.Summary.Playtime" xml:space="preserve"><value>Playtime: {0}</value></data>
+  <data name="Achievements.Summary.CompletedQuests" xml:space="preserve"><value>{0} / {1} questů</value></data>
+  <data name="Achievements.Leaderboard.Title" xml:space="preserve"><value>Sezonní leaderboard</value></data>
+  <data name="Achievements.Leaderboard.Subtitle" xml:space="preserve"><value>Top hráči podle aktuálního quest progressu v aktivní sezóně.</value></data>
+  <data name="Achievements.Empty.Title" xml:space="preserve"><value>Pro aktivní účet zatím nemáme sezonní progres</value></data>
+  <data name="Achievements.Empty.Subtitle" xml:space="preserve"><value>Přihlas se pod stejným Minecraft účtem, který používáš na VOID-CRAFT serveru, nebo chvíli počkej na další backend snapshot.</value></data>
+  <data name="Achievements.NoData.Title" xml:space="preserve"><value>Achievement Hub nemá žádný snapshot</value></data>
+  <data name="Achievements.NoData.Subtitle" xml:space="preserve"><value>Backend sezonních statistik právě nevrátil použitelná data a v cache není starší snapshot.</value></data>
+  <data name="Achievements.Filter.All" xml:space="preserve"><value>Všechny</value></data>
+  <data name="Achievements.Filter.Progress" xml:space="preserve"><value>Progress</value></data>
+  <data name="Achievements.Filter.Mastery" xml:space="preserve"><value>Mastery</value></data>
+  <data name="Achievements.Filter.Social" xml:space="preserve"><value>Social</value></data>
+  <data name="Achievements.Category.Progress" xml:space="preserve"><value>Sezonní progres</value></data>
+  <data name="Achievements.Category.Mastery" xml:space="preserve"><value>Mistrovství</value></data>
+  <data name="Achievements.Category.Social" xml:space="preserve"><value>Social a tým</value></data>
+  <data name="Achievements.Status.Unlocked" xml:space="preserve"><value>Splněno</value></data>
+  <data name="Achievements.Status.Locked" xml:space="preserve"><value>Rozpracováno</value></data>
+  <data name="Achievements.Status.NoPlayer" xml:space="preserve"><value>Bez dat</value></data>
+  <data name="Achievements.Rule.FirstQuest.Title" xml:space="preserve"><value>První tah</value></data>
+  <data name="Achievements.Rule.FirstQuest.Description" xml:space="preserve"><value>Dokonči alespoň 1 quest v aktivní sezóně.</value></data>
+  <data name="Achievements.Rule.Quarter.Title" xml:space="preserve"><value>Čtvrtina sezóny</value></data>
+  <data name="Achievements.Rule.Quarter.Description" xml:space="preserve"><value>Dostaň quest progress na 25 %.</value></data>
+  <data name="Achievements.Rule.Halfway.Title" xml:space="preserve"><value>Na půli cesty</value></data>
+  <data name="Achievements.Rule.Halfway.Description" xml:space="preserve"><value>Dostaň quest progress na 50 %.</value></data>
+  <data name="Achievements.Rule.HighTier.Title" xml:space="preserve"><value>Void Vanguard</value></data>
+  <data name="Achievements.Rule.HighTier.Description" xml:space="preserve"><value>Dostaň quest progress na 75 %.</value></data>
+  <data name="Achievements.Rule.Completionist.Title" xml:space="preserve"><value>Completionist</value></data>
+  <data name="Achievements.Rule.Completionist.Description" xml:space="preserve"><value>Dokonči celou sezónu na 100 %.</value></data>
+  <data name="Achievements.Rule.VoidiumRank.DescriptionHours" xml:space="preserve"><value>Odehraj alespoň {0} hodin na VOID-CRAFTu.</value></data>
+  <data name="Achievements.Rule.VoidiumRank.DescriptionComposite" xml:space="preserve"><value>Odehraj alespoň {0} hodin a splň {1}.</value></data>
+  <data name="Achievements.Rule.VoidiumScout.Title" xml:space="preserve"><value>Voidium Scout</value></data>
+  <data name="Achievements.Rule.VoidiumScout.Description" xml:space="preserve"><value>Odehraj alespoň 10 hodin na VOID-CRAFTu.</value></data>
+  <data name="Achievements.Rule.VoidiumVeteran.Title" xml:space="preserve"><value>Voidium Veteran</value></data>
+  <data name="Achievements.Rule.VoidiumVeteran.Description" xml:space="preserve"><value>Odehraj alespoň 50 hodin na VOID-CRAFTu.</value></data>
+  <data name="Achievements.Rule.VoidiumLegend.Title" xml:space="preserve"><value>Voidium Legend</value></data>
+  <data name="Achievements.Rule.VoidiumLegend.Description" xml:space="preserve"><value>Odehraj alespoň 100 hodin na VOID-CRAFTu a odemkni vyšší rankový milestone.</value></data>
+  <data name="Achievements.Rule.Podium.Title" xml:space="preserve"><value>Podium finish</value></data>
+  <data name="Achievements.Rule.Podium.Description" xml:space="preserve"><value>Dostaň se mezi top 3 hráče aktivní sezóny.</value></data>
+  <data name="Achievements.Rule.Teamplay.Title" xml:space="preserve"><value>Týmový hráč</value></data>
+  <data name="Achievements.Rule.Teamplay.Description" xml:space="preserve"><value>Měj v sezonních datech přiřazený tým.</value></data>
+  <data name="Achievements.Rule.OnlineNow.Title" xml:space="preserve"><value>Právě online</value></data>
+  <data name="Achievements.Rule.OnlineNow.Description" xml:space="preserve"><value>Objev se v posledním snapshotu jako online hráč.</value></data>
+  <data name="Achievements.Progress.Percent" xml:space="preserve"><value>{0}% / {1}%</value></data>
+  <data name="Achievements.Progress.Quests" xml:space="preserve"><value>{0} / {1} questů</value></data>
+  <data name="Achievements.Progress.Hours" xml:space="preserve"><value>{0}h / {1}h</value></data>
+  <data name="Achievements.Progress.VoidiumComposite" xml:space="preserve"><value>{0}h / {1}h • {2}/{3} podmínek</value></data>
+  <data name="Achievements.Progress.Rank" xml:space="preserve"><value>{0}. místo / top {1}</value></data>
+  <data name="Achievements.Progress.Team" xml:space="preserve"><value>{0}</value></data>
+  <data name="Achievements.Progress.Online" xml:space="preserve"><value>{0}</value></data>
+  <data name="Achievements.Progress.Online.Yes" xml:space="preserve"><value>Online</value></data>
+  <data name="Achievements.Progress.Online.No" xml:space="preserve"><value>Momentálně offline</value></data>
+  <data name="Achievements.Condition.KILL" xml:space="preserve"><value>{0} zabití</value></data>
+  <data name="Achievements.Condition.VISIT" xml:space="preserve"><value>{0} návštěv biomů</value></data>
+  <data name="Achievements.Condition.BREAK" xml:space="preserve"><value>{0} rozbitých bloků</value></data>
+  <data name="Achievements.Condition.PLACE" xml:space="preserve"><value>{0} položených bloků</value></data>
+  <data name="Achievements.Condition.Generic" xml:space="preserve"><value>{0}x {1}</value></data>
+  <data name="Achievements.Leaderboard.TeamBadge" xml:space="preserve"><value>{0} hráči</value></data>
+  <data name="Common.LastUpdated" xml:space="preserve"><value>Naposledy aktualizováno {0}</value></data>
+  <data name="Common.Unknown" xml:space="preserve"><value>Neznámé</value></data>
+</root>

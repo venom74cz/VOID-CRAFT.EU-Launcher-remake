@@ -1,0 +1,175 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:VoidCraftLauncher.ViewModels"
+             xmlns:models="using:VoidCraftLauncher.Models"
+             x:Class="VoidCraftLauncher.Controls.ThemeSwitcherView"
+             x:DataType="vm:MainViewModel"
+             x:Name="ThemeSwitcherRoot">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="32,28,32,32">
+        <StackPanel Spacing="24">
+
+            <!-- Header -->
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Spacing="4">
+                    <TextBlock Text="Motivy" FontSize="26" FontWeight="ExtraBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <TextBlock Text="Zvol vizuální styl launcheru. Změna se projeví okamžitě."
+                               FontSize="13" Foreground="{DynamicResource TextMutedBrush}"/>
+                </StackPanel>
+                <Border Grid.Column="1" Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusPill}"
+                        Padding="14,6" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding BuiltInThemeCount, StringFormat='{}{0} built-in motivy'}" FontSize="11" Foreground="{DynamicResource SuccessBrush}" FontWeight="SemiBold"/>
+                </Border>
+            </Grid>
+
+            <!-- Current theme preview -->
+            <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="{DynamicResource RadiusCard}"
+                    BorderBrush="{DynamicResource PrimaryBBrush}" BorderThickness="2" Padding="24">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Spacing="12">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Border Width="14" Height="14" CornerRadius="7" Background="{DynamicResource PrimaryBBrush}"/>
+                            <TextBlock Text="{Binding CurrentTheme.Name}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                            <Border Background="{DynamicResource SuccessBrush}" CornerRadius="{DynamicResource RadiusPill}"
+                                    Padding="8,3" VerticalAlignment="Center" Opacity="0.9">
+                                <TextBlock Text="Aktivní" FontSize="10" Foreground="{DynamicResource BgCanvasBrush}" FontWeight="SemiBold"/>
+                            </Border>
+                        </StackPanel>
+                        <TextBlock Text="{Binding CurrentTheme.Description}"
+                                   FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                        <!-- Color swatches -->
+                        <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,4,0,0">
+                            <Border Width="28" Height="28" CornerRadius="6" Background="{DynamicResource BgCanvasBrush}"
+                                    BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" ToolTip.Tip="#07070b"/>
+                            <Border Width="28" Height="28" CornerRadius="6" Background="{DynamicResource BgShellBrush}"
+                                    BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" ToolTip.Tip="Shell"/>
+                            <Border Width="28" Height="28" CornerRadius="6" Background="{DynamicResource BgPanelBrush}"
+                                    BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" ToolTip.Tip="Panel"/>
+                            <Border Width="28" Height="28" CornerRadius="6" Background="{DynamicResource PrimaryABrush}"
+                                    ToolTip.Tip="Primary A"/>
+                            <Border Width="28" Height="28" CornerRadius="6" Background="{DynamicResource PrimaryBBrush}"
+                                    ToolTip.Tip="Primary B"/>
+                            <Border Width="28" Height="28" CornerRadius="6" Background="{DynamicResource AccentTealBrush}"
+                                    ToolTip.Tip="Accent Teal"/>
+                            <Border Width="28" Height="28" CornerRadius="6" Background="{DynamicResource SuccessBrush}"
+                                    ToolTip.Tip="Success"/>
+                            <Border Width="28" Height="28" CornerRadius="6" Background="{DynamicResource WarningBrush}"
+                                    ToolTip.Tip="Warning"/>
+                            <Border Width="28" Height="28" CornerRadius="6" Background="{DynamicResource DangerBrush}"
+                                    ToolTip.Tip="Danger"/>
+                        </StackPanel>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Spacing="8" VerticalAlignment="Center">
+                        <TextBlock Text="Motiv je aktivní okamžitě a načte se znovu při dalším startu launcheru."
+                                   MaxWidth="220" TextWrapping="Wrap" TextAlignment="Right"
+                                   FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="{DynamicResource RadiusCard}"
+                    BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" Padding="24">
+                <Grid ColumnDefinitions="*,20,260">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="{Binding MotionPreferenceCardTitle}" FontSize="16" FontWeight="Bold"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <TextBlock Text="{Binding MotionPreferenceCardHint}" FontSize="12"
+                                   Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" LineHeight="18"/>
+                        <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusPill}"
+                                Padding="12,6" HorizontalAlignment="Left">
+                            <TextBlock Text="{Binding MotionPreferenceStatus}" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource AccentTealBrush}"/>
+                        </Border>
+                        <TextBlock Text="{Binding MotionPreferenceSystemStatus}" FontSize="11"
+                                   Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" LineHeight="17"/>
+                    </StackPanel>
+
+                    <Border Grid.Column="2" Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}"
+                            Padding="16,14">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Režim animací" FontSize="12" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"/>
+                            <ComboBox ItemsSource="{Binding MotionPreferenceOptions}"
+                                      SelectedItem="{Binding SelectedMotionPreferenceOption}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate x:DataType="models:SelectionOption">
+                                        <TextBlock Text="{Binding Label}"/>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <TextBlock Text="Galerie motivů" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+
+            <ItemsControl ItemsSource="{Binding ThemeOptions}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="models:ThemeInfo">
+                        <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="{DynamicResource RadiusCard}"
+                                BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" Padding="20" Margin="0,0,16,16"
+                                Width="264">
+                            <StackPanel Spacing="12">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <Border Width="28" Height="28" CornerRadius="6" Background="{Binding Preview0}"/>
+                                    <Border Width="28" Height="28" CornerRadius="6" Background="{Binding Preview1}"/>
+                                    <Border Width="28" Height="28" CornerRadius="6" Background="{Binding Preview2}"/>
+                                </StackPanel>
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                    <TextBlock Text="{Binding Description}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" LineHeight="17"/>
+                                </StackPanel>
+                                <Border Background="{DynamicResource SuccessBrush}" CornerRadius="{DynamicResource RadiusPill}"
+                                        Padding="10,4" HorizontalAlignment="Left" IsVisible="{Binding IsActive}">
+                                    <TextBlock Text="Aktivní motiv" FontSize="10" Foreground="{DynamicResource BgCanvasBrush}" FontWeight="SemiBold"/>
+                                </Border>
+                                <Button Content="Použít motiv" Classes="secondary" Padding="12,8"
+                                        IsVisible="{Binding !IsActive}"
+                                        Command="{Binding #ThemeSwitcherRoot.DataContext.ApplyThemeCommand}"
+                                        CommandParameter="{Binding Id}"/>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- Token reference -->
+            <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="{DynamicResource RadiusCard}"
+                    BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" Padding="24">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Theme Engine" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <TextBlock Text="Design tokeny řídí barvy, zaoblení a povrchy celého launcheru. Každý motiv definuje vlastní paletu."
+                               FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" LineHeight="18"/>
+                    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12">
+                        <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="12,10">
+                            <StackPanel Spacing="2" HorizontalAlignment="Center">
+                                <TextBlock Text="17" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource PrimaryBBrush}" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Barevných tokenů" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Column="1" Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="12,10">
+                            <StackPanel Spacing="2" HorizontalAlignment="Center">
+                                <TextBlock Text="5" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource PrimaryBBrush}" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Radius tokenů" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Column="2" Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="12,10">
+                            <StackPanel Spacing="2" HorizontalAlignment="Center">
+                                <TextBlock Text="4" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource PrimaryBBrush}" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Live motivy" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

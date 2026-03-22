@@ -1,0 +1,80 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ╔══════════════════════════════════════════════════════════════╗ -->
+    <!-- ║              OBSIDIAN ICON SYSTEM                            ║ -->
+    <!-- ║  Unified icon tokens — single source for navigation,        ║ -->
+    <!-- ║  status, and action marks across the launcher.              ║ -->
+    <!-- ║  Uses symbolic glyphs instead of emoji.                     ║ -->
+    <!-- ╚══════════════════════════════════════════════════════════════╝ -->
+
+    <!-- ═══════════════ NAVIGATION ═══════════════ -->
+    <x:String x:Key="IconDashboard">⌂</x:String>
+    <x:String x:Key="IconLibrary">▤</x:String>
+    <x:String x:Key="IconDiscover">⌕</x:String>
+    <x:String x:Key="IconSettings">⚙</x:String>
+    <x:String x:Key="IconServerHub">◎</x:String>
+    <x:String x:Key="IconNews">☰</x:String>
+    <x:String x:Key="IconAchievements">✦</x:String>
+    <x:String x:Key="IconSkinStudio">◌</x:String>
+    <x:String x:Key="IconStreaming">▷</x:String>
+    <x:String x:Key="IconFuture">◇</x:String>
+    <x:String x:Key="IconTheme">◐</x:String>
+    <x:String x:Key="IconLanguage">A</x:String>
+
+    <!-- ═══════════════ ACTIONS ═══════════════ -->
+    <x:String x:Key="IconPlay">▶</x:String>
+    <x:String x:Key="IconStop">■</x:String>
+    <x:String x:Key="IconUpdate">↻</x:String>
+    <x:String x:Key="IconDownload">↓</x:String>
+    <x:String x:Key="IconUpload">↑</x:String>
+    <x:String x:Key="IconSearch">⌕</x:String>
+    <x:String x:Key="IconAdd">+</x:String>
+    <x:String x:Key="IconClose">✕</x:String>
+    <x:String x:Key="IconBack">←</x:String>
+    <x:String x:Key="IconCopy">⧉</x:String>
+    <x:String x:Key="IconOpen">↗</x:String>
+    <x:String x:Key="IconSave">⬒</x:String>
+    <x:String x:Key="IconTrash">⌫</x:String>
+    <x:String x:Key="IconRefresh">↺</x:String>
+    <x:String x:Key="IconExport">⇪</x:String>
+    <x:String x:Key="IconImport">⇩</x:String>
+
+    <!-- ═══════════════ STATUS ═══════════════ -->
+    <x:String x:Key="IconOnline">●</x:String>
+    <x:String x:Key="IconOffline">○</x:String>
+    <x:String x:Key="IconWarning">⚠</x:String>
+    <x:String x:Key="IconError">×</x:String>
+    <x:String x:Key="IconSuccess">✓</x:String>
+    <x:String x:Key="IconInfo">ℹ</x:String>
+    <x:String x:Key="IconLoading">…</x:String>
+
+    <!-- ═══════════════ AUTH / ACCOUNTS ═══════════════ -->
+    <x:String x:Key="IconLogin">⌁</x:String>
+    <x:String x:Key="IconUser">◉</x:String>
+    <x:String x:Key="IconUsers">◎</x:String>
+    <x:String x:Key="IconShield">◇</x:String>
+
+    <!-- ═══════════════ SOCIAL ═══════════════ -->
+    <x:String x:Key="IconDiscord">D</x:String>
+    <x:String x:Key="IconYouTube">Y</x:String>
+    <x:String x:Key="IconFacebook">f</x:String>
+    <x:String x:Key="IconInstagram">I</x:String>
+
+    <!-- ═══════════════ INSTANCE / GAME ═══════════════ -->
+    <x:String x:Key="IconFolder">□</x:String>
+    <x:String x:Key="IconMods">⊞</x:String>
+    <x:String x:Key="IconConfig">⌘</x:String>
+    <x:String x:Key="IconCrash">✕</x:String>
+    <x:String x:Key="IconBackup">▣</x:String>
+    <x:String x:Key="IconGallery">▥</x:String>
+    <x:String x:Key="IconPerformance">▤</x:String>
+
+    <!-- ═══════════════ ICON SIZES ═══════════════ -->
+    <x:Double x:Key="IconSizeSmall">14</x:Double>
+    <x:Double x:Key="IconSizeMedium">18</x:Double>
+    <x:Double x:Key="IconSizeLarge">22</x:Double>
+    <x:Double x:Key="IconSizeNav">20</x:Double>
+    <x:Double x:Key="IconSizeHero">28</x:Double>
+
+</ResourceDictionary>

@@ -205,7 +205,7 @@ namespace VoidCraftLauncher.ViewModels
                 
                 RequestClose?.Invoke();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // Error handling
             }

@@ -1,0 +1,99 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:VoidCraftLauncher.ViewModels"
+             xmlns:converters="using:VoidCraftLauncher.Converters"
+             x:Class="VoidCraftLauncher.Controls.SettingsView"
+             x:DataType="vm:MainViewModel">
+
+    <UserControl.Resources>
+        <converters:RamValueConverter x:Key="RamValueConverter"/>
+    </UserControl.Resources>
+
+    <Border Background="{DynamicResource BgCanvasBrush}">
+        <Grid ColumnDefinitions="220,*">
+
+            <!-- Settings Left Nav -->
+            <Border Grid.Column="0" Background="{DynamicResource BgShellBrush}"
+                    BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="0,0,1,0" Padding="16,24">
+                <StackPanel Spacing="2">
+                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="8,0,0,20">
+                        <TextBlock Text="{StaticResource IconSettings}" FontSize="20" Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center"/>
+                        <TextBlock Text="Nastavení" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="12,8">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="{StaticResource IconPerformance}" FontSize="13" VerticalAlignment="Center"/>
+                            <TextBlock Text="Paměť a výkon" FontSize="13" Foreground="{DynamicResource PrimaryBBrush}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Spacer + version -->
+                    <Border Height="1" Background="{DynamicResource StrokeSoftBrush}" Margin="0,20"/>
+                    <StackPanel Margin="8,8,0,0" Spacing="2">
+                        <TextBlock Text="{Binding AppVersion}" Foreground="{DynamicResource TextMutedBrush}" FontSize="11"/>
+                        <TextBlock Text="Windows" Foreground="{DynamicResource StrokeSoftBrush}" FontSize="10"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Settings Content -->
+            <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Disabled">
+                <Border Padding="32,28,32,60">
+                    <StackPanel Spacing="24" MaxWidth="700">
+
+                        <!-- RAM Section -->
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Paměť a výkon" FontSize="22" FontWeight="ExtraBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                            <TextBlock Text="Globální konfigurace launcheru a herního běhu" Foreground="{DynamicResource TextMutedBrush}" FontSize="13"/>
+                        </StackPanel>
+
+                        <!-- RAM Card -->
+                        <Border Classes="card">
+                            <StackPanel Spacing="18">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <StackPanel Spacing="2">
+                                        <TextBlock Text="Maximální RAM" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="15"/>
+                                        <TextBlock Text="Kolik paměti může hra využít" Foreground="{DynamicResource TextMutedBrush}" FontSize="11"/>
+                                    </StackPanel>
+                                    <Border Grid.Column="1" Background="{DynamicResource BgInteractiveBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="12,6">
+                                        <TextBlock Text="{Binding Config.MaxRamMb, Converter={StaticResource RamValueConverter}}" FontWeight="ExtraBold" Foreground="{DynamicResource PrimaryBBrush}" FontSize="16"/>
+                                    </Border>
+                                </Grid>
+                                <Slider Minimum="2048" Maximum="{Binding SystemRamMb}" Value="{Binding Config.MaxRamMb}" TickFrequency="512" IsSnapToTickEnabled="True"/>
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Text="Min: 2 GB" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding SystemRamMb, Converter={StaticResource RamValueConverter}, StringFormat='Systém: {0}'}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Optimization Card -->
+                        <Border Classes="card">
+                            <StackPanel Spacing="16">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <StackPanel Spacing="2">
+                                        <TextBlock Text="Optimalizační flagy" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="15"/>
+                                        <TextBlock Text="JVM argumenty pro lepší výkon" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                    </StackPanel>
+                                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding Config.EnableOptimizationFlags}" OnContent="" OffContent=""/>
+                                </Grid>
+
+                                <StackPanel IsVisible="{Binding Config.EnableOptimizationFlags}" Spacing="10">
+                                    <Border Height="1" Background="{DynamicResource StrokeSoftBrush}"/>
+                                    <TextBlock Text="Garbage Collector" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" FontWeight="SemiBold"/>
+                                    <ComboBox ItemsSource="{Binding GcTypes}" SelectedItem="{Binding Config.SelectedGc}" HorizontalAlignment="Stretch"/>
+                                    <TextBlock Text="Doporučujeme ponechat výchozí nastavení." FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Save -->
+                        <Button Content="Uložit změny" Command="{Binding SaveSettingsCommand}"
+                                Classes="primary" FontSize="14" Padding="0,14" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+            </ScrollViewer>
+        </Grid>
+    </Border>
+</UserControl>

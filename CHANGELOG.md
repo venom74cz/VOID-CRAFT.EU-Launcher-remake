@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.1.1 - 2026-03-23
+
+### Hotfix detailu instance a Server Hubu
+- `Instance Workspace` uz po otevreni korektne prepocita odvozene hlavicky a overview, kdyz se metadata modpacku dotahnou asynchronne z API.
+- Opraven placeholder stav `Nacitani...` v detailu instance, ktery zustaval viset i po tom, co uz launcher znal realny nazev, autora a popis packu.
+- `Server Hub` ted nacita a renderuje server favicony cisteji: fallback glyph se zobrazi jen kdyz chybi realna ikona a nacitena ikona uz neni ztlumena overlay vrstvou.
+- Vazba server -> modpack umi pouzit logo modpacku jako fallback iconu, kdyz server neposila vlastni favicon.
+
 ## 3.1.0 - 2026-03-23
 
 ### Creator Studio jako skutecny workspace

@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using VoidCraftLauncher.Services;
 using VoidCraftLauncher.Models;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -80,6 +81,7 @@ public partial class MainViewModel : ViewModelBase
     private ModpackManifestInfo _lastManifestInfo;
     private readonly SemaphoreSlim _modpackUpdateCheckLock = new(1, 1);
     private static readonly TimeSpan ModpackUpdateCheckInterval = TimeSpan.FromSeconds(5);
+    private ModpackInfo? _observedCurrentModpack;
 
     // ===== CORE STATE =====
 
@@ -665,6 +667,22 @@ public partial class MainViewModel : ViewModelBase
 
     partial void OnCurrentModpackChanged(ModpackInfo value)
     {
+        if (!ReferenceEquals(_observedCurrentModpack, value))
+        {
+            if (_observedCurrentModpack != null)
+            {
+                _observedCurrentModpack.PropertyChanged -= OnCurrentModpackPropertyChanged;
+            }
+
+            _observedCurrentModpack = value;
+
+            if (_observedCurrentModpack != null)
+            {
+                _observedCurrentModpack.PropertyChanged += OnCurrentModpackPropertyChanged;
+            }
+        }
+
+        NotifyCurrentModpackDerivedStateChanged();
         _ = LoadCurrentModpackScreenshotsAsync();
         _ = RefreshCurrentModpackWorkspaceDataAsync();
         RefreshCurrentModpackCreatorManifest();
@@ -673,6 +691,32 @@ public partial class MainViewModel : ViewModelBase
         _ = RefreshCreatorWorkbenchAsync();
         NotifyStreamingToolsStateChanged();
         RefreshCreatorWorkspaceContext();
+    }
+
+    private void OnCurrentModpackPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        NotifyCurrentModpackDerivedStateChanged();
+
+        if (string.IsNullOrEmpty(e.PropertyName) || e.PropertyName == nameof(ModpackInfo.Name))
+        {
+            _ = LoadCurrentModpackScreenshotsAsync();
+            _ = RefreshCurrentModpackWorkspaceDataAsync();
+            RefreshCurrentModpackCreatorManifest();
+            RefreshCreatorWorkspaceContext();
+        }
+    }
+
+    private void NotifyCurrentModpackDerivedStateChanged()
+    {
+        OnPropertyChanged(nameof(MainPanelTitle));
+        OnPropertyChanged(nameof(CurrentWorkspaceDisplayName));
+        OnPropertyChanged(nameof(HasCurrentWorkspaceDescription));
+        OnPropertyChanged(nameof(CurrentWorkspaceDescription));
+        OnPropertyChanged(nameof(CurrentWorkspaceAuthorLabel));
+        OnPropertyChanged(nameof(CurrentWorkspaceMetadataSummary));
+        OnPropertyChanged(nameof(CurrentWorkspacePrimaryServerLabel));
+        OnPropertyChanged(nameof(CurrentWorkspaceRecommendedRamLabel));
+        UpdateDiscordPresence();
     }
 
     private void OnInstalledModpacksCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)

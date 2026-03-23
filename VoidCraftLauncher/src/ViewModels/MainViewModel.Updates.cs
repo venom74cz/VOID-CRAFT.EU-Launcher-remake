@@ -220,9 +220,12 @@ public partial class MainViewModel
             CurrentModpack = new ModpackInfo
             {
                 ProjectId = id ?? VOID_BOX_PROJECT_ID,
+                Source = "CurseForge",
                 Name = name ?? "VOID-BOX 2",
                 LogoUrl = logo ?? "",
                 Description = summary ?? "",
+                Author = modpack?["authors"]?[0]?["name"]?.ToString() ?? modpack?["author"]?.ToString() ?? "",
+                WebLink = modpack?["links"]?["websiteUrl"]?.ToString() ?? "",
                 CurrentVersion = selectedVersion,
                 Versions = versionsList,
                 IsDeletable = false
@@ -463,27 +466,160 @@ public partial class MainViewModel
 
         try
         {
+            HydrateCurrentModpackIdentity(CurrentModpack);
+
+            string? fetchedName = null;
+            string? fetchedSummary = null;
+            string? fetchedAuthor = null;
+            string? fetchedLogoUrl = null;
+            string? fetchedWebLink = null;
             string fullDescription = "";
-            if (CurrentModpack.Source == "CurseForge" && CurrentModpack.ProjectId > 0)
+
+            if ((string.IsNullOrWhiteSpace(CurrentModpack.Source) || CurrentModpack.Source == "CurseForge") && CurrentModpack.ProjectId > 0)
             {
+                var modpackJson = await _curseForgeApi.GetModpackInfoAsync(CurrentModpack.ProjectId);
+                var modpackNode = JsonNode.Parse(modpackJson)?["data"];
+                fetchedName = modpackNode?["name"]?.ToString();
+                fetchedSummary = modpackNode?["summary"]?.ToString();
+                fetchedAuthor = modpackNode?["authors"]?[0]?["name"]?.ToString() ?? modpackNode?["author"]?.ToString();
+                fetchedLogoUrl = modpackNode?["logo"]?["url"]?.ToString() ?? modpackNode?["logo"]?["thumbnailUrl"]?.ToString();
+                fetchedWebLink = modpackNode?["links"]?["websiteUrl"]?.ToString();
                 fullDescription = await _curseForgeApi.GetProjectDescriptionAsync(CurrentModpack.ProjectId);
             }
             else if (CurrentModpack.Source == "Modrinth" && !string.IsNullOrEmpty(CurrentModpack.ModrinthId))
             {
-                fullDescription = await _modrinthApi.GetProjectDescriptionAsync(CurrentModpack.ModrinthId);
+                var projectJson = await _modrinthApi.GetProjectAsync(CurrentModpack.ModrinthId);
+                var projectNode = JsonNode.Parse(projectJson);
+                fetchedName = projectNode?["title"]?.ToString();
+                fetchedSummary = projectNode?["description"]?.ToString();
+                fetchedAuthor = projectNode?["author"]?.ToString();
+                fetchedLogoUrl = projectNode?["icon_url"]?.ToString();
+                fetchedWebLink = projectNode?["slug"] is JsonNode slugNode
+                    ? $"https://modrinth.com/modpack/{slugNode}"
+                    : CurrentModpack.WebLink;
+                fullDescription = projectNode?["body"]?.ToString() ?? "";
             }
 
-            if (!string.IsNullOrWhiteSpace(fullDescription))
+            var descriptionToApply = !string.IsNullOrWhiteSpace(fullDescription)
+                ? fullDescription
+                : fetchedSummary ?? "";
+
+            var changed = await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
             {
-                await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() => 
+                var metadataChanged = false;
+
+                if (ShouldReplaceCurrentModpackName(CurrentModpack.Name) && !string.IsNullOrWhiteSpace(fetchedName))
                 {
-                    CurrentModpack.Description = fullDescription;
-                });
+                    CurrentModpack.Name = fetchedName;
+                    metadataChanged = true;
+                }
+
+                if (!string.IsNullOrWhiteSpace(descriptionToApply) && !string.Equals(CurrentModpack.Description, descriptionToApply, StringComparison.Ordinal))
+                {
+                    CurrentModpack.Description = descriptionToApply;
+                    metadataChanged = true;
+                }
+
+                if (string.IsNullOrWhiteSpace(CurrentModpack.Author) && !string.IsNullOrWhiteSpace(fetchedAuthor))
+                {
+                    CurrentModpack.Author = fetchedAuthor;
+                    metadataChanged = true;
+                }
+
+                if (string.IsNullOrWhiteSpace(CurrentModpack.LogoUrl) && !string.IsNullOrWhiteSpace(fetchedLogoUrl))
+                {
+                    CurrentModpack.LogoUrl = fetchedLogoUrl;
+                    metadataChanged = true;
+                }
+
+                if (string.IsNullOrWhiteSpace(CurrentModpack.WebLink) && !string.IsNullOrWhiteSpace(fetchedWebLink))
+                {
+                    CurrentModpack.WebLink = fetchedWebLink;
+                    metadataChanged = true;
+                }
+
+                if (string.IsNullOrWhiteSpace(CurrentModpack.Source))
+                {
+                    CurrentModpack.Source = CurrentModpack.ProjectId > 0 ? "CurseForge" : "Modrinth";
+                    metadataChanged = true;
+                }
+
+                return metadataChanged;
+            });
+
+            if (changed)
+            {
+                SaveModpacks();
             }
         }
         catch (Exception ex)
         {
             LogService.Error($"[FetchFullDescriptionAsync] Failed for {CurrentModpack.Name}", ex);
         }
+    }
+
+    private void HydrateCurrentModpackIdentity(ModpackInfo modpack)
+    {
+        var existing = InstalledModpacks.FirstOrDefault(candidate =>
+            !ReferenceEquals(candidate, modpack) &&
+            ((modpack.ProjectId > 0 && candidate.ProjectId == modpack.ProjectId) ||
+             (!string.IsNullOrWhiteSpace(modpack.ModrinthId) && string.Equals(candidate.ModrinthId, modpack.ModrinthId, StringComparison.OrdinalIgnoreCase)) ||
+             ArePackNamesEquivalent(candidate.Name, modpack.Name)));
+
+        if (existing == null)
+        {
+            return;
+        }
+
+        if (modpack.ProjectId <= 0)
+        {
+            modpack.ProjectId = existing.ProjectId;
+        }
+
+        if (string.IsNullOrWhiteSpace(modpack.Source))
+        {
+            modpack.Source = existing.Source;
+        }
+
+        if (string.IsNullOrWhiteSpace(modpack.ModrinthId))
+        {
+            modpack.ModrinthId = existing.ModrinthId;
+        }
+
+        if (string.IsNullOrWhiteSpace(modpack.WebLink))
+        {
+            modpack.WebLink = existing.WebLink;
+        }
+
+        if (ShouldReplaceCurrentModpackName(modpack.Name) && !string.IsNullOrWhiteSpace(existing.Name))
+        {
+            modpack.Name = existing.Name;
+        }
+
+        if (string.IsNullOrWhiteSpace(modpack.LogoUrl))
+        {
+            modpack.LogoUrl = existing.LogoUrl;
+        }
+
+        if (string.IsNullOrWhiteSpace(modpack.Author))
+        {
+            modpack.Author = existing.Author;
+        }
+
+        if (string.IsNullOrWhiteSpace(modpack.Description))
+        {
+            modpack.Description = existing.Description;
+        }
+    }
+
+    private static bool ShouldReplaceCurrentModpackName(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return true;
+        }
+
+        return string.Equals(value.Trim(), "Načítání...", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(value.Trim(), "Loading...", StringComparison.OrdinalIgnoreCase);
     }
 }

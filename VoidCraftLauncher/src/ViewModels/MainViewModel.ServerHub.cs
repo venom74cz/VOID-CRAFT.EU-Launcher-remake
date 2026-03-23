@@ -377,6 +377,11 @@ public partial class MainViewModel
             server.LinkedModpackName = modpack.Name;
         }
 
+        if (string.IsNullOrWhiteSpace(server.IconUrl) && !string.IsNullOrWhiteSpace(modpack.LogoUrl))
+        {
+            server.IconUrl = modpack.LogoUrl;
+        }
+
         var manifest = TryLoadManifestInfo(modpack);
         if (manifest != null)
         {

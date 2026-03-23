@@ -2,6 +2,16 @@
 
 Všechny důležité změny v projektu jsou dokumentovány v tomto souboru.
 
+## [3.1.1] - 2026-03-23
+
+### 🛠️ Hotfix Instance Workspace a Server Hub
+
+### Opraveno
+- **Metadata detailu instance**: `Instance Workspace` po otevření znovu přepočítá breadcrumb, titulek i overview ve chvíli, kdy se metadata modpacku dotáhnou asynchronně z API.
+- **Placeholder `Načítání...`**: opraven stav, kdy detail instance zůstával na fallback názvu, prázdném popisu a neznámém autorovi i po úspěšném načtení dat.
+- **Server icon layering**: favicony serverů v `Server Hubu` už nejsou ztlumené parent overlay vrstvou a fallback glyph se skryje, jakmile je k dispozici skutečná ikona.
+- **Fallback icon metadata**: community i pinned servery umí použít logo navázaného modpacku jako bezpečný fallback, když status API nevrátí vlastní favicon.
+
 ## [3.1.0] - 2026-03-23
 
 ### ✨ Creator Studio F0/F1

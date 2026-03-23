@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Text.Json.Nodes;
 using System.Threading;
@@ -60,6 +62,11 @@ public class ServerStatusService : IDisposable
                 server.PlayerCount = players?["online"]?.GetValue<int>() ?? 0;
                 server.MaxPlayers = players?["max"]?.GetValue<int>() ?? 0;
                 server.StatusText = "Online";
+                var resolvedIconUrl = ResolveServerIconUrl(json?["icon"]?.ToString(), key);
+                if (!string.IsNullOrWhiteSpace(resolvedIconUrl))
+                {
+                    server.IconUrl = resolvedIconUrl;
+                }
 
                 var motdList = json["motd"]?["clean"]?.AsArray();
                 if (motdList != null && motdList.Count > 0)
@@ -149,6 +156,7 @@ public class ServerStatusService : IDisposable
         to.MaxPlayers = from.MaxPlayers;
         to.StatusText = from.StatusText;
         to.Motd = from.Motd;
+        to.IconUrl = from.IconUrl;
         to.LastPolled = from.LastPolled;
     }
 
@@ -176,6 +184,37 @@ public class ServerStatusService : IDisposable
             DiscoverySource = source.DiscoverySource,
             LastPolled = source.LastPolled
         };
+    }
+
+    private static string? ResolveServerIconUrl(string? iconPayload, string cacheKey)
+    {
+        if (string.IsNullOrWhiteSpace(iconPayload))
+        {
+            return null;
+        }
+
+        const string pngPrefix = "data:image/png;base64,";
+        if (!iconPayload.StartsWith(pngPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return iconPayload;
+        }
+
+        try
+        {
+            var bytes = Convert.FromBase64String(iconPayload[pngPrefix.Length..]);
+            var iconDirectory = Path.Combine(Path.GetTempPath(), "voidcraft-server-icons");
+            Directory.CreateDirectory(iconDirectory);
+
+            var safeFileName = new string(cacheKey.Select(character => char.IsLetterOrDigit(character) ? character : '_').ToArray());
+            var filePath = Path.Combine(iconDirectory, safeFileName + ".png");
+
+            File.WriteAllBytes(filePath, bytes);
+            return new Uri(filePath).AbsoluteUri;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     public void Dispose()

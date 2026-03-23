@@ -3,6 +3,8 @@
              xmlns:vm="using:VoidCraftLauncher.ViewModels"
              xmlns:models="using:VoidCraftLauncher.Models"
              xmlns:controls="using:VoidCraftLauncher.Controls"
+             xmlns:asyncImage="clr-namespace:AsyncImageLoader;assembly=AsyncImageLoader.Avalonia"
+             xmlns:converters="using:VoidCraftLauncher.Converters"
              x:Class="VoidCraftLauncher.Controls.ServerHubView"
              x:DataType="vm:MainViewModel"
              x:Name="ServerHubRoot">
@@ -121,8 +123,16 @@
                             <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="16">
                                 <!-- Server icon -->
                                 <Border Width="56" Height="56" CornerRadius="{DynamicResource RadiusControl}"
-                                        Background="{DynamicResource PrimaryBBrush}" Opacity="0.15">
-                                    <TextBlock Text="{StaticResource IconServerHub}" FontSize="28" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        ClipToBounds="True">
+                                    <Border.Background>
+                                        <SolidColorBrush Color="{DynamicResource PrimaryB}" Opacity="0.15"/>
+                                    </Border.Background>
+                                    <Grid>
+                                        <TextBlock Text="{StaticResource IconServerHub}" FontSize="28" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                   IsVisible="{Binding PinnedServer.IconUrl, Converter={x:Static StringConverters.IsNullOrEmpty}}"/>
+                                        <asyncImage:AdvancedImage Source="{Binding PinnedServer.IconUrl}" Stretch="UniformToFill"
+                                                                 IsVisible="{Binding PinnedServer.IconUrl, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                                    </Grid>
                                 </Border>
 
                                 <!-- Info -->
@@ -223,8 +233,13 @@
                                     Padding="20" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" Margin="0,0,0,12">
                                 <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="16">
                                     <Border Width="52" Height="52" CornerRadius="{DynamicResource RadiusControl}"
-                                            Background="{DynamicResource BgInteractiveBrush}">
-                                        <TextBlock Text="{StaticResource IconServerHub}" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            Background="{DynamicResource BgInteractiveBrush}" ClipToBounds="True">
+                                        <Grid>
+                                            <TextBlock Text="{StaticResource IconServerHub}" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                       IsVisible="{Binding IconUrl, Converter={x:Static StringConverters.IsNullOrEmpty}}"/>
+                                            <asyncImage:AdvancedImage Source="{Binding IconUrl}" Stretch="UniformToFill"
+                                                                     IsVisible="{Binding IconUrl, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                                        </Grid>
                                     </Border>
                                     <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
                                         <StackPanel Orientation="Horizontal" Spacing="8">

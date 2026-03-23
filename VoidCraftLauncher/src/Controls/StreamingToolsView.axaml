@@ -6,262 +6,460 @@
              x:Class="VoidCraftLauncher.Controls.StreamingToolsView"
              x:DataType="vm:MainViewModel">
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="32,28,32,60">
-        <StackPanel Spacing="24">
-
-            <!-- Header -->
-            <Grid ColumnDefinitions="*,Auto">
-                <StackPanel Spacing="4">
-                    <TextBlock Text="Creator Studio" FontSize="26" FontWeight="ExtraBold"
-                               Foreground="{DynamicResource TextPrimaryBrush}"/>
-                    <TextBlock Text="Správa instancí, konfiguračních souborů a rychlé akce na jednom místě"
-                               FontSize="13" Foreground="{DynamicResource TextMutedBrush}"/>
+    <Grid RowDefinitions="Auto,*">
+        <Border Background="{DynamicResource BgPanelBrush}" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="0,0,0,1" Padding="32,26,32,20">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                <StackPanel Spacing="6">
+                    <TextBlock Text="Creator Studio" FontSize="28" FontWeight="ExtraBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <TextBlock Text="Workflow shell pro workspace, metadata, soubory, notes, Git a release bez nekonecne long-page navigace." FontSize="13" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                    <WrapPanel Orientation="Horizontal">
+                        <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusPill}" Padding="12,6" Margin="0,0,8,0">
+                            <TextBlock Text="{Binding CreatorStudioInstanceLabel}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource PrimaryBBrush}"/>
+                        </Border>
+                        <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusPill}" Padding="12,6" Margin="0,0,8,0">
+                            <TextBlock Text="{Binding CreatorCurrentTabLabel}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        </Border>
+                        <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusPill}" Padding="12,6" Margin="0,0,8,0">
+                            <TextBlock Text="{Binding CreatorManifestStatus}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        </Border>
+                    </WrapPanel>
                 </StackPanel>
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                    <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusPill}"
-                            Padding="14,6" IsVisible="{Binding HasCreatorWorkbenchFiles}">
-                        <TextBlock Text="Workbench připraven" FontSize="11" Foreground="{DynamicResource SuccessBrush}" FontWeight="SemiBold"/>
-                    </Border>
-                    <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusPill}"
-                            Padding="14,6" IsVisible="{Binding !HasCreatorWorkbenchFiles}">
-                        <TextBlock Text="Čeká na instanci" FontSize="11" Foreground="{DynamicResource WarningBrush}" FontWeight="SemiBold"/>
-                    </Border>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Top">
+                    <Button Command="{Binding UseCreatorCopilotDeskCommand}" Classes="primary" Padding="14,8">
+                        <TextBlock Text="Copilot Desk"/>
+                    </Button>
+                    <Button Command="{Binding UseDefaultContextDockCommand}" Classes="secondary" Padding="14,8">
+                        <TextBlock Text="Context Dock"/>
+                    </Button>
+                    <Button Command="{Binding OpenCreatorNotesDrawerCommand}" Classes="secondary" Padding="14,8">
+                        <TextBlock Text="Notes Drawer"/>
+                    </Button>
                 </StackPanel>
             </Grid>
+        </Border>
 
-            <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="{DynamicResource RadiusCard}"
-                    BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" Padding="24">
-                <StackPanel Spacing="16">
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="Pracovní instance" FontSize="16" FontWeight="Bold"
-                                       Foreground="{DynamicResource TextPrimaryBrush}"/>
-                            <TextBlock Text="Vyber instanci, nad kterou chceš pracovat. Dostaneš přímý přístup ke config souborům, serverovým vazbám a workspace akcím."
-                                       FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
-                        </StackPanel>
-                        <Border Grid.Column="1" Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusPill}"
-                                Padding="12,6">
-                            <TextBlock Text="{Binding CreatorStudioInstanceLabel}" FontSize="11" FontWeight="Bold"
-                                       Foreground="{DynamicResource PrimaryBBrush}"/>
-                        </Border>
-                    </Grid>
+        <TabControl Grid.Row="1" Margin="24,20,24,20" SelectedIndex="{Binding CreatorSelectedTabIndex}">
+            <TabItem Header="Overview">
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Spacing="16" Margin="8,4,8,40" MaxWidth="1080">
+                        <Border Classes="card">
+                            <StackPanel Spacing="16">
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="Pracovni workspace" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                        <TextBlock Text="Vyber instanci, nad kterou bude Creator shell drzet sdileny context pro vsechny workflow zalozky." FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                    <Border Grid.Column="1" Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusPill}" Padding="12,6">
+                                        <TextBlock Text="{Binding CreatorGitStatusSummary}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                    </Border>
+                                </Grid>
 
-                    <ComboBox ItemsSource="{Binding SkinStudioInstanceOptions}"
-                              SelectedItem="{Binding SelectedSkinStudioInstance}"
-                              IsEnabled="{Binding HasCreatorStudioInstances}">
-                        <ComboBox.ItemTemplate>
-                            <DataTemplate x:DataType="models:SelectionOption">
-                                <TextBlock Text="{Binding Label}"/>
-                            </DataTemplate>
-                        </ComboBox.ItemTemplate>
-                    </ComboBox>
-
-                    <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="16,14">
-                        <Grid ColumnDefinitions="*,16,*,16,*">
-                            <StackPanel Spacing="4">
-                                <TextBlock Text="Instance path" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
-                                <TextBlock Text="{Binding CreatorStudioInstancePath}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
-                            </StackPanel>
-                            <StackPanel Grid.Column="2" Spacing="4">
-                                <TextBlock Text="Minecraft" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
-                                <TextBlock Text="{Binding CreatorStudioMinecraftVersion}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                            </StackPanel>
-                            <StackPanel Grid.Column="4" Spacing="4">
-                                <TextBlock Text="Loader / obsah" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
-                                <TextBlock Text="{Binding CreatorStudioModLoader}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                <TextBlock Text="{Binding CreatorStudioModCountLabel}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
-                            </StackPanel>
-                        </Grid>
-                    </Border>
-
-                    <Grid ColumnDefinitions="*,12,*">
-                        <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="16"
-                                BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
-                            <StackPanel Spacing="8">
-                                <TextBlock Text="Serverové vazby" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                <TextBlock Text="{Binding CreatorStudioLinkedServersLabel}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
-                                <Button Content="Otevřít Server Hub" Command="{Binding GoToServerHubCommand}"
-                                        Classes="secondary" FontSize="11" Padding="12,6"/>
-                            </StackPanel>
-                        </Border>
-                        <Border Grid.Column="2" Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="16"
-                                BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
-                            <StackPanel Spacing="8">
-                                <TextBlock Text="Detail instance" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                            <TextBlock Text="Přímý vstup do workspace, logů a screenshotů vybrané instance."
-                                           FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
-                                <Button Content="Otevřít workspace" Command="{Binding OpenStreamingWorkspaceCommand}"
-                                        Classes="secondary" FontSize="11" Padding="12,6" IsEnabled="{Binding HasCreatorStudioInstances}"/>
-                            </StackPanel>
-                        </Border>
-                    </Grid>
-                </StackPanel>
-            </Border>
-
-            <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="{DynamicResource RadiusCard}"
-                    BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" Padding="24">
-                <StackPanel Spacing="16">
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
-                        <StackPanel Spacing="2">
-                            <TextBlock Text="Creator Workbench" FontSize="16" FontWeight="Bold"
-                                       Foreground="{DynamicResource TextPrimaryBrush}"/>
-                            <TextBlock Text="Vyber malý textový soubor z instance a uprav ho přímo v launcheru. Studio záměrně filtruje těžké složky a binární obsah."
-                                       FontSize="12" Foreground="{DynamicResource TextMutedBrush}"/>
-                        </StackPanel>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                            <Button Content="Obnovit soubory" Command="{Binding RefreshCreatorWorkbenchCommand}" Classes="secondary" Padding="12,6" FontSize="11"/>
-                            <Button Content="Uložit změny" Command="{Binding SaveCreatorWorkbenchFileCommand}" Classes="primary" Padding="12,6" FontSize="11"
-                                    IsEnabled="{Binding CanSaveCreatorWorkbenchFile}"/>
-                        </StackPanel>
-                    </Grid>
-
-                    <Grid ColumnDefinitions="280,16,*">
-                        <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}"
-                                Padding="14" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
-                            <StackPanel Spacing="12">
-                                <StackPanel Spacing="4">
-                                    <TextBlock Text="Soubory instance" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                    <TextBlock Text="{Binding CreatorWorkbenchSearchSummary}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
-                                </StackPanel>
-                                <TextBox Text="{Binding CreatorWorkbenchSearchQuery}"
-                                         Watermark="Hledej podle názvu, cesty nebo typu..."/>
-                                <controls:EmptyState IsVisible="{Binding !HasVisibleCreatorWorkbenchFiles}"
-                                                     Icon="{StaticResource IconFolder}"
-                                                     Title="{Binding CreatorWorkbenchEmptyTitle}"
-                                                     Subtitle="{Binding CreatorWorkbenchEmptySubtitle}"/>
-                                <ListBox ItemsSource="{Binding FilteredCreatorWorkbenchFiles}"
-                                         SelectedItem="{Binding SelectedCreatorWorkbenchFile}"
-                                         IsVisible="{Binding HasVisibleCreatorWorkbenchFiles}"
-                                         Height="420">
-                                    <ListBox.ItemTemplate>
-                                        <DataTemplate x:DataType="models:CreatorWorkbenchFile">
-                                            <StackPanel Spacing="2" Margin="2">
-                                                <TextBlock Text="{Binding RelativePath}" FontSize="12" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-                                                <TextBlock Text="{Binding SizeLabel}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
-                                            </StackPanel>
+                                <ComboBox ItemsSource="{Binding SkinStudioInstanceOptions}" SelectedItem="{Binding SelectedSkinStudioInstance}" IsEnabled="{Binding HasCreatorStudioInstances}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate x:DataType="models:SelectionOption">
+                                            <TextBlock Text="{Binding Label}"/>
                                         </DataTemplate>
-                                    </ListBox.ItemTemplate>
-                                </ListBox>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+
+                                <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="16,14">
+                                    <Grid ColumnDefinitions="*,16,*,16,*" RowDefinitions="Auto,14,Auto">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Text="Instance path" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                            <TextBlock Text="{Binding CreatorStudioInstancePath}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Spacing="4">
+                                            <TextBlock Text="Minecraft" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                            <TextBlock Text="{Binding CreatorStudioMinecraftVersion}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="4" Spacing="4">
+                                            <TextBlock Text="Loader / obsah" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                            <TextBlock Text="{Binding CreatorStudioModLoader}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                            <TextBlock Text="{Binding CreatorStudioModCountLabel}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Row="2" Spacing="4">
+                                            <TextBlock Text="Pack summary" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                            <TextBlock Text="{Binding CreatorMetadataPackName}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding CreatorMetadataAuthorsPreview}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Row="2" Grid.Column="2" Spacing="4">
+                                            <TextBlock Text="Release" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                            <TextBlock Text="{Binding CreatorMetadataVersion}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                            <TextBlock Text="{Binding CreatorMetadataReleaseChannel}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Row="2" Grid.Column="4" Spacing="4">
+                                            <TextBlock Text="Primary server" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                            <TextBlock Text="{Binding CreatorMetadataPrimaryServer}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding CreatorReleaseStatusSummary}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
                             </StackPanel>
                         </Border>
 
-                        <Border Grid.Column="2" Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}"
-                                Padding="16" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
-                            <StackPanel Spacing="12">
-                                <StackPanel Spacing="3">
-                                    <TextBlock Text="{Binding CreatorWorkbenchSelectionLabel}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                    <TextBlock Text="{Binding CreatorWorkbenchSelectionMeta}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
-                                    <TextBlock Text="{Binding CreatorWorkbenchStatus}" FontSize="11" Foreground="{DynamicResource PrimaryBBrush}" TextWrapping="Wrap"/>
+                        <Border Classes="card">
+                            <StackPanel Spacing="14">
+                                <TextBlock Text="Aktualni creator session" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="16,14">
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Text="{Binding StreamingSessionHeadline}" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                        <TextBlock Text="{Binding StreamingSessionStatus}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" LineHeight="18"/>
+                                        <TextBlock Text="{Binding CreatorLastActivityLabel}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Grid ColumnDefinitions="*,16,*" RowDefinitions="Auto,16,Auto">
+                                    <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="16" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                                        <StackPanel Spacing="10">
+                                            <TextBlock Text="{StaticResource IconGallery}" FontSize="24"/>
+                                            <TextBlock Text="Screenshot workflow" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                            <Button Content="Otevrit screenshoty" Command="{Binding OpenStreamingScreenshotsFolderCommand}" Classes="secondary" FontSize="11" Padding="12,6" IsEnabled="{Binding HasStreamingContextModpack}"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Grid.Column="2" Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="16" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                                        <StackPanel Spacing="10">
+                                            <TextBlock Text="{StaticResource IconInfo}" FontSize="24"/>
+                                            <TextBlock Text="Logy a diagnostika" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                            <Button Content="Otevrit logy" Command="{Binding OpenStreamingLogsFolderCommand}" Classes="secondary" FontSize="11" Padding="12,6" IsEnabled="{Binding HasStreamingContextModpack}"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Grid.Row="2" Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="16" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                                        <StackPanel Spacing="10">
+                                            <TextBlock Text="{StaticResource IconFolder}" FontSize="24"/>
+                                            <TextBlock Text="Pracovni adresar" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                            <Button Content="Otevrit instanci" Command="{Binding OpenStreamingWorkspaceCommand}" Classes="secondary" FontSize="11" Padding="12,6" IsEnabled="{Binding HasStreamingContextModpack}"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Grid.Row="2" Grid.Column="2" Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="16" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                                        <StackPanel Spacing="10">
+                                            <TextBlock Text="{StaticResource IconCopy}" FontSize="24"/>
+                                            <TextBlock Text="Creator summary" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                            <Button Content="Kopirovat summary" Command="{Binding CopyCreatorSessionSummaryCommand}" Classes="secondary" FontSize="11" Padding="12,6"/>
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="Metadata">
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Spacing="16" Margin="8,4,8,40" MaxWidth="1080">
+                        <Border Classes="card">
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                <StackPanel Spacing="14">
+                                    <TextBlock Text="Source of truth" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                    <TextBlock Text="F1 uz umi bootstrapnout a upravovat creator_manifest.json primo z launcheru misto cekani na dalsi externi editor." FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                    <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="14,12">
+                                        <StackPanel Spacing="6">
+                                            <TextBlock Text="{Binding CreatorWorkspaceContext.CreatorManifestPath}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding CreatorManifestStatus}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryBBrush}"/>
+                                            <TextBlock Text="{Binding CreatorMetadataValidationMessage}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </Border>
                                 </StackPanel>
-
-                                <TextBox Text="{Binding CreatorWorkbenchContent}"
-                                         AcceptsReturn="True"
-                                         TextWrapping="NoWrap"
-                                         Height="420"
-                                         IsEnabled="{Binding HasSelectedCreatorWorkbenchFile}"
-                                         Watermark="Vyber soubor z levého seznamu a jeho obsah se zobrazí tady."/>
-                            </StackPanel>
+                                <Button Grid.Column="1" Command="{Binding SaveCreatorMetadataCommand}" Classes="primary" Padding="16,10" VerticalAlignment="Top" IsEnabled="{Binding CanSaveCreatorMetadata}">
+                                    <TextBlock Text="{Binding CreatorMetadataActionLabel}"/>
+                                </Button>
+                            </Grid>
                         </Border>
-                    </Grid>
-                </StackPanel>
-            </Border>
 
-            <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="{DynamicResource RadiusCard}"
-                    BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" Padding="24">
-                <StackPanel Spacing="16">
-                    <StackPanel Spacing="4">
-                        <TextBlock Text="Aktuální creator session" FontSize="16" FontWeight="Bold"
-                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
-                        <TextBlock Text="Stav aktuální session, rychlé akce a nástroje nad vybranou instancí." FontSize="12" Foreground="{DynamicResource TextMutedBrush}"/>
+                        <Grid ColumnDefinitions="*,16,*">
+                            <Border Grid.Column="0" Classes="card">
+                                <StackPanel Spacing="12">
+                                    <TextBlock Text="Metadata editor" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Text="Pack name" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                        <TextBox Text="{Binding CreatorMetadataPackName}" Watermark="Nazev packu"/>
+                                    </StackPanel>
+                                    <Grid ColumnDefinitions="*,12,*">
+                                        <StackPanel Grid.Column="0" Spacing="6">
+                                            <TextBlock Text="Slug" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                            <TextBox Text="{Binding CreatorMetadataSlug}" Watermark="voidcraft-pack"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Spacing="6">
+                                            <TextBlock Text="Version" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                            <TextBox Text="{Binding CreatorMetadataVersion}" Watermark="0.1.0"/>
+                                        </StackPanel>
+                                    </Grid>
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Text="Summary" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                        <TextBox Text="{Binding CreatorMetadataSummary}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="84" Watermark="Kratky popis packu a prvni release zamer."/>
+                                    </StackPanel>
+                                    <Grid ColumnDefinitions="*,12,*">
+                                        <StackPanel Grid.Column="0" Spacing="6">
+                                            <TextBlock Text="Authors" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                            <TextBox Text="{Binding CreatorMetadataAuthors}" Watermark="VOIDIVIDE, VOID-CRAFT team"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Spacing="6">
+                                            <TextBlock Text="Release channel" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                            <ComboBox SelectedItem="{Binding CreatorMetadataReleaseChannel}" HorizontalAlignment="Stretch">
+                                                <x:String>alpha</x:String>
+                                                <x:String>beta</x:String>
+                                                <x:String>playtest</x:String>
+                                                <x:String>stable</x:String>
+                                            </ComboBox>
+                                        </StackPanel>
+                                    </Grid>
+                                    <Grid ColumnDefinitions="*,12,*">
+                                        <StackPanel Grid.Column="0" Spacing="6">
+                                            <TextBlock Text="Primary server" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                            <TextBox Text="{Binding CreatorMetadataPrimaryServer}" Watermark="play.void-craft.eu"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Spacing="6">
+                                            <TextBlock Text="Recommended RAM (MB)" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                            <TextBox Text="{Binding CreatorMetadataRecommendedRamMb}" Watermark="12288"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Column="2" Classes="card">
+                                <StackPanel Spacing="12">
+                                    <TextBlock Text="Workspace baseline" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                    <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="8">
+                                        <TextBlock Text="Pack" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding CreatorMetadataPackName}" FontSize="12" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                                        <TextBlock Grid.Row="1" Text="Autoři" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding CreatorMetadataAuthorsPreview}" FontSize="12" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                                        <TextBlock Grid.Row="2" Text="Minecraft" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding CreatorWorkspaceContext.MinecraftVersion}" FontSize="12" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                        <TextBlock Grid.Row="3" Text="Loader" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding CreatorWorkspaceContext.LoaderLabel}" FontSize="12" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                        <TextBlock Grid.Row="4" Text="Channel" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding CreatorMetadataReleaseChannel}" FontSize="12" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                    </Grid>
+
+                                    <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="14,12">
+                                        <StackPanel Spacing="6">
+                                            <TextBlock Text="Workspace layout" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                            <TextBlock Text="{Binding CreatorWorkspaceFoldersSummary}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                            <ItemsControl ItemsSource="{Binding CreatorWorkspaceContext.ExistingStandardFolders}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:CompileBindings="False">
+                                                        <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="8" Padding="10,6" Margin="0,0,0,6">
+                                                            <TextBlock Text="{Binding .}" FontSize="11" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <controls:EmptyState IsVisible="{Binding HasCreatorMissingFolders}" Icon="{StaticResource IconWarning}" Title="Workspace jeste nema cilovou strukturu" Subtitle="F0 uz umi zkontrolovat standardni slozky a drzet release warning signal v creator shellu."/>
                     </StackPanel>
+                </ScrollViewer>
+            </TabItem>
 
-                    <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="16,14">
-                        <StackPanel Spacing="6">
-                            <TextBlock Text="{Binding StreamingSessionHeadline}" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                            <TextBlock Text="{Binding StreamingSessionStatus}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" LineHeight="18"/>
-                        </StackPanel>
-                    </Border>
-
-                    <Grid ColumnDefinitions="*,16,*" RowDefinitions="Auto,16,Auto">
-                        <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}"
-                                Padding="16" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
-                            <StackPanel Spacing="10">
-                                <TextBlock Text="{StaticResource IconGallery}" FontSize="24"/>
-                                <TextBlock Text="Screenshot workflow" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                <TextBlock Text="Přímý přístup do screenshot složky aktuální instance."
-                                           FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
-                                <Button Content="Otevřít screenshoty" Command="{Binding OpenStreamingScreenshotsFolderCommand}"
-                                        Classes="secondary" FontSize="11" Padding="12,6" IsEnabled="{Binding HasStreamingContextModpack}"/>
-                            </StackPanel>
+            <TabItem Header="Mods">
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Spacing="16" Margin="8,4,8,40" MaxWidth="1080">
+                        <Border Classes="card">
+                            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                                <StackPanel Spacing="3">
+                                    <TextBlock Text="Obsah instance" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                    <TextBlock Text="F0 znovu pouziva existujici mod workflow jako samostatnou creator zalozku misto skryteho odkazu jinam." FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <Button Grid.Column="1" Command="{Binding RefreshInstalledModsCommand}" Classes="secondary" Padding="14,8">
+                                    <TextBlock Text="Obnovit seznam"/>
+                                </Button>
+                                <Button Grid.Column="2" Command="{Binding GoToInstanceDetailCommand}" CommandParameter="{Binding CurrentModpack}" Classes="secondary" Padding="14,8">
+                                    <TextBlock Text="Detail instance"/>
+                                </Button>
+                            </Grid>
                         </Border>
 
-                        <Border Grid.Column="2" Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}"
-                                Padding="16" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
-                            <StackPanel Spacing="10">
-                                <TextBlock Text="{StaticResource IconInfo}" FontSize="24"/>
-                                <TextBlock Text="Logy a diagnostika" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                <TextBlock Text="Přímý vstup do logových souborů pro diagnostiku a bug reporty."
-                                           FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
-                                <Button Content="Otevřít logy" Command="{Binding OpenStreamingLogsFolderCommand}"
-                                        Classes="secondary" FontSize="11" Padding="12,6" IsEnabled="{Binding HasStreamingContextModpack}"/>
+                        <Border Classes="card">
+                            <StackPanel Spacing="12">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Text="Nainstalovane mody" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding CreatorStudioModCountLabel}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center"/>
+                                </Grid>
+                                <TextBlock Text="Zatim zadne mody nebo metadata." Foreground="{DynamicResource TextMutedBrush}" FontSize="12" IsVisible="{Binding !InstalledMods.Count}"/>
+                                <ItemsControl ItemsSource="{Binding InstalledMods}" IsVisible="{Binding InstalledMods.Count}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:CompileBindings="False">
+                                            <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="12,10" Margin="0,0,0,6" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                                                <StackPanel Spacing="3">
+                                                    <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                                    <TextBlock Text="{Binding InstalledFileName}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock Text="{Binding Description}" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" IsVisible="{Binding Description.Length}"/>
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <Button Content="Pridat obsah" Command="{Binding SearchModsForProfileCommand}" Classes="primary" Padding="14,8" IsVisible="{Binding CurrentModpack.IsCustomProfile}"/>
                             </StackPanel>
                         </Border>
-
-                        <Border Grid.Row="2" Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}"
-                                Padding="16" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
-                            <StackPanel Spacing="10">
-                                <TextBlock Text="{StaticResource IconFolder}" FontSize="24"/>
-                                <TextBlock Text="Pracovní adresář" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                <TextBlock Text="Otevře kořenový adresář instance s resourcepacky, shaderpacks a dalším obsahem."
-                                           FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
-                                <Button Content="Otevřít instanci" Command="{Binding OpenStreamingWorkspaceCommand}"
-                                        Classes="secondary" FontSize="11" Padding="12,6" IsEnabled="{Binding HasStreamingContextModpack}"/>
-                            </StackPanel>
-                        </Border>
-
-                        <Border Grid.Row="2" Grid.Column="2" Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}"
-                                Padding="16" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
-                            <StackPanel Spacing="10">
-                                <TextBlock Text="{StaticResource IconCopy}" FontSize="24"/>
-                                <TextBlock Text="Creator summary" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                <TextBlock Text="Zkopíruje přehled účtu, modpacku a serveru do schránky."
-                                           FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
-                                <Button Content="Kopírovat summary" Command="{Binding CopyCreatorSessionSummaryCommand}"
-                                        Classes="secondary" FontSize="11" Padding="12,6"/>
-                            </StackPanel>
-                        </Border>
-                    </Grid>
-                </StackPanel>
-            </Border>
-
-            <!-- Content Creator Resources -->
-            <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="{DynamicResource RadiusCard}"
-                    BorderBrush="{DynamicResource AccentTealBrush}" BorderThickness="1" Padding="24" Opacity="0.85">
-                <StackPanel Spacing="12">
-                    <StackPanel Orientation="Horizontal" Spacing="10">
-                        <TextBlock Text="{StaticResource IconInfo}" FontSize="18" VerticalAlignment="Center"/>
-                        <TextBlock Text="Pro tvůrce obsahu" FontSize="16" FontWeight="Bold"
-                                   Foreground="{DynamicResource AccentTealBrush}"/>
                     </StackPanel>
-                    <TextBlock Text="Zdroje a kanály VOID-CRAFT komunity pro tvůrce modpacků a obsahu."
-                               FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" LineHeight="20"/>
+                </ScrollViewer>
+            </TabItem>
 
-                    <StackPanel Orientation="Horizontal" Spacing="10">
-                        <Button Content="Otevřít Discord" Classes="secondary" Padding="16,8"
-                                Command="{Binding OpenUrlCommand}" CommandParameter="https://discord.gg/cFvCaC2KDh"/>
-                        <Button Content="YouTube kanál" Classes="secondary" Padding="16,8"
-                                Command="{Binding OpenUrlCommand}" CommandParameter="https://www.youtube.com/@void-craft-eu"/>
-                        <Button Content="Zkopírovat IP" Classes="secondary" Padding="16,8"
-                                Command="{Binding CopyIpCommand}"/>
+            <TabItem Header="Files">
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Spacing="16" Margin="8,4,8,40" MaxWidth="1080">
+                        <Border Classes="card">
+                            <StackPanel Spacing="16">
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                                    <StackPanel Spacing="2">
+                                        <TextBlock Text="Creator Workbench" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                        <TextBlock Text="Soucasny plain-text workbench je oddeleny do samostatne Files workflow zalozky a pripraveny na budouci editor host." FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                        <Button Content="Obnovit soubory" Command="{Binding RefreshCreatorWorkbenchCommand}" Classes="secondary" Padding="12,6" FontSize="11"/>
+                                        <Button Content="Ulozit zmeny" Command="{Binding SaveCreatorWorkbenchFileCommand}" Classes="primary" Padding="12,6" FontSize="11" IsEnabled="{Binding CanSaveCreatorWorkbenchFile}"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <Grid ColumnDefinitions="300,16,*">
+                                    <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="14" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                                        <StackPanel Spacing="12">
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Text="Soubory instance" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                                <TextBlock Text="{Binding CreatorWorkbenchSearchSummary}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                            </StackPanel>
+                                            <TextBox Text="{Binding CreatorWorkbenchSearchQuery}" Watermark="Hledej podle nazvu, cesty nebo typu..."/>
+                                            <controls:EmptyState IsVisible="{Binding !HasVisibleCreatorWorkbenchFiles}" Icon="{StaticResource IconFolder}" Title="{Binding CreatorWorkbenchEmptyTitle}" Subtitle="{Binding CreatorWorkbenchEmptySubtitle}"/>
+                                            <ListBox ItemsSource="{Binding FilteredCreatorWorkbenchFiles}" SelectedItem="{Binding SelectedCreatorWorkbenchFile}" IsVisible="{Binding HasVisibleCreatorWorkbenchFiles}" Height="460">
+                                                <ListBox.ItemTemplate>
+                                                    <DataTemplate x:DataType="models:CreatorWorkbenchFile">
+                                                        <StackPanel Spacing="2" Margin="2">
+                                                            <TextBlock Text="{Binding RelativePath}" FontSize="12" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                                            <TextBlock Text="{Binding SizeLabel}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                                        </StackPanel>
+                                                    </DataTemplate>
+                                                </ListBox.ItemTemplate>
+                                            </ListBox>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Grid.Column="2" Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="16" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                                        <StackPanel Spacing="12">
+                                            <StackPanel Spacing="3">
+                                                <TextBlock Text="{Binding CreatorWorkbenchSelectionLabel}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                                <TextBlock Text="{Binding CreatorWorkbenchSelectionMeta}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                                <TextBlock Text="{Binding CreatorWorkbenchStatus}" FontSize="11" Foreground="{DynamicResource PrimaryBBrush}" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                            <TextBox Text="{Binding CreatorWorkbenchContent}" AcceptsReturn="True" TextWrapping="NoWrap" Height="460" IsEnabled="{Binding HasSelectedCreatorWorkbenchFile}" Watermark="Vyber soubor z leveho seznamu a jeho obsah se zobrazi tady."/>
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
+                </ScrollViewer>
+            </TabItem>
 
-                    <controls:EmptyState IsVisible="{Binding !HasStreamingContextModpack}"
-                                         Icon="{StaticResource IconStreaming}"
-                                         Title="Vyber instanci pro Creator Studio"
-                                         Subtitle="Nainstaluj modpack a vyber ho jako pracovní instanci."/>
-                </StackPanel>
-            </Border>
+            <TabItem Header="Notes">
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Spacing="16" Margin="8,4,8,40" MaxWidth="1080">
+                        <Border Classes="card">
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Notes a handoff" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                    <TextBlock Text="F0 pripravuje notes workspace a drawer contract tak, aby dalsi faze nepridavaly dalsi oddeleny planning flow mimo shell." FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <Button Grid.Column="1" Command="{Binding OpenCreatorNotesDrawerCommand}" Classes="primary" Padding="14,8">
+                                    <TextBlock Text="Otevrit drawer"/>
+                                </Button>
+                            </Grid>
+                        </Border>
 
-        </StackPanel>
-    </ScrollViewer>
+                        <Grid ColumnDefinitions="*,16,*">
+                            <Border Grid.Column="0" Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Text="Notes workspace" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                    <TextBlock Text="{Binding CreatorNotesWorkspaceStatus}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                    <TextBlock Text="{Binding CreatorWorkspaceContext.NotesPath}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                    <Button Content="Otevrit notes slozku" Command="{Binding OpenCreatorNotesWorkspaceCommand}" Classes="secondary" Padding="14,8"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Column="2" Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Text="Recent workspaces" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                    <ItemsControl ItemsSource="{Binding CreatorWorkspaceContext.RecentWorkspaces}" IsVisible="{Binding HasCreatorRecentWorkspaces}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:CompileBindings="False">
+                                                <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="8" Padding="10,8" Margin="0,0,0,6">
+                                                    <StackPanel Spacing="3">
+                                                        <TextBlock Text="{Binding Label}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                                        <TextBlock Text="{Binding LastAccessedUtc, StringFormat='{}{0:dd.MM.yyyy HH:mm}'}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <controls:EmptyState IsVisible="{Binding !HasCreatorRecentWorkspaces}" Icon="{StaticResource IconInfo}" Title="Recent list se zacne plnit po vyberu workspace" Subtitle="Vybrane instance se persistuji do launcher configu a desk je pouziva pro kontextovy handoff."/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="Git">
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Spacing="16" Margin="8,4,8,40" MaxWidth="1080">
+                        <Border Classes="card">
+                            <StackPanel Spacing="12">
+                                <TextBlock Text="Git contract" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                <TextBlock Text="F0 uz drzi repository signal, branch context a dirty indicator v creator workspace contextu. Dalsi faze na to muze navazat bez dalsiho hledani napric viewmodely." FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="14,12">
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Text="{Binding CreatorGitStatusSummary}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                        <TextBlock Text="{Binding CreatorWorkspaceContext.WorkspacePath}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Border>
+                                <Button Content="Otevrit workspace" Command="{Binding OpenStreamingWorkspaceCommand}" Classes="secondary" Padding="14,8" HorizontalAlignment="Left"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="Release">
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Spacing="16" Margin="8,4,8,40" MaxWidth="1080">
+                        <Border Classes="card">
+                            <StackPanel Spacing="12">
+                                <TextBlock Text="Release baseline" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Release shell uz ma snapshot, export a warning signal na jednom miste. Dalsi faze muze pridat validatory a export profiles bez dalsiho prekopavani layoutu." FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                <Grid ColumnDefinitions="*,16,*">
+                                    <Border Grid.Column="0" Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="14,12">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Text="Snapshoty" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                            <TextBlock Text="{Binding CreatorWorkspaceContext.SnapshotCount, StringFormat='{}{0} snapshotu'}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                        </StackPanel>
+                                    </Border>
+                                    <Border Grid.Column="2" Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="14,12">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Text="Exporty" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                            <TextBlock Text="{Binding CreatorWorkspaceContext.ExportArtifactCount, StringFormat='{}{0} exportu'}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Button Content="Vytvorit snapshot" Command="{Binding CreateInstanceBackupCommand}" Classes="secondary" Padding="14,8"/>
+                                    <Button Content="Export instance" Command="{Binding ExportInstanceCommand}" Classes="secondary" Padding="14,8"/>
+                                    <Button Content="Otevrit exports" Command="{Binding OpenCreatorExportsWorkspaceCommand}" Classes="secondary" Padding="14,8"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+    </Grid>
 </UserControl>

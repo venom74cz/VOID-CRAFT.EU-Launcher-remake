@@ -1,0 +1,107 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:VoidCraftLauncher.ViewModels"
+             x:Class="VoidCraftLauncher.Controls.CreatorCopilotDesk"
+             x:DataType="vm:MainViewModel">
+
+    <Border Background="{DynamicResource BgShellBrush}" BorderBrush="{DynamicResource BgInteractiveBrush}" BorderThickness="1,0,0,0">
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Spacing="0">
+                <Border Padding="18,18,18,14" BorderBrush="{DynamicResource BgInteractiveBrush}" BorderThickness="0,0,0,1">
+                    <StackPanel Spacing="12">
+                        <StackPanel Spacing="3">
+                            <TextBlock Text="Copilot Desk" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource TextMutedBrush}" LetterSpacing="0.5"/>
+                            <TextBlock Text="{Binding CreatorDockHeadline}" FontSize="18" FontWeight="ExtraBold" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                            <TextBlock Text="{Binding CreatorDockSubtitle}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                        </StackPanel>
+
+                        <WrapPanel Orientation="Horizontal" ItemWidth="118" ItemHeight="48">
+                            <Border Background="{DynamicResource BgInteractiveBrush}" CornerRadius="10" Padding="10,8" Margin="0,0,8,8">
+                                <StackPanel Spacing="2">
+                                    <TextBlock Text="Manifest" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                    <TextBlock Text="{Binding CreatorManifestStatus}" FontSize="10" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Background="{DynamicResource BgInteractiveBrush}" CornerRadius="10" Padding="10,8" Margin="0,0,8,8">
+                                <StackPanel Spacing="2">
+                                    <TextBlock Text="Git" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                    <TextBlock Text="{Binding CreatorGitStatusSummary}" FontSize="10" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Background="{DynamicResource BgInteractiveBrush}" CornerRadius="10" Padding="10,8" Margin="0,0,8,8">
+                                <StackPanel Spacing="2">
+                                    <TextBlock Text="Release" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                    <TextBlock Text="{Binding CreatorReleaseStatusSummary}" FontSize="10" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+                        </WrapPanel>
+
+                        <StackPanel Spacing="6">
+                            <Button Command="{Binding OpenCreatorNotesDrawerCommand}" Classes="primary" FontSize="11" Padding="0,8" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
+                                <TextBlock Text="Otevrit Notes Drawer"/>
+                            </Button>
+                            <Button Command="{Binding OpenStreamingWorkspaceCommand}" Classes="secondary" FontSize="11" Padding="0,8" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
+                                <TextBlock Text="Otevrit workspace"/>
+                            </Button>
+                            <Button Command="{Binding CopyCreatorSessionSummaryCommand}" Classes="secondary" FontSize="11" Padding="0,8" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
+                                <TextBlock Text="Kopirovat session summary"/>
+                            </Button>
+                            <Button Command="{Binding UseDefaultContextDockCommand}" Classes="ghost" FontSize="11" Padding="0,6" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
+                                <TextBlock Text="Prepnout na standardni dock"/>
+                            </Button>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Padding="18,14" BorderBrush="{DynamicResource BgInteractiveBrush}" BorderThickness="0,0,0,1">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Sdileny context" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource TextMutedBrush}" LetterSpacing="0.5"/>
+                        <TextBlock Text="{Binding CreatorWorkspaceContext.WorkspacePath}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                        <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="10" Padding="12" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="Aktivni scope" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                <TextBlock Text="{Binding CreatorActiveScopeSummary}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                                <TextBlock Text="{Binding CreatorLastActivityLabel}" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+                        <TextBlock Text="Vetsi multi-file apply flow ma predem vytvorit snapshot a zachovat preview + diff jako bezpecny default." FontSize="10" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" LineHeight="15"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Padding="18,14" BorderBrush="{DynamicResource BgInteractiveBrush}" BorderThickness="0,0,0,1">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Workspace layout" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource TextMutedBrush}" LetterSpacing="0.5"/>
+                        <TextBlock Text="{Binding CreatorWorkspaceFoldersSummary}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                        <ItemsControl ItemsSource="{Binding CreatorWorkspaceContext.ExistingStandardFolders}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:CompileBindings="False">
+                                    <Border Background="{DynamicResource BgInteractiveBrush}" CornerRadius="8" Padding="10,6" Margin="0,0,0,6">
+                                        <TextBlock Text="{Binding .}" FontSize="11" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <Border Padding="18,14">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Recent workspaces" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource TextMutedBrush}" LetterSpacing="0.5" IsVisible="{Binding HasCreatorRecentWorkspaces}"/>
+                        <ItemsControl ItemsSource="{Binding CreatorWorkspaceContext.RecentWorkspaces}" IsVisible="{Binding HasCreatorRecentWorkspaces}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:CompileBindings="False">
+                                    <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="10" Padding="12" Margin="0,0,0,6" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                                        <StackPanel Spacing="3">
+                                            <TextBlock Text="{Binding Label}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                            <TextBlock Text="{Binding LastAccessedUtc, StringFormat='{}{0:dd.MM.yyyy HH:mm}'}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </Border>
+</UserControl>

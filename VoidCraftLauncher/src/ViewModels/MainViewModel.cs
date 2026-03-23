@@ -16,6 +16,8 @@ using System.Collections.ObjectModel;
 using System.Threading;
 using System.Collections.Specialized;
 using System.Text.RegularExpressions;
+using VoidCraftLauncher.Models.CreatorStudio;
+using VoidCraftLauncher.Services.CreatorStudio;
 
 namespace VoidCraftLauncher.ViewModels;
 
@@ -73,6 +75,8 @@ public partial class MainViewModel : ViewModelBase
     private readonly AchievementHubService _achievementHubService;
     private readonly SkinStudioService _skinStudioService;
     private readonly CreatorWorkbenchService _creatorWorkbenchService;
+    private readonly CreatorWorkspaceService _creatorWorkspaceService;
+    private readonly CreatorManifestService _creatorManifestService;
     private ModpackManifestInfo _lastManifestInfo;
     private readonly SemaphoreSlim _modpackUpdateCheckLock = new(1, 1);
     private static readonly TimeSpan ModpackUpdateCheckInterval = TimeSpan.FromSeconds(5);
@@ -539,6 +543,8 @@ public partial class MainViewModel : ViewModelBase
         _achievementHubService = sl.Resolve<AchievementHubService>();
         _skinStudioService = sl.Resolve<SkinStudioService>();
         _creatorWorkbenchService = sl.Resolve<CreatorWorkbenchService>();
+        _creatorWorkspaceService = sl.Resolve<CreatorWorkspaceService>();
+        _creatorManifestService = sl.Resolve<CreatorManifestService>();
         _discordRpcService.Initialize();
         _discordRpcService.PresenceChanged += () => Avalonia.Threading.Dispatcher.UIThread.Post(NotifyStreamingToolsStateChanged);
         
@@ -582,9 +588,12 @@ public partial class MainViewModel : ViewModelBase
             Config.MotionPreference = ThemeEngine.MotionPreferenceSystem;
         }
 
+        Config.CreatorStudio ??= new CreatorStudioPreferences();
+
         InitializeThemeSurface();
         InitializeLocalizationSurface();
         InitializeAchievementSurface();
+        InitializeCreatorStudioShell();
 
         // Restore offline username
         if (!string.IsNullOrEmpty(Config.LastOfflineUsername))
@@ -658,10 +667,12 @@ public partial class MainViewModel : ViewModelBase
     {
         _ = LoadCurrentModpackScreenshotsAsync();
         _ = RefreshCurrentModpackWorkspaceDataAsync();
+        RefreshCurrentModpackCreatorManifest();
         RebuildSkinStudioInstanceOptions();
         RebuildNewServerModpackOptions();
         _ = RefreshCreatorWorkbenchAsync();
         NotifyStreamingToolsStateChanged();
+        RefreshCreatorWorkspaceContext();
     }
 
     private void OnInstalledModpacksCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -675,6 +686,7 @@ public partial class MainViewModel : ViewModelBase
         RebuildNewServerModpackOptions();
         _ = RefreshCreatorWorkbenchAsync();
         _ = RefreshAutoDiscoveredServersAsync();
+        RefreshCreatorWorkspaceContext();
     }
 
     private void OnCurrentModpackScreenshotsChanged(object? sender, NotifyCollectionChangedEventArgs e)

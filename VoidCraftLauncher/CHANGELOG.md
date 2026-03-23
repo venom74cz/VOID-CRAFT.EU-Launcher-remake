@@ -2,6 +2,26 @@
 
 Všechny důležité změny v projektu jsou dokumentovány v tomto souboru.
 
+## [3.1.0] - 2026-03-23
+
+### ✨ Creator Studio F0/F1
+
+### Přidáno
+- **Creator workflow shell**: `Creator Studio` má vlastní tabbed shell s `Overview`, `Metadata`, `Mods`, `Files`, `Notes`, `Git` a `Release` místo jedné dlouhé stránky.
+- **Creator context layer**: nové kontrakty `CreatorWorkspaceContext`, `CreatorShellState` a service vrstva v `CreatorStudio` namespace centralizují workspace stav, scope, git signal, notes layout, snapshoty a export summary.
+- **Copilot Desk a Notes Drawer**: pravý dock se v creator režimu umí přepnout do creator-only pracovního sloupce a otevřít rychlý notes drawer přes aktuální workflow.
+- **Bootstrap varianty nové instance**: wizard teď umí `Blank`, `Template`, `Import CF`, `Import MR`, `Clone Git` a `Restore Snapshot`.
+- **creator_manifest.json**: nový source of truth pro metadata workspace zapisovaný už při založení creator instance.
+
+### Změněno
+- **Metadata workflow**: launcher umí načíst, upravit a uložit `creator_manifest.json` bez externího editoru.
+- **Metadata sync do launcheru**: uložená creator metadata se propisují zpět do `ModpackInfo`, takže `Instance Workspace` header i Creator overview používají stejnou identitu packu.
+- **Template bootstrap**: built-in presety už nejsou kosmetické a seedují curated baseline soubory do `docs`, `notes`, `qa` a `quests`.
+
+### Opraveno
+- **Snapshot-before-apply**: workspace-scope metadata apply flow už nepíše naslepo a před větším zápisem vytvoří snapshot relevantních částí workspace.
+- **Release metadata sync**: verze projektu, installeru a release dokumentace jsou znovu srovnané na stejný release.
+
 ## [3.0.0] - 2026-03-22
 
 ### ✨ Kompletní redesign launcheru

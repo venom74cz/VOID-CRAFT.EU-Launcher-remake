@@ -343,7 +343,7 @@ public class SocialFeedService
     private async Task<List<FeedItem>> FetchOfficialMinecraftSiteFallbackAsync()
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, "https://www.minecraft.net/en-us/articles");
-        request.Headers.TryAddWithoutValidation("User-Agent", $"VoidCraftLauncher/{typeof(SocialFeedService).Assembly.GetName().Version?.ToString(3) ?? "3.0.0"}");
+        request.Headers.TryAddWithoutValidation("User-Agent", $"VoidCraftLauncher/{typeof(SocialFeedService).Assembly.GetName().Version?.ToString(3) ?? "3.1.0"}");
         request.Headers.TryAddWithoutValidation("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         request.Headers.TryAddWithoutValidation("Accept-Language", "en-US,en;q=0.9");
 

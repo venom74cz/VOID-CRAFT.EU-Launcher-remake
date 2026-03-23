@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
+using VoidCraftLauncher.Models.CreatorStudio;
 
 namespace VoidCraftLauncher.Models;
 
@@ -48,6 +49,8 @@ public partial class LauncherConfig : ObservableObject
 
     [ObservableProperty]
     private string? _activeAccountId;
+
+    public CreatorStudioPreferences CreatorStudio { get; set; } = new();
 }
 
 public enum GcType

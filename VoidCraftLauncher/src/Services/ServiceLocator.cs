@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Net.Http;
+using VoidCraftLauncher.Services.CreatorStudio;
 
 namespace VoidCraftLauncher.Services;
 
@@ -102,6 +103,8 @@ public sealed class ServiceLocator
         RegisterFactory(() => new SkinStudioService(Resolve<HttpClient>()));
         RegisterFactory(() => new SocialFeedService(Resolve<HttpClient>(), Resolve<LauncherService>(), Resolve<ObservabilityService>()));
         RegisterFactory(() => new CreatorWorkbenchService());
+        RegisterFactory(() => new CreatorWorkspaceService(Resolve<LauncherService>()));
+        RegisterFactory(() => new CreatorManifestService(Resolve<CreatorWorkspaceService>()));
         RegisterFactory(() => new AchievementHubService(Resolve<HttpClient>(), Resolve<LauncherService>(), Resolve<ObservabilityService>()));
         RegisterFactory(() => new ServerDiscoveryService(Resolve<LauncherService>(), Resolve<ObservabilityService>()));
         RegisterFactory(() => new InstanceExportService());

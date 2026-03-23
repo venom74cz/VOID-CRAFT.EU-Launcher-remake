@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:VoidCraftLauncher.ViewModels"
+             xmlns:models="using:VoidCraftLauncher.Models"
              x:Class="VoidCraftLauncher.Controls.CreateProfileWizard"
              x:DataType="vm:MainViewModel"
              x:Name="WizardRoot">
@@ -16,7 +17,7 @@
                 BorderThickness="1"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
-                Width="620"
+                Width="700"
                 MaxHeight="760"
                 Padding="0">
             <Border.Effect>
@@ -109,10 +110,140 @@
 
                 <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Spacing="20" Margin="28,24">
-                        <StackPanel Spacing="6" IsVisible="{Binding IsCreateProfileIdentityStep}">
-                            <TextBlock Text="Jak se má instance jmenovat" FontWeight="SemiBold" FontSize="13"
-                                       Foreground="{DynamicResource TextSecondaryBrush}"/>
-                            <TextBox Text="{Binding NewProfileName}" Watermark="Např. My Epic Survival"/>
+                        <StackPanel Spacing="16" IsVisible="{Binding IsCreateProfileIdentityStep}">
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="Bootstrap workspace" FontWeight="SemiBold" FontSize="13"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                <ComboBox ItemsSource="{Binding CreateProfileBootstrapOptions}"
+                                          SelectedItem="{Binding SelectedCreateProfileBootstrapOption}"
+                                          HorizontalAlignment="Stretch">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate x:DataType="models:SelectionOption">
+                                            <TextBlock Text="{Binding Label}"/>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </StackPanel>
+
+                            <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="14" Padding="16"
+                                    BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Text="{Binding CreateProfileBootstrapSummary}" FontSize="12"
+                                               Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+
+                                    <StackPanel Spacing="8" IsVisible="{Binding IsCreateProfileTemplateBootstrap}">
+                                        <TextBlock Text="Template preset" FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                        <ComboBox ItemsSource="{Binding CreateProfileTemplateOptions}"
+                                                  SelectedItem="{Binding SelectedCreateProfileTemplateOption}"
+                                                  HorizontalAlignment="Stretch">
+                                            <ComboBox.ItemTemplate>
+                                                <DataTemplate x:DataType="models:SelectionOption">
+                                                    <TextBlock Text="{Binding Label}"/>
+                                                </DataTemplate>
+                                            </ComboBox.ItemTemplate>
+                                        </ComboBox>
+                                    </StackPanel>
+
+                                    <StackPanel Spacing="8" IsVisible="{Binding IsCreateProfileArchiveBootstrap}">
+                                        <TextBlock Text="Lokální archiv" FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                        <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                                            <TextBox Text="{Binding NewProfileBootstrapArchivePath}" Watermark="Vyber archiv balíčku"/>
+                                            <Button Grid.Column="1" Content="Vybrat" Command="{Binding BrowseCreateProfileBootstrapArchiveCommand}"
+                                                    Classes="secondary" FontSize="12" Padding="12,8"/>
+                                            <Button Grid.Column="2" Content="Vyčistit" Command="{Binding ClearCreateProfileBootstrapArchiveCommand}"
+                                                    Classes="ghost" FontSize="12" Padding="12,8" IsVisible="{Binding HasCreateProfileBootstrapArchivePath}"/>
+                                        </Grid>
+                                    </StackPanel>
+
+                                    <StackPanel Spacing="8" IsVisible="{Binding IsCreateProfileCloneGitBootstrap}">
+                                        <TextBlock Text="Git remote" FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                        <TextBox Text="{Binding NewProfileBootstrapGitUrl}" Watermark="https://github.com/owner/repo.git nebo git@github.com:owner/repo.git"/>
+                                        <TextBox Text="{Binding NewProfileBootstrapGitBranch}" Watermark="main"/>
+                                    </StackPanel>
+
+                                    <StackPanel Spacing="8" IsVisible="{Binding IsCreateProfileRestoreSnapshotBootstrap}">
+                                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                            <TextBlock Text="Snapshot source" FontSize="12" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center"/>
+                                            <Button Grid.Column="1" Content="↻ Obnovit" Command="{Binding RefreshCreateProfileBootstrapSnapshotsCommand}"
+                                                    Classes="secondary" FontSize="12" Padding="12,8"/>
+                                        </Grid>
+                                        <ComboBox ItemsSource="{Binding CreateProfileSnapshotOptions}"
+                                                  SelectedItem="{Binding SelectedCreateProfileSnapshotOption}"
+                                                  HorizontalAlignment="Stretch"
+                                                  IsEnabled="{Binding HasCreateProfileSnapshotOptions}">
+                                            <ComboBox.ItemTemplate>
+                                                <DataTemplate x:DataType="models:SelectionOption">
+                                                    <TextBlock Text="{Binding Label}" TextWrapping="Wrap"/>
+                                                </DataTemplate>
+                                            </ComboBox.ItemTemplate>
+                                        </ComboBox>
+                                        <TextBlock Text="Launcher tu nabízí snapshoty z existujících instancí a creator backup workspace." FontSize="11"
+                                                   Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"
+                                                   IsVisible="{Binding !HasCreateProfileSnapshotOptions}"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="Jak se má pack jmenovat" FontWeight="SemiBold" FontSize="13"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                <TextBox Text="{Binding NewProfileName}" Watermark="Např. My Epic Survival"/>
+                            </StackPanel>
+
+                            <Grid ColumnDefinitions="*,12,*">
+                                <StackPanel Grid.Column="0" Spacing="6">
+                                    <TextBlock Text="Slug" FontWeight="SemiBold" FontSize="13"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                    <TextBox Text="{Binding NewProfileSlug}" Watermark="my-epic-survival"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" Spacing="6">
+                                    <TextBlock Text="Startovní verze" FontWeight="SemiBold" FontSize="13"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                    <TextBox Text="{Binding NewProfileVersion}" Watermark="0.1.0"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="Krátké summary" FontWeight="SemiBold" FontSize="13"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                <TextBox Text="{Binding NewProfileSummary}" AcceptsReturn="True" TextWrapping="Wrap"
+                                         MinHeight="86" Watermark="Jedna až dvě věty, které popíšou směr packu, mood a první release cíl."/>
+                            </StackPanel>
+
+                            <Grid ColumnDefinitions="*,12,*">
+                                <StackPanel Grid.Column="0" Spacing="6">
+                                    <TextBlock Text="Autoři" FontWeight="SemiBold" FontSize="13"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                    <TextBox Text="{Binding NewProfileAuthors}" Watermark="např. VOIDIVIDE, VOID-CRAFT team"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" Spacing="6">
+                                    <TextBlock Text="Release channel" FontWeight="SemiBold" FontSize="13"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                    <ComboBox SelectedItem="{Binding NewProfileReleaseChannel}" HorizontalAlignment="Stretch">
+                                        <x:String>alpha</x:String>
+                                        <x:String>beta</x:String>
+                                        <x:String>playtest</x:String>
+                                        <x:String>stable</x:String>
+                                    </ComboBox>
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid ColumnDefinitions="*,12,*">
+                                <StackPanel Grid.Column="0" Spacing="6">
+                                    <TextBlock Text="Primary server" FontWeight="SemiBold" FontSize="13"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                    <TextBox Text="{Binding NewProfilePrimaryServer}" Watermark="např. play.void-craft.eu"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" Spacing="6">
+                                    <TextBlock Text="Recommended RAM (MB)" FontWeight="SemiBold" FontSize="13"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                    <TextBox Text="{Binding NewProfileRecommendedRamMb}" Watermark="12288"/>
+                                </StackPanel>
+                            </Grid>
 
                             <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="14" Padding="16"
                                     BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
@@ -181,6 +312,12 @@
                                     </StackPanel>
                                 </Grid>
                             </Border>
+
+                            <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="14" Padding="16"
+                                    BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                                <TextBlock Text="{Binding CreateProfileRuntimeBootstrapNote}" FontSize="11"
+                                           Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                            </Border>
                         </StackPanel>
 
                         <StackPanel Spacing="16" IsVisible="{Binding IsCreateProfileReviewStep}">
@@ -203,8 +340,8 @@
                                     <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
                                         <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="12" Padding="14">
                                             <StackPanel Spacing="4">
-                                                <TextBlock Text="Instance" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
-                                                <TextBlock Text="{Binding CreateProfileDirectoryName}" FontSize="14" FontWeight="Bold"
+                                                <TextBlock Text="Pack" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                                <TextBlock Text="{Binding NewProfileName}" FontSize="14" FontWeight="Bold"
                                                            Foreground="{DynamicResource TextPrimaryBrush}"/>
                                             </StackPanel>
                                         </Border>
@@ -217,11 +354,59 @@
                                         </Border>
                                     </Grid>
 
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                                        <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="12" Padding="14">
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Text="Metadata" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                                <TextBlock Text="{Binding CreateProfileMetadataSummary}" FontSize="14" FontWeight="Bold"
+                                                           Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </Border>
+                                        <Border Grid.Column="1" Background="{DynamicResource BgPanelBrush}" CornerRadius="12" Padding="14">
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Text="Bootstrap" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                                <TextBlock Text="{Binding CreateProfileBootstrapModeLabel}" FontSize="12" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                                                <TextBlock Text="{Binding CreateProfileBootstrapSourceSummary}" FontSize="11"
+                                                           Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
+
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                                        <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="12" Padding="14">
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Text="Autoři / server" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                                <TextBlock Text="{Binding NewProfileAuthors}" FontSize="12" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                                                <TextBlock Text="{Binding NewProfilePrimaryServer}" FontSize="11"
+                                                           Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </Border>
+                                        <Border Grid.Column="1" Background="{DynamicResource BgPanelBrush}" CornerRadius="12" Padding="14">
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Text="Bootstrap efekt" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                                <TextBlock Text="{Binding CreateProfileBootstrapSummary}" FontSize="11"
+                                                           Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
+
+                                    <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="12" Padding="14">
+                                        <StackPanel Spacing="6">
+                                            <TextBlock Text="Summary" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                            <TextBlock Text="{Binding NewProfileSummary}" FontSize="11"
+                                                       Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </Border>
+
                                     <Border Background="{DynamicResource BgInteractiveBrush}" CornerRadius="12" Padding="14">
                                         <StackPanel Spacing="6">
                                             <TextBlock Text="Cílová cesta" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
                                             <TextBlock Text="{Binding CreateProfilePathPreview}" FontSize="11"
                                                        Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                            <TextBlock Text="Bootstrap vytvoří standardní složky config/defaultconfigs/scripts/kubejs/docs/notes/exports/qa/quests, připraví manifest a podle zvolené varianty přidá template, archiv, git nebo snapshot obsah."
+                                                       FontSize="10" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
                                         </StackPanel>
                                     </Border>
                                 </StackPanel>

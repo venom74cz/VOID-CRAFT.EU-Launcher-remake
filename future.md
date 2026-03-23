@@ -68,6 +68,210 @@ Kazda future feature by naopak nemela:
 
 ---
 
+## Creator Studio / Workbench jako modpack HQ
+
+Tenhle blok je zamerne vic "author-side" nez zbytek roadmapy. Cilem je, aby Creator Studio nebylo jen utility panel pro par souboru, ale plnohodnotne misto, kam prijdes, zalozis novy modpack od piky, navrhnes jeho identitu, upravis obsah, napojis repo, pripravis release a odchazis az v momentu, kdy je build venku.
+
+North star pro tuhle cast je jednoducha:
+
+- prijdu do launcheru a vytvorim novou instanci / novy modpack
+- dam mu identitu, logo, metadata a exportni cile
+- upravim configy, skripty, questy, assety a poznamky citelneji nez v plain textu
+- pres `Copilot SDK` pouziju AI na upravy souboru, poznamek, canvasu, diffu a release textu primo nad workbenchem
+- napojim Git / GitHub a mam pod kontrolou fetch, pull, commit, push i release kontext
+- pripravim export kompatibilni s CurseForge, Modrinth i internim `.voidpack` flow
+- v launcheru si odplanuju progres, questy, checklisty a release poznamky
+- bez odchodu zvladnu playtest, rollback, changelog i finalni vydani
+
+### 0A. Co uz launcher umi dnes
+
+> [!note]
+> **Popis**
+> Creator Studio uz dnes stoji na realnem zakladu. Neni to prazdny koncept, ale prvni vrstva authoring workspace, na kterou se da navazat.
+>
+> **Mozna implementace**
+> - Launcher uz umi vytvorit novou custom instanci s vyberem nazvu, Minecraft verze, loaderu a konkretni verze loaderu.
+> - Custom instance uz umi hledat a pridavat jednotlive mody z CurseForge a Modrinthu a zase je odebirat.
+> - Detail instance uz ma produkcni workspace se screenshot galerii, linked servery, snapshoty a export/import flow.
+> - Existuje `.voidpack` export/import pro lokalni archivaci a prenos instance.
+> - Creator Studio uz umi vybrat pracovni instanci, otevrit workspace, screenshoty a logy a editovat male textove soubory primo v instanci.
+> - Workbench uz filtruje `config`, `defaultconfigs`, `scripts`, `kubejs` a prioritni root soubory typu `manifest_info.json`, `mods_metadata.json` nebo `launcher_config.json`.
+> - Launcher uz ma GitHub vazbu pro roadmapu, changelog a update checky, takze idea "repo-backed workflow" uz v produktu existuje aspon na obsahove vrstve.
+>
+> **Proc to dava smysl**
+> - Roadmapa se muze oprit o skutecny produktovy zaklad, ne o vymyslenou nulu.
+> - Dalsi krok neni "predelat vsechno", ale zhutnit a prohloubit authoring flow do jedne souvisle plochy.
+
+### 0B. Co dnes chybi, aby z toho byl workspace "od piky az po vydani"
+
+> [!warning]
+> **Popis**
+> Soucasny zaklad je dobry start, ale jeste to neni misto, odkud autor opravdu nechce odchazet. Dnes je to spis mix utility akci nez plny modpack workbench.
+>
+> **Mozna implementace**
+> - Zakladani instance resi jen runtime a jmeno; chybi metadata packu, branding, templaty a scaffold pro release-ready workspace.
+> - Creator Workbench dnes umi jen male textove soubory a jen v plain text podobe; chybi parsery, schema-aware formulare, diffy a validace.
+> - Export/import dnes pokryva jen `.voidpack`; chybi CurseForge-compatible export, Modrinth `.mrpack`, kontrola manifestu a publish pipeline.
+> - Chybi lokalni Git vrstva a realne GitHub workflow: clone, branch, commit, push, pull, release draft, PR/issue kontext.
+> - Chybi visual asset workflow pro logo modpacku, cover obrazky, galerie a export brand assetu.
+> - Chybi AI-native vrstva nad celym workbenchem: inteligentni upravy souboru, poznamek, canvasu, hromadne zmeny, diff explanation a bezpecne apply flow.
+> - Chybi planning vrstva: mind mapa, quest flow board, poznamky, backlog, release checklist a creator knowledge base.
+> - Chybi QA/release gate vrstva, ktera by rekla "tahle verze je pripravena ven" nebo "chybi diff, snapshot, changelog nebo smoke test".
+>
+> **Proc to dava smysl**
+> - Bez techto vrstev je Creator Studio uzitecne, ale porad to neni "modpack HQ".
+> - Prave tyhle gapy rozhoduji, jestli autor zustava v launcheru, nebo utece do VS Code, Obsidianu, GitHub Desktopu, exploreru a browseru.
+
+### 0C. Instance Bootstrap a Metadata Studio
+
+> [!success]
+> **Popis**
+> Prvni krok musi byt silny: zalozeni noveho modpacku nesmi znamenat rucni skladani slozek a metadat bokem. Creator Studio ma umet vytvorit cisty, pojmenovany a produkcne pripraveny workspace.
+>
+> **Mozna implementace**
+> - Wizard musi umet `Blank instance`, `From template`, `Import CurseForge pack`, `Import Modrinth pack`, `Clone from Git repo`, `Fork existujici instance` a `Restore from snapshot`.
+> - Soucasti zalozeni maji byt pole pro `pack name`, `slug`, `summary`, `authors`, `version`, `MC version`, `loader`, `loader version`, `recommended RAM`, `Java target`, `primary server`, `release channel`.
+> - Hned v bootstrapu ma jit vybrat vizualni identita: logo, hero image, accent color, launcher card title, kratky one-liner.
+> - Launcher ma automaticky vytvorit standardni strukturu adresaru: `config`, `defaultconfigs`, `kubejs`, `scripts`, `resourcepacks`, `shaderpacks`, `docs`, `notes`, `exports`, `qa`, pripadne `quests`.
+> - Vhodne je drzet vlastni `creator manifest`, ktery sjednoti metadata packu, release poznamky, repozitar, exportni cile a assety na jednom miste.
+> - Templaty mohou pokryt typy jako `kitchen sink`, `expert`, `quest`, `vanilla+`, `technical`, `hardcore`, aby autor nejel od nuly kazdy detail.
+>
+> **Proc to dava smysl**
+> - Nejvetsi friction u noveho packu je prave chaoticky start.
+> - Silny bootstrap okamzite posouva launcher z "spravce instanci" na "authoring environment".
+
+### 0D. Branding, Asset a Media Pipeline
+
+> [!success]
+> **Popis**
+> Modpack potrebuje identitu stejne jako technicky obsah. Creator Studio ma umet pracovat s logem, coverem, screenshoty a dalsimi assety jako s first-class casti workflow, ne jako s bokovkou v exploreru.
+>
+> **Mozna implementace**
+> - Autor musi umet nahrat `logo`, `cover`, `square icon`, `wide hero`, `social preview` a `launcher card art` primo v launcheru.
+> - Studio muze automaticky delat resize/crop, safe-zone preview, export thumbnail variant a kontrolu pruhlednosti / rozliseni.
+> - Screenshot galerie uz dnes existuje; dalsi krok je tagging, favorite pin, vyber "official screenshotu" a export media kitu pro release.
+> - Asset pipeline ma umet navazat obrazky na konkretni verzi packu, release note nebo Git tag.
+> - Vhodne je pridat i jednoduchy textovy `brand profile`: tonalita, short pitch, support linky, Discord, GitHub, web.
+> - Pri exportu packu musi jit snadno pribalit spravne obrazky a metadata pro CurseForge, Modrinth, GitHub release nebo launcher listing.
+>
+> **Proc to dava smysl**
+> - Uzivatel konkretne potrebuje nahrat logo modpacku a to je presne use case, ktery zvedne pocit "tohle je moje studio".
+> - Branding bez workflow casto skonci v chaosu, ztracenych verzich obrazku a nejednotnych release materialech.
+
+### 0E. Structured Config, Script a Data Editors
+
+> [!success]
+> **Popis**
+> Plain text editor je dobry fallback, ale ne finalni cil. Creator Workbench ma configy a datove soubory parsovat a zobrazovat citelneji podle typu obsahu, aby se autor orientoval rychleji a s mensim rizikem chyb.
+>
+> **Mozna implementace**
+> - `json`, `json5`, `toml`, `yaml`, `ini`, `properties` a cast `cfg` souboru maji dostat structured editor s poli, sekcemi, search, resetem a inline validaci.
+> - `kubejs`, `zs`, `js` a podobne skripty maji mit syntax highlight, outline, rychle skoky na sekce, diff view a aspon lehke diagnostiky.
+> - Kazdy editor by mel umet `Structured`, `Raw`, `Split` a `Diff against last export / snapshot / default` rezim.
+> - Nad editorem ma jit pustit AI akce typu `vysvetli`, `najdi problem`, `prepis jen tuhle sekci`, `navrhni safe fix`, `aplikuj zmenu do vybranych souboru` a `vytvor patch z poznamky`.
+> - Kde parser neni stoprocentni, launcher musi bezpecne spadnout do raw modu misto rozbiteho prepisu.
+> - U castych mod configu se hodi schema/template knihovna s popisy, tooltipy a vysvetlenim, co konkretni volba dela.
+> - Silny use case je `open file -> vidim sekce, komentar, default hodnotu, posledni zmenu a validacni stav`, ne jen dlouhou zed textu.
+> - Pozdeji lze pridat specializovane editory pro quest JSON, loot tabulky, datapacky, recipe override nebo worldgen presety.
+>
+> **Proc to dava smysl**
+> - Presne tohle je rozdil mezi "launcher ma editor" a "launcher je prijemne misto pro authoring".
+> - Citelnejsi editace dramaticky snizuje pocet chyb a zkracuje cas mezi napadem a funkcnim buildem.
+
+### 0F. Git a GitHub Collaboration Desk
+
+> [!success]
+> **Popis**
+> Pokud ma byt Creator Studio opravdu centralni workspace, musi umet repozitarovy flow. Nejen otevrit odkaz na GitHub, ale pracovat s lokalnim repem i remote kontextem.
+>
+> **Mozna implementace**
+> - Studio ma umet `init repo`, `clone repo`, `link existing repo`, `fetch`, `pull`, `push`, `switch branch`, `create branch`, `commit selected files`, `view history`.
+> - Autor musi videt stav typu `mas lokalni zmeny`, `remote obsahuje nove commity`, `branch je zaostala`, `chybi pull pred push`.
+> - Dulezita je moznost syncovat jen vybrane casti workspace: treba `config/`, `defaultconfigs/`, `scripts/`, `kubejs/`, `resourcepacks/`, `docs/notes`.
+> - GitHub vrstva ma nabidnout posledni commity, issue/PR odkazy, release draft, tagy, changelog z commitu a signal, kdy nekdo pushnul update ke stazeni.
+> - Konflikty musi mit citelny UI rezim: `ours/theirs/base`, preview diffu a moznost nevynutit nic naslepo.
+> - Dobre funguje i "repo health" panel: default branch, posledni release, otevrene bugy k dane vetvi, navazane notes a export snapshoty.
+>
+> **Proc to dava smysl**
+> - Uzivatel explicitne chce flow `rovnou nahrat z gitu nebo stahnout/pushnout update` a to je centralni capability, ne doplnek.
+> - Bez Git/GitHub vrstvy bude launcher porad jen lokalni editor, ne kolaboracni workspace.
+
+### 0G. Packaging, Compatibility a Distribution Desk
+
+> [!success]
+> **Popis**
+> Export nesmi znamenat jen "udelat zip". Creator Studio ma umet z jedne pracovni instance vyrabet validni baliky pro ruzne distribucni cile a jeste pred vydanim rict, jestli je build opravdu kompatibilni.
+>
+> **Mozna implementace**
+> - Export cile maji pokryt `VOIDPACK`, `CurseForge-compatible zip/manifest`, `Modrinth .mrpack`, `GitHub release bundle`, pripadne `local playtest build`.
+> - Import musi umet nahrat existujici CurseForge pack, Modrinth pack, lokalni instanci, repo branch nebo starsi export snapshot.
+> - Pred exportem ma bezet validator: struktura `overrides`, chybejici metadata, neplatne assety, nekompatibilni loader target, prazdny changelog, podezrele velke soubory.
+> - U kazdeho exportu ma byt preview: `co jde ven`, `co je nove`, `co je odebrane`, `co neni kompatibilni s vybranym cilem`.
+> - Vhodne je i `one-click package recipes`: `CurseForge release`, `Modrinth release`, `Discord playtest`, `internal QA snapshot`.
+> - To prirozene navazuje na uz popsane snapshot ringy, diff archive a release gate vrstvu nize v dokumentu.
+>
+> **Proc to dava smysl**
+> - Dnes launcher umi lokalni `.voidpack`, ale ne plny multiplatform export workflow.
+> - Kompatibilni packaging je jedna z nejpraktictejsich veci, ktera z Creator Studia udela opravdu pouzitelne centrum pro modpack autora.
+
+### 0H. Quest, Progression a Notes Canvas
+
+> [!tip]
+> **Popis**
+> Creator Workbench nema resit jen soubory, ale i mysleni nad obsahem. Pokud jde udelat mind mapu pro questy, progres, poznamky a release uvahy, je to presne ten typ vrstvy, ktery drzi autora v jednom prostredi.
+>
+> **Mozna implementace**
+> - Zacit lze `mind map / canvas` rezimem s nody pro questline, progression gate, dimension unlock, boss, recipe tier, lore beat, TODO nebo release blocker.
+> - Nod muze mit poznamku, checklist, prioritu, tagy, screenshot, odkaz na soubor, commit, export snapshot nebo issue.
+> - Dulezite je propojeni s workbenchem: z node jde otevrit konkretni config, script, datapack nebo changelog draft.
+> - Studio muze mit i jednodussi `notes/wiki` vrstvu pro design notes, balancing notes, onboarding texty, known issues a patch ideas.
+> - AI nad canvasem a notes musi umet delat i obsahove operace: rozpadnout napad na questline, sepsat TODO, preusporadat progresi, shrnout meeting note nebo z poznamky pripravit konkretni edit tasky.
+> - Export canvasu do `md`, `json`, `png` nebo `obsidian-friendly` struktury pomuze, i kdyby autor chtel cast dokumentace vzit jinam.
+> - Pozdeji lze pridat specializovane quest adaptery pro realne quest mody, ale prvni verze muze byt planner, ne nutne plny editor formatove zavisly na jednom modu.
+>
+> **Proc to dava smysl**
+> - Uzivatel konkretne zminuje questy, progres a zapisky, takze to neni nice-to-have, ale prime jadro use case.
+> - Planning vrstva je casto duvod, proc autor utika do Obsidianu, Miro nebo draw.io; launcher tady muze realne usetrit context switching.
+
+### 0I. Release Ops, QA a "neodchazet z launcheru"
+
+> [!success]
+> **Popis**
+> Posledni faze je delivery. Creator Studio ma umet autora dovest az k vydani: od test builda pres diffy, changelog a announcement az po rollback a hotfix.
+>
+> **Mozna implementace**
+> - Buildy maji mit kanaly `stable`, `candidate`, `nightly`, `playtest`, `hotfix` s jasnym stavem a historii.
+> - Release panel ma ukazovat `version bump`, `snapshot ready`, `diff generated`, `notes ready`, `tests checked`, `publish target selected`.
+> - Launcher ma umet zmeny prelozit do lidskeho vystupu: changelog, Discord post, GitHub release notes, patch impact summary, tester brief.
+> - QA vrstva muze drzet smoke checklist, crash log review, compatibility warnings, list znamych problemu a rychly rollback na predchozi snapshot.
+> - Dobre funguje i feedback inbox: co nahlasili playtesteri, co je blocker, co je jen follow-up po releasu.
+> - Kdyz vse projde, autor jednim flow posle export, pushne repo update, vytvori release draft a archivuje build do historie.
+>
+> **Proc to dava smysl**
+> - Tohle je posledni krok k tomu, aby autor opravdu nemusel "odejit jinam az po vydani".
+> - Release discipline zveda kvalitu packu stejne silne jako dobry editor configu.
+
+### 0J. AI-native Copilot SDK Layer nad celym Workbenchem
+
+> [!success]
+> **Popis**
+> AI nema byt jen chat bokem ani generator changelogu. Pres `Copilot SDK` ma jit o nativni vrstvu nad celym Creator Workbenchem, ktera umi rozumet souborum, notes, quest canvasu, assetum, exportum i repo kontextu a realne s nimi pracovat.
+>
+> **Mozna implementace**
+> - Copilot musi umet pracovat nad `selected scope`: jeden soubor, vice souboru, cela slozka, notes workspace, quest canvas nebo release board.
+> - AI akce maji pokryt `explain`, `find issue`, `suggest`, `rewrite`, `apply patch`, `rename`, `sync metadata`, `generate changelog`, `prepare release text`, `summarize diff`, `convert note to task list`.
+> - Soucasti musi byt i prime upravy libovolneho workbench obsahu: configy, skripty, `kubejs`, markdown notes, quest plan, release notes, manifesty, JSON data a dalsi textove assety.
+> - Multi-file zmeny musi bezet pres preview rezim: seznam dotcenych souboru, diff, duvod zmeny, moznost odskrtnout jednotlive patche a `undo`.
+> - U kazde akce ma jit nastavit rezim `jen navrh`, `navrh + patch`, `rovnou aplikovat do vybraneho scope` a `vytvor commit draft`.
+> - Copilot ma umet prekladat mezi vrstvami: z notes udelat konkretni upravy configu, z diffu udelat changelog, z crash logu navrhnout fixy, z quest mapy pripravit data tasky.
+> - Dulezite je, aby AI rozumela i vztahum mezi soubory, ne jen jednomu textu v izolaci: `tenhle config patri k tomuhle scriptu`, `tenhle note popisuje tenhle release`, `tenhle quest node souvisi s timhle datapackem`.
+> - Guardraily musi byt jasne: zadne tiche autonomni prepisovani cele instance. Bezpecny default je preview, diff, explicitni potvrzeni a u vetsich zmen i snapshot pred apply.
+>
+> **Proc to dava smysl**
+> - Tohle je presne use case `pomoci AI delat upravy cehokoliv v Creator Workbenchi`.
+> - Jakmile AI umi sahnout nejen na text, ale i na notes, quest planning a release workflow, Creator Studio se realne meni na centralni authoring cockpit.
+> - Nejvetsi hodnota neni "chatovat si s AI", ale zkratit cestu od napadu k hotove uprave v pracovnim prostoru.
+
 ## Priorita A - Core features
 
 > [!success]
@@ -547,15 +751,16 @@ Kazda future feature by naopak nemela:
 
 > [!tip]
 > **Popis**  
-> Creator Studio dostane task-oriented copilot vrstvu postavenou nad vybranou pracovni instanci. Ne obecny chat pro vsechno, ale asistenta, ktery rozumi modpacku, assetum, changelogu, screenshotum, logum a release workflow. Cilem je z Creator Studia udelat skutecny authoring workspace, ne jen utility panel.
+> Creator Studio dostane task-oriented copilot vrstvu postavenou nad vybranou pracovni instanci. Ne obecny chat pro vsechno, ale asistenta, ktery rozumi modpacku, assetum, souborum workbenche, notes, quest planum, changelogu, screenshotum, logum a release workflow. Cilem je z Creator Studia udelat skutecny authoring workspace, ne jen utility panel.
 >
 > **Mozna implementace**
-> - Copilot panel bezi nad `selected instance` kontextem: vidi metadata modpacku, obsah `mods/`, `config/`, screenshoty, crash logy, linked servery a posledni zmeny ve workspace.
+> - Copilot panel bezi nad `selected instance` kontextem: vidi metadata modpacku, obsah `mods/`, `config/`, `scripts/`, `kubejs/`, notes workspace, quest canvas, screenshoty, crash logy, linked servery a posledni zmeny ve workspace.
 > - Pomoci `Copilot SDK` muze asistovat s ukoly typu `vysvetli co se zmenilo mezi dvema buildy`, `navrhni patch summary`, `vytvor draft Discord announcementu`, `zkontroluj release checklist`, `shrni crash log pro support`, `navrhni popis modpacku nebo spotlight card`.
+> - Stejna vrstva musi umet i prime AI editace nad workbenchem: upravit config, prepsat sekci skriptu, srovnat metadata, z poznamky vygenerovat patch nebo zmenit vice souboru v jednom kontrolovanem tahu.
 > - Creator Studio muze byt napojene i na GitHub repo modpacku nebo konfigurace: `fetch`, `pull`, prehled poslednich commitu, branch context a signal, ze nekdo pushnul zmeny, ktere si muzes stahnout do pracovni instance.
 > - Diky tomu jde delat lehkou kolaboraci bez odchodu z launcheru: otevrit branch/workspace, stahnout update od dalsiho autora, porovnat lokalni zmeny proti repu a navazat na uz rozpracovanou verzi.
 > - Silny use case je preklad mezi technickou a obsahovou vrstvou: z lokalnich zmen udela lidsky citelny changelog, Creator Quest submit, guide draft nebo release card pro launcher.
-> - Akce by mely byt kuratorovane a bezpecne: navrhy, diff summary, exporty, metadata, validace assetu a checklisty. Ne volne autonomni prepisovani cele instance bez kontroly.
+> - Akce by mely byt kuratorovane a bezpecne: AI muze delat i prime upravy souboru, notes a dalsiho workbench obsahu, ale vzdy pres preview, diff, vyber scope, undo a explicitni potvrzeni u vetsich nebo vice-souborovych zmen. Ne tichy autonomni rewrite cele instance bez kontroly.
 > - Pozdeji lze pridat specializovane rezimy `release copilot`, `support copilot`, `creator post copilot`, `modpack audit`, `repo sync copilot`, kazdy s jasnym scope a prompt kontraktem.
 >
 > **Proc to dava smysl**

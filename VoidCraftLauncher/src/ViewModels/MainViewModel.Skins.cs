@@ -111,6 +111,7 @@ public partial class MainViewModel
         OnPropertyChanged(nameof(SkinStudioSelectedInstancePath));
         NotifyStreamingToolsStateChanged();
         _ = RefreshCreatorWorkbenchAsync();
+        OnCreatorWorkspaceSelectionChanged(value);
     }
 
     partial void OnSelectedSkinHistoryItemChanged(SkinHistoryItem? value)
@@ -285,7 +286,7 @@ public partial class MainViewModel
 
     private void RebuildSkinStudioInstanceOptions()
     {
-        var selectedId = SelectedSkinStudioInstance?.Id;
+        var selectedId = SelectedSkinStudioInstance?.Id ?? Config.CreatorStudio?.SelectedWorkspaceId;
         var currentModpackName = CurrentModpack?.Name;
 
         SkinStudioInstanceOptions.Clear();

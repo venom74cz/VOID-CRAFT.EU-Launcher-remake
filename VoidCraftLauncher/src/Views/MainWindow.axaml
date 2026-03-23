@@ -97,7 +97,10 @@
         <!-- ╔══════════════════════════════════════════════════╗ -->
         <!-- ║      CONTEXT DOCK (extracted UserControl)        ║ -->
         <!-- ╚══════════════════════════════════════════════════╝ -->
-        <controls:ContextDock x:Name="ContextDockPanel" Grid.Column="2"/>
+        <Grid x:Name="RightDockHost" Grid.Column="2">
+            <controls:ContextDock x:Name="ContextDockPanel" IsVisible="{Binding IsStandardContextDockVisible}"/>
+            <controls:CreatorCopilotDesk IsVisible="{Binding IsCreatorCopilotDeskVisible}"/>
+        </Grid>
 
 
         <!-- ╔══════════════════════════════════════════════════╗ -->
@@ -189,6 +192,8 @@
         <!-- ║          CRASH DIAGNOSTICS DRAWER (M3)           ║ -->
         <!-- ╚══════════════════════════════════════════════════╝ -->
         <controls:CrashDrawer Grid.ColumnSpan="3"/>
+
+        <controls:CreatorNotesDrawer Grid.ColumnSpan="3"/>
 
 
         <!-- ╔══════════════════════════════════════════════════╗ -->

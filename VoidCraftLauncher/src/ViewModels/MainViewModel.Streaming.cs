@@ -176,6 +176,7 @@ public partial class MainViewModel
         OnPropertyChanged(nameof(CreatorWorkbenchSelectionLabel));
         OnPropertyChanged(nameof(CreatorWorkbenchSelectionMeta));
         OnPropertyChanged(nameof(CanSaveCreatorWorkbenchFile));
+        NotifyCreatorShellVisualStateChanged();
     }
 
     partial void OnIsLaunchingChanged(bool value) => NotifyStreamingToolsStateChanged();
@@ -271,7 +272,10 @@ public partial class MainViewModel
         var summary =
             $"VOID-CRAFT | účet: {StreamingAccountLabel}\n" +
             $"Modpack: {CreatorStudioInstanceLabel}\n" +
-            $"Server: mc.void-craft.eu\n" +
+            $"Pack: {(string.IsNullOrWhiteSpace(CreatorMetadataPackName) ? CreatorStudioInstanceLabel : CreatorMetadataPackName)}\n" +
+            $"Release: {CreatorMetadataSlug} • v{CreatorMetadataVersion} • {CreatorMetadataReleaseChannel}\n" +
+            $"Runtime: {CreatorStudioMinecraftVersion} / {CreatorStudioModLoader}\n" +
+            $"Server: {(string.IsNullOrWhiteSpace(CreatorMetadataPrimaryServer) ? "mc.void-craft.eu" : CreatorMetadataPrimaryServer)}\n" +
             $"Soubor: {CreatorWorkbenchSelectionLabel}";
 
         await topLevel.Clipboard.SetTextAsync(summary);
@@ -285,11 +289,13 @@ public partial class MainViewModel
         OnPropertyChanged(nameof(CreatorWorkbenchSelectionMeta));
         OnPropertyChanged(nameof(CanSaveCreatorWorkbenchFile));
         _ = LoadSelectedCreatorWorkbenchFileAsync(value);
+        SyncCreatorWorkbenchFocus(value);
     }
 
     partial void OnCreatorWorkbenchContentChanged(string value)
     {
         OnPropertyChanged(nameof(CanSaveCreatorWorkbenchFile));
+        UpdateCreatorDirtyIndicators();
     }
 
     partial void OnCreatorWorkbenchSearchQueryChanged(string value)
@@ -322,6 +328,7 @@ public partial class MainViewModel
     {
         await RefreshCreatorWorkbenchAsync();
         ShowToast("Creator Studio", "Seznam upravitelných souborů byl obnoven.", ToastSeverity.Success, 2000);
+        TrackCreatorActivity("Obnoven seznam creator workbench souboru.");
     }
 
     [RelayCommand]
@@ -341,6 +348,8 @@ public partial class MainViewModel
             CreatorWorkbenchStatus = $"Uloženo: {SelectedCreatorWorkbenchFile.RelativePath}";
             OnPropertyChanged(nameof(CanSaveCreatorWorkbenchFile));
             ShowToast("Creator Studio", "Soubor byl uložen přímo do instance.", ToastSeverity.Success, 2200);
+            TrackCreatorActivity($"Ulozen soubor {SelectedCreatorWorkbenchFile.RelativePath}.");
+            RefreshCreatorWorkspaceContext();
         }
         catch (Exception ex)
         {
@@ -396,6 +405,7 @@ public partial class MainViewModel
             OnPropertyChanged(nameof(CreatorWorkbenchSelectionLabel));
             OnPropertyChanged(nameof(CreatorWorkbenchSelectionMeta));
             OnPropertyChanged(nameof(CanSaveCreatorWorkbenchFile));
+            RefreshCreatorWorkspaceContext();
         });
     }
 
@@ -442,6 +452,7 @@ public partial class MainViewModel
                 CreatorWorkbenchContent = content;
                 CreatorWorkbenchStatus = $"Načteno: {file.RelativePath}";
                 OnPropertyChanged(nameof(CanSaveCreatorWorkbenchFile));
+                RefreshCreatorWorkspaceContext();
             });
         }
         catch (Exception ex)

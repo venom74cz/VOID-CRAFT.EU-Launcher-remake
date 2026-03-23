@@ -2,7 +2,7 @@
 
 ## 1) Project Snapshot
 - **Name**: VoidCraft Launcher
-- **Current version**: **2.1.0**
+- **Current version**: **3.1.0**
 - **Stack**: .NET 9 + Avalonia UI 11.3 + CommunityToolkit.Mvvm 8.4
 - **MC Core**: CmlLib.Core 4.0.6
 - **Auth**: Microsoft.Identity.Client (MSAL) + custom Xbox/XSTS/MC token chain
@@ -11,14 +11,14 @@
 ## 2) Current Architecture
 
 ### UI Layer
-- **Main Window**: `src/Views/MainWindow.axaml` – Sidebar (300px) + Right Panel with state-based views
-- **Views**: Home (modpack grid), GlobalSettings, ModpackSettings, Browser, Dashboard
-- **Login Modal**: Embedded overlay in MainWindow with tabbed MS/Offline login
-- **Mod Manager**: `ModManagerWindow.axaml` – separate dialog for enable/disable mods
-- **Potato Mods**: `PotatoModsWindow.axaml` – config for low-end PC mod disabling
+- **Main Window**: `src/Views/MainWindow.axaml` – shell orchestrator s `NavRail`, hlavním content hostem, `ContextDock`/creator dock switchem a overlay vrstvami
+- **Views / surfaces**: Dashboard, Library, Discover, Future, Server Hub, Achievement Hub, Skin Studio, Theme Switcher, Localization, Creator Studio a Instance Workspace
+- **Login / create profile / backup flow**: launcher používá overlay sheet vrstvy místo starých izolovaných dialogů
+- **Creator Studio**: production workspace surface pro bootstrap modpacku, metadata, workbench soubory, notes handoff a release workflow
+- **Potato Mods**: `PotatoModsWindow.axaml` – config pro low-end PC mod disabling
 
 ### MVVM Architecture
-- **MainViewModel.cs** (~2080 lines) – Orchestration VM: navigation, auth state, modpack lifecycle, update loops, settings, screenshots, presets, browser search
+- **MainViewModel.cs** – Orchestration VM rozdeleny do partial oblasti pro navigation, auth, install/update, settings, server hub, news feed, Creator Studio a instance workflow
 - **ModManagerViewModel.cs** – Mod toggle logic
 - **PotatoModsViewModel.cs** – Potato mode mod list management
 - **ViewModelBase.cs** – Base class
@@ -34,6 +34,8 @@
 | **ModUtils** | `ModUtils.cs` | Potato mode file renaming (.jar ↔ .jar.disabled) |
 | **LogService** | `LogService.cs` | Centralized file + debug logging |
 | **ProtocolHandler** | `ProtocolHandler.cs` | URL protocol handling |
+| **CreatorWorkspaceService** | `Services/CreatorStudio/CreatorWorkspaceService.cs` | Shared creator workspace context, standard folder layout, git signal, snapshot/export summary |
+| **CreatorManifestService** | `Services/CreatorStudio/CreatorManifestService.cs` | `creator_manifest.json` load/save, slug normalization, workspace structure bootstrap |
 
 ### Models
 | Model | File | Purpose |
@@ -100,6 +102,9 @@ Documents/.voidcraft/
 - Per-modpack settings (RAM, Java, GC override, Potato mode)
 - Global options.txt presets (save/load/delete)
 - Screenshots gallery
+- Server Hub + quick connect flow s modpack bindingy
+- Achievement Hub, Skin Studio, runtime themes a localization surfaces
+- Creator Studio shell s `creator_manifest.json`, bootstrap workflow a creator workbench editaci
 - Server status card (mcsrvstat.us API)
 - Launcher self-update (GitHub Releases)
 
@@ -145,10 +150,12 @@ Documents/.voidcraft/
 ## 8) Release History
 | Version | Changes |
 |---------|---------|
+| 3.1.0 | Creator Studio F0/F1: workflow shell, creator_manifest.json, bootstrap modes, metadata sync, snapshot-before-apply |
+| 3.0.0 | Kompletní redesign shellu, Dashboard, Server Hub, Achievement Hub, Skin Studio, Context Dock, runtime themes/localization |
 | 1.2.5 | Linux AppImage Skia native library packaging fix |
 | 1.2.6 | Linux login callback reliability + fallback guidance |
 | 1.2.7 | Login modal UX improvements for Device Code visibility |
 | 1.2.8 | Linux Device Code-first flow + robust code parsing |
 
 ---
-*Last updated: 2026-03-07*
+*Last updated: 2026-03-23*

@@ -27,7 +27,7 @@
                             <TextBlock Text="→" FontSize="16" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,8,0" VerticalAlignment="Center"/>
                             <TextBlock Text="Knihovna" FontSize="14" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center"/>
                             <TextBlock Text="›" FontSize="14" Foreground="{DynamicResource StrokeSoftBrush}" Margin="6,0" VerticalAlignment="Center"/>
-                            <TextBlock Text="{Binding CurrentModpack.Name}" FontSize="14" Foreground="{DynamicResource TextPrimaryBrush}" FontWeight="SemiBold" VerticalAlignment="Center"
+                            <TextBlock Text="{Binding CurrentWorkspaceDisplayName}" FontSize="14" Foreground="{DynamicResource TextPrimaryBrush}" FontWeight="SemiBold" VerticalAlignment="Center"
                                        TextTrimming="CharacterEllipsis" MaxWidth="400"/>
                         </StackPanel>
                     </Button>
@@ -43,13 +43,24 @@
 
                     <!-- Name & info -->
                     <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="16,0,0,0" Spacing="2">
-                        <TextBlock Text="{Binding CurrentModpack.Name}" FontSize="20" FontWeight="ExtraBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <TextBlock Text="{Binding CurrentWorkspaceDisplayName}" FontSize="20" FontWeight="ExtraBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                         <StackPanel Orientation="Horizontal" Spacing="10">
                             <StackPanel Orientation="Horizontal" Spacing="4">
                                 <TextBlock Text="{StaticResource IconPlay}" FontSize="11" VerticalAlignment="Center"/>
                                 <TextBlock Text="{Binding CurrentModpack.VersionTransitionText}" FontSize="12" Foreground="{DynamicResource TextMutedBrush}"/>
                             </StackPanel>
                         </StackPanel>
+                        <WrapPanel Orientation="Horizontal" IsVisible="{Binding HasCurrentWorkspaceCreatorMetadata}">
+                            <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="999" Padding="10,4" Margin="0,0,8,0">
+                                <TextBlock Text="{Binding CurrentWorkspaceMetadataSummary}" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                            </Border>
+                            <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="999" Padding="10,4" Margin="0,0,8,0" IsVisible="{Binding HasCurrentWorkspacePrimaryServer}">
+                                <TextBlock Text="{Binding CurrentWorkspacePrimaryServerLabel}" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                            </Border>
+                            <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="999" Padding="10,4">
+                                <TextBlock Text="{Binding CurrentWorkspaceRecommendedRamLabel}" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                            </Border>
+                        </WrapPanel>
                     </StackPanel>
 
                     <!-- Play Button -->
@@ -97,15 +108,16 @@
                             <Border Classes="card">
                                 <StackPanel Spacing="12">
                                     <TextBlock Text="Popis" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="16"/>
-                                    <TextBlock Text="{Binding CurrentModpack.Description}" FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" LineHeight="20"/>
-                                    <StackPanel IsVisible="{Binding !CurrentModpack.Description.Length}">
+                                    <TextBlock Text="{Binding CurrentWorkspaceDescription}" FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" LineHeight="20"
+                                               IsVisible="{Binding HasCurrentWorkspaceDescription}"/>
+                                    <StackPanel IsVisible="{Binding !HasCurrentWorkspaceDescription}">
                                         <TextBlock Text="Popis není k dispozici." Foreground="{DynamicResource TextMutedBrush}" FontStyle="Italic" FontSize="13"/>
                                     </StackPanel>
                                     <Border Height="1" Background="{DynamicResource StrokeSoftBrush}" Margin="0,4"/>
                                     <Grid ColumnDefinitions="Auto,*,Auto">
                                         <StackPanel Orientation="Horizontal" Spacing="6">
                                             <TextBlock Text="Autor:" Foreground="{DynamicResource TextMutedBrush}" FontSize="12"/>
-                                            <TextBlock Text="{Binding CurrentModpack.Author, TargetNullValue='Neznámý'}" Foreground="{DynamicResource PrimaryBBrush}" FontWeight="Bold" FontSize="12"/>
+                                            <TextBlock Text="{Binding CurrentWorkspaceAuthorLabel}" Foreground="{DynamicResource PrimaryBBrush}" FontWeight="Bold" FontSize="12"/>
                                         </StackPanel>
                                         <Button Grid.Column="2" Command="{Binding OpenUrlCommand}" CommandParameter="{Binding CurrentModpack.WebLink}"
                                                 IsVisible="{Binding !!CurrentModpack.WebLink.Length}"
@@ -591,7 +603,7 @@
                                         <TextBlock Grid.Row="1" Text="Verze:" FontSize="12" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,12,6"/>
                                         <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding CurrentModpack.VersionTransitionText}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"/>
                                         <TextBlock Grid.Row="2" Text="Autor:" FontSize="12" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,12,0"/>
-                                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding CurrentModpack.Author, TargetNullValue='Neznámý'}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding CurrentWorkspaceAuthorLabel}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"/>
                                     </Grid>
                                 </StackPanel>
                             </Border>

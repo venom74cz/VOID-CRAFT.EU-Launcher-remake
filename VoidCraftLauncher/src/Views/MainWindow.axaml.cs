@@ -53,12 +53,12 @@ namespace VoidCraftLauncher.Views
             if (shouldCollapse && col2.Width != new GridLength(0))
             {
                 col2.Width = new GridLength(0);
-                ContextDockPanel.IsVisible = false;
+                RightDockHost.IsVisible = false;
             }
             else if (!shouldCollapse && col2.Width == new GridLength(0))
             {
                 col2.Width = new GridLength(280);
-                ContextDockPanel.IsVisible = true;
+                RightDockHost.IsVisible = true;
             }
         }
 

@@ -61,6 +61,12 @@ public partial class MainViewModel : ViewModelBase
 {
     // ===== COLLECTIONS =====
     public ObservableCollection<ModpackInfo> InstalledModpacks { get; private set; }
+    
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasRecentModpacks))]
+    private ObservableCollection<ModpackInfo> _recentModpacks = new();
+
+    public bool HasRecentModpacks => RecentModpacks.Count > 0;
 
     // ===== SERVICES =====
     private readonly AuthService _authService;
@@ -731,6 +737,28 @@ public partial class MainViewModel : ViewModelBase
         _ = RefreshCreatorWorkbenchAsync();
         _ = RefreshAutoDiscoveredServersAsync();
         RefreshCreatorWorkspaceContext();
+        RefreshRecentModpacks();
+    }
+
+    public void RefreshRecentModpacks()
+    {
+        if (Config == null) return;
+        var newRecents = new List<ModpackInfo>();
+        foreach (var recentName in Config.RecentInstances)
+        {
+            var mp = InstalledModpacks.FirstOrDefault(m => string.Equals(m.Name, recentName, StringComparison.OrdinalIgnoreCase));
+            if (mp != null)
+                newRecents.Add(mp);
+        }
+
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            RecentModpacks.Clear();
+            foreach (var r in newRecents)
+                RecentModpacks.Add(r);
+                
+            OnPropertyChanged(nameof(HasRecentModpacks));
+        });
     }
 
     private void OnCurrentModpackScreenshotsChanged(object? sender, NotifyCollectionChangedEventArgs e)

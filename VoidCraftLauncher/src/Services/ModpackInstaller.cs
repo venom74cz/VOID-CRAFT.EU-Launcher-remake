@@ -241,59 +241,82 @@ namespace VoidCraftLauncher.Services
                 int downloaded = 0;
                 int skipped = 0;
                 
-                foreach (var mod in curseFiles)
+                object logLock = new object();
+                object progressLock = new object();
+                var semaphore = new SemaphoreSlim(10);
+                
+                var downloadTasks = curseFiles.Select(async mod => 
                 {
-                    current++;
-                    
-                    // Determine Target Directory
-                    string targetDir = modsDir; // Default
-                    if (modClassMap.TryGetValue(mod.ModId, out int classId))
+                    await semaphore.WaitAsync();
+                    try
                     {
-                        if (classId == 12) targetDir = rpDir; // Resource Pack
-                        else if (classId == 6552 || classId == 4546) targetDir = shaderDir; // Shader Pack
-                    }
-
-                    var destPath = Path.Combine(targetDir, mod.FileName);
-                    var disabledPath = destPath + ".disabled";
-
-                    // Check if file exists (enabled OR disabled)
-                    if (File.Exists(destPath) || File.Exists(disabledPath))
-                    {
-                        skipped++;
-                        continue;
-                    }
-
-                    StatusChanged?.Invoke($"Stahuji ({current}/{total}): {mod.DisplayName}");
-                    ProgressChanged?.Invoke((double)current / total);
-
-                    // Get download URL - use CDN fallback if API returns null
-                    var url = mod.DownloadUrl;
-                    debugLog.WriteLine($"Processing Mod: {mod.FileName} (ID: {mod.Id}, Class: {classId}) - URL: {url}");
-                    if (string.IsNullOrEmpty(url))
-                    {
-                        // CurseForge CDN pattern: https://edge.forgecdn.net/files/{id[0:4]}/{id[4:]}/{filename}
-                        var idStr = mod.Id.ToString();
-                        if (idStr.Length >= 4)
+                        // Determine Target Directory
+                        string targetDir = modsDir; // Default
+                        if (modClassMap.TryGetValue(mod.ModId, out int classId))
                         {
-                            var part1 = idStr.Substring(0, 4);
-                            var part2 = idStr.Substring(4);
-                            url = $"https://edge.forgecdn.net/files/{part1}/{part2}/{mod.FileName}";
+                            if (classId == 12) targetDir = rpDir; // Resource Pack
+                            else if (classId == 6552 || classId == 4546) targetDir = shaderDir; // Shader Pack
+                        }
+
+                        var destPath = Path.Combine(targetDir, mod.FileName);
+                        var disabledPath = destPath + ".disabled";
+
+                        // Check if file exists (enabled OR disabled)
+                        if (File.Exists(destPath) || File.Exists(disabledPath))
+                        {
+                            Interlocked.Increment(ref skipped);
+                            return;
+                        }
+
+                        lock (progressLock)
+                        {
+                            current++;
+                            StatusChanged?.Invoke($"Stahuji ({current}/{total}): {mod.DisplayName}");
+                            ProgressChanged?.Invoke((double)current / total);
+                        }
+
+                        // Get download URL - use CDN fallback if API returns null
+                        var url = mod.DownloadUrl;
+                        lock (logLock)
+                        {
+                            debugLog.WriteLine($"Processing Mod: {mod.FileName} (ID: {mod.Id}, Class: {classId}) - URL: {url}");
+                        }
+
+                        if (string.IsNullOrEmpty(url))
+                        {
+                            // CurseForge CDN pattern: https://edge.forgecdn.net/files/{id[0:4]}/{id[4:]}/{filename}
+                            var idStr = mod.Id.ToString();
+                            if (idStr.Length >= 4)
+                            {
+                                var part1 = idStr.Substring(0, 4);
+                                var part2 = idStr.Substring(4);
+                                url = $"https://edge.forgecdn.net/files/{part1}/{part2}/{mod.FileName}";
+                            }
+                        }
+                        
+                        if (!string.IsNullOrEmpty(url))
+                        {
+                            try 
+                            {
+                                await DownloadFileAsync(url, destPath);
+                                Interlocked.Increment(ref downloaded);
+                            }
+                            catch (Exception ex)
+                            {
+                                lock (progressLock)
+                                {
+                                    StatusChanged?.Invoke($"Chyba stahování {mod.FileName}: {ex.Message}");
+                                }
+                            }
                         }
                     }
-                    
-                    if (!string.IsNullOrEmpty(url))
+                    finally
                     {
-                        try 
-                        {
-                            await DownloadFileAsync(url, destPath);
-                            downloaded++;
-                        }
-                        catch (Exception ex)
-                        {
-                            StatusChanged?.Invoke($"Chyba stahování {mod.FileName}: {ex.Message}");
-                        }
+                        semaphore.Release();
                     }
-                }
+                });
+
+                await Task.WhenAll(downloadTasks);
 
                 // 4. Extract Overrides (Configs, Scripts, etc.)
                 // Smart Config Update: compare hashes to detect modpack-changed configs
@@ -605,24 +628,40 @@ namespace VoidCraftLauncher.Services
             int current = 0;
             int total = index.Files?.Count ?? 0;
 
-            foreach (var file in index.Files ?? new List<ModrinthFile>())
+            object progressLock = new object();
+            var semaphore = new SemaphoreSlim(10);
+
+            var downloadTasks = (index.Files ?? new List<ModrinthFile>()).Select(async file =>
             {
-                current++;
-                statusCallback?.Invoke($"Stahuji ({current}/{total}): {Path.GetFileName(file.Path)}");
-                progressCallback?.Invoke((double)current / total);
-
-                var targetPath = Path.Combine(installPath, file.Path);
-                
-                // Skip if exists
-                if (File.Exists(targetPath)) continue;
-
-                Directory.CreateDirectory(Path.GetDirectoryName(targetPath));
-
-                if (file.Downloads?.Count > 0)
+                await semaphore.WaitAsync();
+                try
                 {
-                    await DownloadFileAsync(file.Downloads[0], targetPath);
+                    var targetPath = Path.Combine(installPath, file.Path);
+                    
+                    // Skip if exists
+                    if (File.Exists(targetPath)) return;
+
+                    lock (progressLock)
+                    {
+                        current++;
+                        statusCallback?.Invoke($"Stahuji ({current}/{total}): {Path.GetFileName(file.Path)}");
+                        progressCallback?.Invoke((double)current / total);
+                    }
+
+                    Directory.CreateDirectory(Path.GetDirectoryName(targetPath));
+
+                    if (file.Downloads?.Count > 0)
+                    {
+                        await DownloadFileAsync(file.Downloads[0], targetPath);
+                    }
                 }
-            }
+                finally
+                {
+                    semaphore.Release();
+                }
+            });
+
+            await Task.WhenAll(downloadTasks);
 
             // Extract Overrides with smart config update
             var mrConfigHashes = LoadConfigHashes(installPath);

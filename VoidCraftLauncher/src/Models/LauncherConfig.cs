@@ -38,6 +38,9 @@ public partial class LauncherConfig : ObservableObject
     // User-defined custom servers for Server Hub
     public List<ServerInfo> CustomServers { get; set; } = new();
 
+    // Recently played normal instances
+    public List<string> RecentInstances { get; set; } = new();
+
     [ObservableProperty]
     private string _currentThemeId = "obsidian";
 

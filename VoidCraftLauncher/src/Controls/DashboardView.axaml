@@ -44,33 +44,53 @@
                                 </StackPanel>
                             </StackPanel>
 
-                            <Border Grid.Column="1" Background="{DynamicResource BgPanelBrush}" CornerRadius="16" Padding="20,16"
-                                    BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" VerticalAlignment="Center"
-                                    MinWidth="220">
-                                <StackPanel Spacing="10" HorizontalAlignment="Center">
-                                    <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
-                                        <Panel VerticalAlignment="Center">
-                                            <Border Width="10" Height="10" CornerRadius="5" Background="{DynamicResource PrimaryBBrush}" IsVisible="{Binding IsServerOnline}">
+                            <Button Grid.Column="1" Command="{Binding QuickConnectCommand}" CommandParameter="{Binding PinnedServer}" Background="{DynamicResource BgPanelBrush}" CornerRadius="16" Padding="16"
+                                    BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" VerticalAlignment="Center" Cursor="Hand"
+                                    MinWidth="240" MaxWidth="280">
+                                <StackPanel Spacing="10" HorizontalAlignment="Stretch">
+                                    <!-- Header: Icon & Name & Status -->
+                                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                                        <!-- Server Icon -->
+                                        <Border CornerRadius="6" ClipToBounds="True" Width="36" Height="36" Background="{DynamicResource BgShellBrush}"
+                                                VerticalAlignment="Center">
+                                            <asyncImage:AdvancedImage Source="{Binding PinnedServer.IconUrl}" Stretch="UniformToFill"/>
+                                        </Border>
+
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                            <TextBlock Text="{Binding PinnedServer.Name, FallbackValue='mc.void-craft.eu'}" FontWeight="Bold" FontSize="14"
+                                                       Foreground="{DynamicResource TextPrimaryBrush}" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="{Binding PinnedServer.Address, FallbackValue='mc.void-craft.eu'}" FontSize="11"
+                                                       Foreground="{DynamicResource PrimaryBBrush}" TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
+                                        
+                                        <!-- Status Dot -->
+                                        <Panel Grid.Column="2" VerticalAlignment="Top" Margin="0,4,0,0">
+                                            <Border Width="10" Height="10" CornerRadius="5" Background="{DynamicResource PrimaryBBrush}" IsVisible="{Binding PinnedServer.IsOnline}">
                                                 <Border.Effect><DropShadowEffect BlurRadius="8" Color="#7c6fff" Opacity="0.6"/></Border.Effect>
                                             </Border>
-                                            <Border Width="10" Height="10" CornerRadius="5" Background="{DynamicResource DangerBrush}" IsVisible="{Binding !IsServerOnline}"/>
+                                            <Border Width="10" Height="10" CornerRadius="5" Background="{DynamicResource DangerBrush}" IsVisible="{Binding !PinnedServer.IsOnline}"/>
                                         </Panel>
-                                        <TextBlock Text="mc.void-craft.eu" FontWeight="Bold" FontSize="13"
-                                                   Foreground="{DynamicResource PrimaryBBrush}" VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                    <TextBlock Foreground="{DynamicResource TextMutedBrush}" FontSize="12" HorizontalAlignment="Center">
-                                        <TextBlock.Text>
-                                            <MultiBinding StringFormat="{}{0}/{1} hráčů">
-                                                <Binding Path="ServerPlayerCount"/>
-                                                <Binding Path="ServerMaxPlayers"/>
-                                            </MultiBinding>
-                                        </TextBlock.Text>
-                                    </TextBlock>
-                                    <ProgressBar Value="{Binding ServerPlayerCount}" Maximum="{Binding ServerMaxPlayers}" Height="4" CornerRadius="2"/>
-                                    <TextBlock Text="{Binding AchievementSummaryProgressValue, StringFormat='Sezónní progres: {0}'}" FontSize="11"
-                                               Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center"/>
+                                    </Grid>
+                                    
+                                    <!-- MOTD -->
+                                    <TextBlock Text="{Binding PinnedServer.Motd}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" 
+                                               TextWrapping="Wrap" MaxHeight="32" TextTrimming="CharacterEllipsis"/>
+
+                                    <!-- Players -->
+                                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                                        <TextBlock Text="{Binding PinnedServer.PlayerCountLabel}" Foreground="{DynamicResource TextMutedBrush}" FontSize="11" VerticalAlignment="Center"/>
+                                        <ProgressBar Grid.Column="1" Value="{Binding PinnedServer.PlayerCount}" Maximum="{Binding PinnedServer.MaxPlayers}" Height="4" CornerRadius="2" VerticalAlignment="Center"/>
+                                    </Grid>
+
+                                    <!-- Quick Connect Label -->
+                                    <Border Background="{DynamicResource PrimaryBBrush}" CornerRadius="6" Padding="0,6" Margin="0,4,0,0" Opacity="0.9">
+                                        <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                                            <TextBlock Text="▶" FontSize="12" Foreground="White" VerticalAlignment="Center"/>
+                                            <TextBlock Text="Quick Connect" FontSize="12" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Border>
                                 </StackPanel>
-                            </Border>
+                            </Button>
                         </Grid>
 
                         <Grid Grid.Row="1" ColumnDefinitions="*,12,*,12,*">
@@ -137,6 +157,72 @@
                             </StackPanel>
                         </Border>
                     </Grid>
+
+                    <TextBlock Text="Rychlá navigace" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,10,0,-4"/>
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <Button Command="{Binding GoToSkinStudioCommand}" Classes="secondary" FontSize="13" Padding="16,10">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="{StaticResource IconPalette}" FontSize="14"/>
+                                <TextBlock Text="Skin Studio"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding GoToAchievementsCommand}" Classes="secondary" FontSize="13" Padding="16,10">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="{StaticResource IconTrophy}" FontSize="14"/>
+                                <TextBlock Text="Achievements"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding GoToSettingsCommand}" Classes="secondary" FontSize="13" Padding="16,10">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="{StaticResource IconSettings}" FontSize="14"/>
+                                <TextBlock Text="Nastavení"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding GoToThemeSwitcherCommand}" Classes="secondary" FontSize="13" Padding="16,10">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="{StaticResource IconBrush}" FontSize="14"/>
+                                <TextBlock Text="Motivy"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding ToggleAccountPickerCommand}" Classes="secondary" FontSize="13" Padding="16,10">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="{StaticResource IconUser}" FontSize="14"/>
+                                <TextBlock Text="Účet"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+
+                    <!-- ══ RECENT INSTANCES ══ -->
+                    <StackPanel Spacing="14" IsVisible="{Binding HasRecentModpacks}" Margin="0,16,0,0">
+                        <TextBlock Text="Nedávno hráno" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <ItemsControl ItemsSource="{Binding RecentModpacks}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="12" Padding="12" Width="260"
+                                            BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" Margin="0,0,14,14">
+                                        <Grid ColumnDefinitions="48,12,*">
+                                            <Border CornerRadius="8" ClipToBounds="True" Background="{DynamicResource BgShellBrush}" Width="48" Height="48" VerticalAlignment="Center">
+                                                <asyncImage:AdvancedImage Source="{Binding LogoUrl}" Stretch="UniformToFill"/>
+                                            </Border>
+                                            
+                                            <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="2">
+                                                <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Text="{Binding CurrentVersion.Name, FallbackValue='Verze neznámá'}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextTrimming="CharacterEllipsis"/>
+                                                <Button Content="Spustit" FontSize="11" Classes="primary" Padding="12,4" HorizontalAlignment="Left" Margin="0,6,0,0"
+                                                        Command="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).SelectAndPlayCommand}" CommandParameter="{Binding}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+
                 </StackPanel>
 
                 <Border IsVisible="{Binding HasFeaturedMinecraftNews}" Background="{DynamicResource BgShellBrush}" CornerRadius="16" Padding="22"

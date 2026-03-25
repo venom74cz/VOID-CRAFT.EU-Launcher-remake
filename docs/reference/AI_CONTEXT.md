@@ -2,7 +2,7 @@
 
 ## 1) Project Snapshot
 - **Name**: VoidCraft Launcher
-- **Current version**: **3.1.1**
+- **Current version**: **3.1.2**
 - **Stack**: .NET 9 + Avalonia UI 11.3 + CommunityToolkit.Mvvm 8.4
 - **MC Core**: CmlLib.Core 4.0.6
 - **Auth**: Microsoft.Identity.Client (MSAL) + custom Xbox/XSTS/MC token chain

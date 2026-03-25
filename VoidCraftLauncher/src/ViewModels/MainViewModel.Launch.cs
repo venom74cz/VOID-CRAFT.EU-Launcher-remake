@@ -337,6 +337,18 @@ public partial class MainViewModel
             RunningModpack = TargetModpack ?? CurrentModpack;
             _discordRpcService.SetPlayingState(RunningModpack?.Name ?? "Minecraft");
             LaunchProgress = 100;
+
+            // Uložit do nedávných instancí
+            if (RunningModpack != null && !string.IsNullOrWhiteSpace(RunningModpack.Name))
+            {
+                Config.RecentInstances.Remove(RunningModpack.Name);
+                Config.RecentInstances.Insert(0, RunningModpack.Name);
+                if (Config.RecentInstances.Count > 6)
+                    Config.RecentInstances.RemoveAt(Config.RecentInstances.Count - 1);
+                _launcherService.SaveConfig(Config);
+                RefreshRecentModpacks();
+            }
+
             TargetModpack = null;
 
             // Minimize to tray while game is running

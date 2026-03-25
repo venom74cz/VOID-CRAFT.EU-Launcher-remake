@@ -1099,6 +1099,191 @@ Prakticky zapis pak muze vypadat takhle:
 
 ---
 
+## Platforma, Web a Ekosystem VOID-CRAFT.EU
+
+> [!important]
+> Tenhle blok resi propojeni launcheru s webem, identitnim systemem VOID ID, GitHubem a monetizaci. Vsechno spolu souvisi — launcher potrebuje web jako verejnou vitrinu, VOID ID jako jednotnou identitu a GitHub jako distribucni pater.
+
+### W1. Preskladani weboveho menu
+
+> [!success]
+> **Popis**
+> Stranky webu void-craft.eu uz existuji a funguji. Jde o preskladani navigacniho menu do logictejsich dropdown sekci.
+>
+> **Aktualni stav menu (Navbar.tsx)**
+> - **VOID-BOX** dropdown: Prehled serveru, Jak se pripojit, Modpack Info, Galerie, Kronika
+> - **O Projektu** dropdown: O VOID-CRAFT, Nas tym, Kontakt
+> - **Novinky** standalone link
+> - **Komunita** dropdown: Prehled, Discord, FAQ a Podpora, Pravidla
+> - **Dashboard** (WIP)
+> - Standalone stranky mimo menu: Hytale (Hytale.tsx), Voidium (Voidium.tsx)
+>
+> **Nova struktura menu**
+> - **Projekt** — slouci O Projektu + Novinky + Komunita do jednoho dropdown: O VOID-CRAFT, Nas tym, Kontakt, Novinky/Updaty, Komunita, Discord, FAQ a Podpora, Pravidla.
+> - **VOID-BOX** — beze zmeny: Prehled serveru, Jak se pripojit, Modpack Info, Galerie, Kronika.
+> - **Launcher** — NOVY dropdown: odkaz na novou stranku launcheru na webu (viz W2).
+> - **Ostatni** — mene caste veci: Hytale, Voidium, Dashboard (WIP), budouci projekty.
+>
+> **Proc to dava smysl**
+> - Aktualni menu ma 4 dropdown + standalone linky — pro noveho navstevnika neprehledne.
+> - Nova struktura jasne oddeluje: projekt jako celek / modpack / launcher / zbytek.
+> - Launcher dropdown vyzaduje novou stranku launcheru na webu (viz W2).
+
+### W2. Nova stranka launcheru na webu
+
+> [!success]
+> **Popis**
+> Na webu void-craft.eu zatim neexistuje stranka o launcheru. Ta musi vzniknout jako landing page: co launcher umi, proc ho pouzivat, download + featured modpacky.
+>
+> **Mozna implementace**
+> - Hero sekce s headlinem, screenshotem launcheru a CTA na stazeni.
+> - Feature grid: Creator Studio, instance management, VOID ID, auto-updater, .voidpack podpora.
+> - Sekce pro creatory: jak pouzivat Creator Workbench, jak propojit GitHub, jak publishnout modpack.
+> - Featured modpacky — zebricek dle stazeni za mesic + celkovy pack counter.
+> - Download sekce s verzemi pro Windows (pozdeji macOS/Linux).
+>
+> **Proc to dava smysl**
+> - Launcher potrebuje verejnou vitrinu, ne jen interni UI.
+> - Featured modpacky na webu slouzi jako socialni dukaz a motivace pro creatory.
+> - Pack counter (celkovy pocet stazeni) buduje duveryhodnost platformy.
+
+---
+
+### V1. VOID ID — Jednotná identita
+
+> [!success]
+> **Popis**
+> VOID ID je centrální účet pro celý ekosystém VOID-CRAFT.EU. Propojuje launcher, web, creator workflow a budoucí služby pod jednu identitu. Ideálně navržený tak, aby fungoval i bez závislosti na doméně void-craft.eu (možnost provozovat infrastrukturu nezávisle).
+>
+> **Mozna implementace**
+> - Registrace a login přes web i přímo z launcheru.
+> - Profil management: avatar, display name, bio, propojené účty (Microsoft, Discord, GitHub).
+> - Projekt management: seznam vlastních modpacků, jejich stav (draft/pre-release/release), statistiky stažení.
+> - Dashboard s přehledem aktivních projektů, posledních buildů a tester feedbacku.
+> - API-first architektura — VOID ID jako OAuth provider pro launcher i web.
+> - Iterace směrem k nezávislosti: pokud je to možné, provozovat vše bez nutnosti domény void-craft.eu (self-hosted fallback, tokenová auth).
+>
+> **Proc to dava smysl**
+> - Bez jednotné identity nelze propojit launcher, web, GitHub releases a creator workflow.
+> - Profil a projekt management dává creatorům důvod používat platformu dlouhodobě.
+> - Nezávislost na doméně zvyšuje odolnost a umožňuje komunitní provoz.
+
+### V2. VOID ID — Projekt management a registrace modpacků
+
+> [!success]
+> **Popis**
+> Přihlášený uživatel přes VOID ID může přímo z launcheru registrovat GitHub release jako oficiální modpack dostupný v launcheru. Správa projektů, verzí a přístupu na jednom místě.
+>
+> **Mozna implementace**
+> - Z launcheru: tlačítko „Registrovat release" — napojí GitHub repo release na VOID ID projekt.
+> - Verze lze označit jako **release** (veřejně dostupná ihned po GitHub release `název.voidpack`) nebo **pre-release** (přístupná jen přes tester kód).
+> - Pre-release verze generují unikátní kód, který tester zadá v launcheru → stáhne se přesně ta verze.
+> - Release verze jsou dostupné okamžitě, jakmile GitHub uvolní `název.voidpack` soubor.
+> - VOID ID dashboard: přehled všech registrovaných projektů, verzí, stažení a tester kódů.
+>
+> **Proc to dava smysl**
+> - Creator nemusí opouštět launcher pro management releases.
+> - Pre-release kódy umožňují kontrolovaný playtest bez veřejného přístupu.
+> - Okamžitá dostupnost release verzí zkracuje cestu od buildu k hráčům.
+
+---
+
+### G1. GitHub Workflow Integration — Automatické .voidpack buildy
+
+> [!success]
+> **Popis**
+> Při prvním pushnutí na GitHub z launcheru se uživateli nabídne automatické vytvoření GitHub Actions workflow, který buildí `.voidpack` soubory do releases. Pokud uživatel odmítne, může workflow vytvořit později přes tlačítko.
+>
+> **Mozna implementace**
+> - Při prvním `git push` z launcheru: prompt „Chceš automaticky nastavit GitHub Actions workflow pro buildy .voidpack do releases?"
+> - Workflow šablona: trigger na push/tag, build `.voidpack`, upload jako GitHub release asset.
+> - Pokud uživatel odmítne: tlačítko „Nastavit workflow" zůstane dostupné v Creator Studio.
+> - Workflow musí být jednoduchý, transparentní a editovatelný — ne black box.
+>
+> **Proc to dava smysl**
+> - Automatizuje nejčastější manuální krok v release pipeline.
+> - Creator se nemusí učit GitHub Actions — launcher to udělá za něj.
+> - Zachovává kontrolu: workflow je ve standardním `.github/workflows/` a jde upravit.
+
+### G2. Co se uploaduje na GitHub
+
+> [!success]
+> **Popis**
+> Na GitHub se nahrává vše potřebné k tomu, aby si kdokoliv mohl stáhnout danou verzi modpacku, a zároveň vše z Creator Workbench, aby creator mohl kdykoliv obnovit svůj projekt.
+>
+> **Co jde do release (pro hráče)**
+> - Metadata: verze, creator, popisek, changelog.
+> - Ikona modpacku.
+> - Modlist s verzemi jednotlivých módů.
+> - Samotný `.voidpack` soubor.
+>
+> **Co jde do repozitáře (pro creatora)**
+> - Vše z Creator Workbench: configy, scripty, KubeJS, defaultconfigs, poznámky, quest plány, assety.
+> - Creator manifest se všemi metadaty projektu.
+> - Snímky workspace pro případnou obnovu při ztrátě lokálních dat.
+>
+> **Proc to dava smysl**
+> - Hráč dostane vše potřebné ke stažení a instalaci.
+> - Creator má plný backup a může pokračovat v práci odkudkoliv.
+> - Oddělení „release pro hráče" a „workspace pro creatora" drží repo čitelný.
+
+---
+
+### M1. Monetizace — Donace a předplatné
+
+> [!tip]
+> **Popis**
+> Web umožní přímou podporu projektu formou jednorázových donací nebo měsíčního předplatného. Jednoduché, bez pay-to-win, bez agresivních výzev.
+>
+> **Mozna implementace**
+> - Jednorázová donace: libovolná částka přímo z webu (Stripe/PayPal).
+> - Měsíční předplatné: 50 Kč/měsíc — podpora projektu, případně drobné benefity (badge v profilu, prioritní support, delší úschova dat).
+> - Předplatné nemá ovlivňovat herní mechaniky ani přístup k modpackům.
+> - Transparentní komunikace: kam peníze jdou (hosting, vývoj, infrastruktura).
+>
+> **Proc to dava smysl**
+> - Projekt potřebuje udržitelný příjem pro provoz infrastruktury.
+> - 50 Kč/měsíc je nízká bariéra, která neodradí komunitu.
+> - Jednorázové donace dávají možnost podpořit bez závazku.
+
+### M2. Monetizace — Delší úschova dat
+
+> [!tip]
+> **Popis**
+> Zpeněžení delší úschovy dat na platformě. Základní úschova (Creator Workbench snapshoty, export historie) je zdarma s limitem, delší retence za 50–100 Kč/měsíc.
+>
+> **Mozna implementace**
+> - Zdarma: posledních 5 export snapshotů (už navrženo v 27B).
+> - Placená úschova (50–100 Kč/měsíc): neomezená historie snapshotů, archiv starších verzí, rozšířený workspace backup.
+> - Úschova navázaná na VOID ID — funguje napříč zařízeními.
+> - Jasná komunikace: co se stane s daty po expiraci předplatného (grace period, export možnost, ne okamžité smazání).
+>
+> **Proc to dava smysl**
+> - Datová úschova má reálné náklady na storage — je férové ji zpeněžit.
+> - Creator, který si platí úschovu, má silnější vazbu na platformu.
+> - Propojuje se s export snapshot systémem (27B) a Creator Studio workflow.
+
+### M3. Featured Modpacky — Žebříček a web counter
+
+> [!tip]
+> **Popis**
+> Na webu (launcher stránka) i v launcheru samotném se zobrazují featured modpacky seřazené podle počtu stažení za měsíc. Na webové stránce launcheru je pack counter s celkovým počtem stažení.
+>
+> **Mozna implementace**
+> - Algoritmus: řazení dle stažení za posledních 30 dní, ne celkově (aby měly šanci i novější packy).
+> - Web: sekce „Nejstahovanější modpacky tohoto měsíce" s kartami (název, ikona, autor, stažení).
+> - Web: globální counter „X modpacků staženo přes VOID-CRAFT.EU".
+> - Launcher: featured sekce na dashboardu nebo v discovery panelu.
+> - Creator může dostat notifikaci „tvůj modpack se dostal do featured" — motivace.
+>
+> **Proc to dava smysl**
+> - Sociální důkaz pro nové návštěvníky webu.
+> - Motivace pro creatory tvořit kvalitní obsah.
+> - Pack counter buduje důvěryhodnost celé platformy.
+> - Měsíční rotace dává šanci i menším projektům.
+
+---
+
 ## Zaver
 
 Pokud ma byt launcher fakt top, musi jit za hranici:

@@ -62,9 +62,9 @@ Kazda future feature by naopak nemela:
 - vytvaret dark patterns nebo FOMO za kazdou cenu
 
 > [!warning]
-> **Startup performance jako mantinel.**
-> Launcher nesmí být těžší na cold start než hra samotná.
-> Každý nový panel, live data feed nebo widget musí projít základním perf testem před integrací do hlavního flow.
+**Startup performance jako mantinel.**
+Launcher musí být dobře optimalizovaný a nesmí zbytečně zabírat výkon, zvlášť když je hra spuštěná — v takovém případě by měl přejít do režimu spánku a odebírat minimum zdrojů, pouze dost na to, aby věděl, kdy se probudit.
+Každý nový panel, live data feed nebo widget musí projít základním perf testem před integrací do hlavního flow.
 
 ---
 
@@ -747,29 +747,7 @@ North star pro tuhle cast je jednoducha:
 > - Respektuje různé typy uživatelů bez nutnosti tvořit separátní profily.
 > - Dává launcheru pocit osobního nástroje, ne generického produktu.
 
-### 27A. Creator Studio Copilot SDK Layer
-
-> [!tip]
-> **Popis**  
-> Creator Studio dostane task-oriented copilot vrstvu postavenou nad vybranou pracovni instanci. Ne obecny chat pro vsechno, ale asistenta, ktery rozumi modpacku, assetum, souborum workbenche, notes, quest planum, changelogu, screenshotum, logum a release workflow. Cilem je z Creator Studia udelat skutecny authoring workspace, ne jen utility panel.
->
-> **Mozna implementace**
-> - Copilot panel bezi nad `selected instance` kontextem: vidi metadata modpacku, obsah `mods/`, `config/`, `scripts/`, `kubejs/`, notes workspace, quest canvas, screenshoty, crash logy, linked servery a posledni zmeny ve workspace.
-> - Pomoci `Copilot SDK` muze asistovat s ukoly typu `vysvetli co se zmenilo mezi dvema buildy`, `navrhni patch summary`, `vytvor draft Discord announcementu`, `zkontroluj release checklist`, `shrni crash log pro support`, `navrhni popis modpacku nebo spotlight card`.
-> - Stejna vrstva musi umet i prime AI editace nad workbenchem: upravit config, prepsat sekci skriptu, srovnat metadata, z poznamky vygenerovat patch nebo zmenit vice souboru v jednom kontrolovanem tahu.
-> - Creator Studio muze byt napojene i na GitHub repo modpacku nebo konfigurace: `fetch`, `pull`, prehled poslednich commitu, branch context a signal, ze nekdo pushnul zmeny, ktere si muzes stahnout do pracovni instance.
-> - Diky tomu jde delat lehkou kolaboraci bez odchodu z launcheru: otevrit branch/workspace, stahnout update od dalsiho autora, porovnat lokalni zmeny proti repu a navazat na uz rozpracovanou verzi.
-> - Silny use case je preklad mezi technickou a obsahovou vrstvou: z lokalnich zmen udela lidsky citelny changelog, Creator Quest submit, guide draft nebo release card pro launcher.
-> - Akce by mely byt kuratorovane a bezpecne: AI muze delat i prime upravy souboru, notes a dalsiho workbench obsahu, ale vzdy pres preview, diff, vyber scope, undo a explicitni potvrzeni u vetsich nebo vice-souborovych zmen. Ne tichy autonomni rewrite cele instance bez kontroly.
-> - Pozdeji lze pridat specializovane rezimy `release copilot`, `support copilot`, `creator post copilot`, `modpack audit`, `repo sync copilot`, kazdy s jasnym scope a prompt kontraktem.
->
-> **Proc to dava smysl**
-> - Navazuje to primo na realny smer, kde se Creator Studio meni na modpack-authoring workspace.
-> - Zkracuje cas mezi `mam rozdelanou instanci` a `mam pripraveny release / post / support summary`.
-> - Repo sync vrstva z Creator Studia dela realny collaboration hub, ne solo authoring panel.
-> - Je to mnohem presvedcivejsi AI use case nez obecny chat na homepage.
-> - Dobre se propojuje s Patch Impact Summary, Version Story, Creator Quests i Spotlight systemem.
-
+<!-- Copilot sekce byla přesunuta výše do části Creator Studio (0J). -->
 ### 27B. Export Snapshot Ring a Modlist Diff Archive
 
 > [!tip]
@@ -1229,39 +1207,23 @@ Prakticky zapis pak muze vypadat takhle:
 
 ---
 
-### M1. Monetizace — Donace a předplatné
+### M1. Monetizace — Donace, předplatné a úschova dat
 
 > [!tip]
 > **Popis**
-> Web umožní přímou podporu projektu formou jednorázových donací nebo měsíčního předplatného. Jednoduché, bez pay-to-win, bez agresivních výzev.
+> Web umožní přímou podporu projektu formou jednorázových donací, měsíčního předplatného a volitelné placené úschovy dat (backup/archive). Vše oddělené od herních mechanik, bez pay-to-win.
 >
 > **Mozna implementace**
-> - Jednorázová donace: libovolná částka přímo z webu (Stripe/PayPal).
-> - Měsíční předplatné: 50 Kč/měsíc — podpora projektu, případně drobné benefity (badge v profilu, prioritní support, delší úschova dat).
-> - Předplatné nemá ovlivňovat herní mechaniky ani přístup k modpackům.
-> - Transparentní komunikace: kam peníze jdou (hosting, vývoj, infrastruktura).
+> - Jednorázová donace: Stripe/PayPal, libovolná částka.
+> - Měsíční předplatné: např. ~50 Kč/měsíc — podpora projektu + drobné benefity (badge v profilu, prioritní support, rozšířená úschova dat jako benefit).
+> - Základní úschova: posledních 5 export snapshotů zdarma; placené tarify (např. 50–100 Kč/měsíc) pro delší retenci, neomezenou historii snapshotů a rozšířený workspace backup.
+> - Úschova navázaná na VOID ID — funguje napříč zařízeními; jasná pravidla pro expiraci a export dat (grace period, export možnost, ne okamžité smazání).
+> - Transparentní komunikace: kam peníze jdou (hosting, vývoj, storage) a co uživatel získá za předplatné.
 >
 > **Proc to dava smysl**
-> - Projekt potřebuje udržitelný příjem pro provoz infrastruktury.
-> - 50 Kč/měsíc je nízká bariéra, která neodradí komunitu.
-> - Jednorázové donace dávají možnost podpořit bez závazku.
-
-### M2. Monetizace — Delší úschova dat
-
-> [!tip]
-> **Popis**
-> Zpeněžení delší úschovy dat na platformě. Základní úschova (Creator Workbench snapshoty, export historie) je zdarma s limitem, delší retence za 50–100 Kč/měsíc.
->
-> **Mozna implementace**
-> - Zdarma: posledních 5 export snapshotů (už navrženo v 27B).
-> - Placená úschova (50–100 Kč/měsíc): neomezená historie snapshotů, archiv starších verzí, rozšířený workspace backup.
-> - Úschova navázaná na VOID ID — funguje napříč zařízeními.
-> - Jasná komunikace: co se stane s daty po expiraci předplatného (grace period, export možnost, ne okamžité smazání).
->
-> **Proc to dava smysl**
-> - Datová úschova má reálné náklady na storage — je férové ji zpeněžit.
-> - Creator, který si platí úschovu, má silnější vazbu na platformu.
-> - Propojuje se s export snapshot systémem (27B) a Creator Studio workflow.
+> - Projekt potřebuje udržitelný příjem pro provoz infrastruktury a storage.
+> - Zpeněžení delší úschovy dat je férové vzhledem k reálným nákladům na storage.
+> - Kombinace donations + subscription + storage dává flexibilitu a snižuje tlak na uživatele.
 
 ### M3. Featured Modpacky — Žebříček a web counter
 

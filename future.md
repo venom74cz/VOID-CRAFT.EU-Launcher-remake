@@ -154,6 +154,16 @@ North star pro tuhle cast je jednoducha:
 > - Vhodne je pridat i jednoduchy textovy `brand profile`: tonalita, short pitch, support linky, Discord, GitHub, web.
 > - Pri exportu packu musi jit snadno pribalit spravne obrazky a metadata pro CurseForge, Modrinth, GitHub release nebo launcher listing.
 >
+> **Aktualni stav implementace (2026-03-25)**
+> - [x] Upload pro logo, cover, square icon, wide hero, social preview
+> - [x] Validace rozliseni, pomeru stran a transparency pres SkiaSharp
+> - [x] Storage do assets/branding s vazbu na creator_manifest.json
+> - [x] Live preview variant primo v launcheru
+> - [x] Export media kitu pro release materialy
+> - [x] Automaticky import verejneho loga z CF/MR packu pri prvnim generovani manifestu
+> - [x] Napojeni brandingu na launcher card/header preview
+> - [ ] Screenshot tagging, favorite pin a official screenshot selection
+>
 > **Proc to dava smysl**
 > - Uzivatel konkretne potrebuje nahrat logo modpacku a to je presne use case, ktery zvedne pocit "tohle je moje studio".
 > - Branding bez workflow casto skonci v chaosu, ztracenych verzich obrazku a nejednotnych release materialech.

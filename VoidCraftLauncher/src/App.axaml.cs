@@ -61,6 +61,7 @@ namespace VoidCraftLauncher
                     DataContext = new MainViewModel()
                 };
 
+                MainViewModel.MainWindow = mainWindow;
                 themeEngine.ApplyMotionPreference(config.MotionPreference, mainWindow);
                 desktop.MainWindow = mainWindow;
                 desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;

@@ -42,6 +42,27 @@ public partial class MainViewModel
     private string _creatorMetadataRecommendedRamMb = "12288";
 
     [ObservableProperty]
+    private string _creatorBrandAccentColor = "#3AA0FF";
+
+    [ObservableProperty]
+    private string _creatorBrandLauncherCardTitle = string.Empty;
+
+    [ObservableProperty]
+    private string _creatorBrandOneLiner = string.Empty;
+
+    [ObservableProperty]
+    private string _creatorBrandWebsite = string.Empty;
+
+    [ObservableProperty]
+    private string _creatorBrandDiscord = string.Empty;
+
+    [ObservableProperty]
+    private string _creatorBrandGitHub = string.Empty;
+
+    [ObservableProperty]
+    private string _creatorBrandSupportLink = string.Empty;
+
+    [ObservableProperty]
     private bool _isCreatorMetadataDirty;
 
     [ObservableProperty]
@@ -164,7 +185,23 @@ public partial class MainViewModel
 
     public string CreatorMetadataActionLabel => CreatorWorkspaceContext.HasCreatorManifest
         ? "Ulozit creator manifest"
-        : "Vytvorit creator manifest";
+        : IsExistingImportedPack
+            ? "Vygenerovat z existujícího"
+            : "Vytvorit creator manifest";
+
+    private bool IsExistingImportedPack
+    {
+        get
+        {
+            var modpack = GetCreatorStudioSelectedModpack();
+            if (modpack == null)
+            {
+                return false;
+            }
+
+            return modpack.Source == "CurseForge" || modpack.Source == "Modrinth" || modpack.Source == "VOID";
+        }
+    }
 
     public string CreatorMetadataValidationMessage
     {
@@ -190,6 +227,49 @@ public partial class MainViewModel
         ? "Autor zatím není vyplněn."
         : CreatorMetadataAuthors;
 
+    public string BrandStoragePath => HasCreatorWorkspaceContext && !string.IsNullOrWhiteSpace(CreatorWorkspaceContext.WorkspacePath)
+        ? Path.Combine(CreatorWorkspaceContext.WorkspacePath, "assets", "branding")
+        : string.Empty;
+
+    public string BrandStorageStatus
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(BrandStoragePath))
+            {
+                return "Brand storage ceka na workspace";
+            }
+
+            var assetCount = 0;
+            if (Directory.Exists(BrandStoragePath))
+            {
+                assetCount = Directory.GetFiles(BrandStoragePath, "*.*", SearchOption.AllDirectories).Length;
+            }
+
+            return assetCount == 0
+                ? "0/5 asset slotu pripraveno"
+                : $"{assetCount}/5 asset slotu pripraveno";
+        }
+    }
+
+    public string LauncherPreviewTitle => !string.IsNullOrWhiteSpace(CreatorBrandLauncherCardTitle)
+        ? CreatorBrandLauncherCardTitle
+        : !string.IsNullOrWhiteSpace(CreatorMetadataPackName)
+            ? CreatorMetadataPackName
+            : "VOID-BOX2";
+
+    public string LauncherPreviewDescription => !string.IsNullOrWhiteSpace(CreatorBrandOneLiner)
+        ? CreatorBrandOneLiner
+        : !string.IsNullOrWhiteSpace(CreatorMetadataSummary)
+            ? CreatorMetadataSummary
+            : "Adventure, Technology, Magic and many QUESTS! All within one single package with the best possible optimization!";
+
+    public string LauncherPreviewAssetStatus => BrandStorageStatus;
+
+    public string LauncherPreviewChannel => !string.IsNullOrWhiteSpace(CreatorMetadataReleaseChannel)
+        ? CreatorMetadataReleaseChannel
+        : "alpha";
+
     partial void OnCreatorMetadataPackNameChanged(string value) => OnCreatorMetadataEditorChanged();
 
     partial void OnCreatorMetadataSlugChanged(string value) => OnCreatorMetadataEditorChanged();
@@ -205,6 +285,20 @@ public partial class MainViewModel
     partial void OnCreatorMetadataPrimaryServerChanged(string value) => OnCreatorMetadataEditorChanged();
 
     partial void OnCreatorMetadataRecommendedRamMbChanged(string value) => OnCreatorMetadataEditorChanged();
+
+    partial void OnCreatorBrandAccentColorChanged(string value) => OnCreatorMetadataEditorChanged();
+
+    partial void OnCreatorBrandLauncherCardTitleChanged(string value) => OnCreatorMetadataEditorChanged();
+
+    partial void OnCreatorBrandOneLinerChanged(string value) => OnCreatorMetadataEditorChanged();
+
+    partial void OnCreatorBrandWebsiteChanged(string value) => OnCreatorMetadataEditorChanged();
+
+    partial void OnCreatorBrandDiscordChanged(string value) => OnCreatorMetadataEditorChanged();
+
+    partial void OnCreatorBrandGitHubChanged(string value) => OnCreatorMetadataEditorChanged();
+
+    partial void OnCreatorBrandSupportLinkChanged(string value) => OnCreatorMetadataEditorChanged();
 
     partial void OnIsCreatorMetadataDirtyChanged(bool value) => NotifyCreatorShellVisualStateChanged();
 
@@ -252,6 +346,12 @@ public partial class MainViewModel
         OnPropertyChanged(nameof(CreatorMetadataActionLabel));
         OnPropertyChanged(nameof(CreatorMetadataValidationMessage));
         OnPropertyChanged(nameof(CreatorMetadataAuthorsPreview));
+        OnPropertyChanged(nameof(BrandStoragePath));
+        OnPropertyChanged(nameof(BrandStorageStatus));
+        OnPropertyChanged(nameof(LauncherPreviewTitle));
+        OnPropertyChanged(nameof(LauncherPreviewDescription));
+        OnPropertyChanged(nameof(LauncherPreviewAssetStatus));
+        OnPropertyChanged(nameof(LauncherPreviewChannel));
     }
 
     private void RefreshCreatorWorkspaceContext()
@@ -286,6 +386,7 @@ public partial class MainViewModel
         CreatorShellState.HasReleaseWarnings = !CreatorWorkspaceContext.HasCreatorManifest || CreatorWorkspaceContext.MissingStandardFolders.Count > 0;
         CreatorShellState.HasUnsavedFileChanges = CanSaveCreatorWorkbenchFile || IsCreatorMetadataDirty;
         SyncCreatorMetadataEditor(previousWorkspaceId, modpack);
+        RefreshBrandingPreviews();
         NotifyCreatorShellVisualStateChanged();
     }
 
@@ -473,13 +574,20 @@ public partial class MainViewModel
             ? modpack.CustomModLoaderVersion
             : string.Empty;
         var creatorManifest = _creatorManifestService.LoadManifest(CreatorWorkspaceContext.WorkspacePath)
-            ?? _creatorManifestService.CreateDefaultManifest(
-                CreatorWorkspaceContext.WorkspaceLabel,
+            ?? _creatorManifestService.CreateFallbackManifest(
+                modpack,
                 CreatorWorkspaceContext.MinecraftVersion,
                 CreatorWorkspaceContext.LoaderLabel,
                 loaderVersion ?? string.Empty);
 
         ApplyCreatorMetadata(creatorManifest);
+        
+        // Preview branding from modpack logo even before manifest exists
+        if (modpack != null && !string.IsNullOrWhiteSpace(modpack.LogoUrl) && !CreatorWorkspaceContext.HasCreatorManifest)
+        {
+            BrandingLogoPreview = modpack.LogoUrl;
+        }
+        
         _creatorMetadataWorkspaceId = CreatorWorkspaceContext.WorkspaceId;
     }
 
@@ -494,6 +602,16 @@ public partial class MainViewModel
         CreatorMetadataReleaseChannel = string.IsNullOrWhiteSpace(manifest.ReleaseChannel) ? "alpha" : manifest.ReleaseChannel;
         CreatorMetadataPrimaryServer = manifest.PrimaryServer;
         CreatorMetadataRecommendedRamMb = manifest.RecommendedRamMb.ToString();
+        
+        // Brand profile
+        CreatorBrandAccentColor = manifest.BrandProfile?.AccentColor ?? "#3AA0FF";
+        CreatorBrandLauncherCardTitle = manifest.BrandProfile?.LauncherCardTitle ?? string.Empty;
+        CreatorBrandOneLiner = manifest.BrandProfile?.OneLiner ?? string.Empty;
+        CreatorBrandWebsite = manifest.BrandProfile?.Website ?? string.Empty;
+        CreatorBrandDiscord = manifest.BrandProfile?.Discord ?? string.Empty;
+        CreatorBrandGitHub = manifest.BrandProfile?.GitHub ?? string.Empty;
+        CreatorBrandSupportLink = manifest.BrandProfile?.SupportLink ?? string.Empty;
+        
         IsCreatorMetadataDirty = false;
         _isSyncingCreatorMetadataEditor = false;
         UpdateCreatorDirtyIndicators();
@@ -510,6 +628,16 @@ public partial class MainViewModel
         CreatorMetadataReleaseChannel = "alpha";
         CreatorMetadataPrimaryServer = string.Empty;
         CreatorMetadataRecommendedRamMb = "12288";
+        
+        // Brand profile
+        CreatorBrandAccentColor = "#3AA0FF";
+        CreatorBrandLauncherCardTitle = string.Empty;
+        CreatorBrandOneLiner = string.Empty;
+        CreatorBrandWebsite = string.Empty;
+        CreatorBrandDiscord = string.Empty;
+        CreatorBrandGitHub = string.Empty;
+        CreatorBrandSupportLink = string.Empty;
+        
         IsCreatorMetadataDirty = false;
         _creatorMetadataWorkspaceId = string.Empty;
         _isSyncingCreatorMetadataEditor = false;
@@ -741,6 +869,12 @@ public partial class MainViewModel
             return;
         }
 
+        if (!CreatorWorkspaceContext.HasCreatorManifest && IsExistingImportedPack)
+        {
+            await GenerateManifestFromExisting();
+            return;
+        }
+
         if (!ValidateCreatorMetadata(out var validationError))
         {
             ShowToast("Creator Studio", validationError, ToastSeverity.Warning, 2800);
@@ -772,6 +906,18 @@ public partial class MainViewModel
                 CreatorMetadataPrimaryServer,
                 CreatorMetadataReleaseChannel,
                 existingManifest?.CreatedAtUtc);
+
+            // Apply brand profile
+            manifest.BrandProfile = new CreatorBrandProfile
+            {
+                AccentColor = CreatorBrandAccentColor,
+                LauncherCardTitle = CreatorBrandLauncherCardTitle,
+                OneLiner = CreatorBrandOneLiner,
+                Website = CreatorBrandWebsite,
+                Discord = CreatorBrandDiscord,
+                GitHub = CreatorBrandGitHub,
+                SupportLink = CreatorBrandSupportLink
+            };
 
             var savedManifest = await _creatorManifestService.SaveManifestAsync(CreatorWorkspaceContext.WorkspacePath, manifest);
             ApplyCreatorMetadata(savedManifest);

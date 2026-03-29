@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
+using VoidCraftLauncher.Models;
 using VoidCraftLauncher.Models.CreatorStudio;
 
 namespace VoidCraftLauncher.Services.CreatorStudio;
@@ -16,10 +18,12 @@ public sealed class CreatorManifestService
     };
 
     private readonly CreatorWorkspaceService _creatorWorkspaceService;
+    private readonly CreatorAssetsService _creatorAssetsService;
 
-    public CreatorManifestService(CreatorWorkspaceService creatorWorkspaceService)
+    public CreatorManifestService(CreatorWorkspaceService creatorWorkspaceService, CreatorAssetsService creatorAssetsService)
     {
         _creatorWorkspaceService = creatorWorkspaceService;
+        _creatorAssetsService = creatorAssetsService;
     }
 
     public string GetManifestPath(string workspacePath)
@@ -77,6 +81,33 @@ public sealed class CreatorManifestService
             "alpha");
     }
 
+    public CreatorManifest CreateFallbackManifest(ModpackInfo? modpack, string minecraftVersion, string modLoader, string modLoaderVersion)
+    {
+        if (modpack == null)
+        {
+            return CreateDefaultManifest("Unnamed Pack", minecraftVersion, modLoader, modLoaderVersion);
+        }
+
+        var packName = !string.IsNullOrWhiteSpace(modpack.Name) ? modpack.Name : "Unnamed Pack";
+        var slug = BuildSlug(packName);
+        var authors = !string.IsNullOrWhiteSpace(modpack.Author) ? new[] { modpack.Author } : Array.Empty<string>();
+        var summary = !string.IsNullOrWhiteSpace(modpack.Description) ? modpack.Description : string.Empty;
+        var version = modpack.CurrentVersion?.Name ?? "0.1.0";
+
+        return CreateManifest(
+            packName,
+            slug,
+            summary,
+            authors,
+            version,
+            minecraftVersion,
+            modLoader,
+            modLoaderVersion,
+            12288,
+            string.Empty,
+            "alpha");
+    }
+
     public CreatorManifest? LoadManifest(string workspacePath)
     {
         if (string.IsNullOrWhiteSpace(workspacePath))
@@ -113,6 +144,8 @@ public sealed class CreatorManifestService
 
         var existingManifest = LoadManifest(workspacePath);
         manifest.CreatedAtUtc = existingManifest?.CreatedAtUtc ?? manifest.CreatedAtUtc;
+        manifest.Branding = existingManifest?.Branding ?? manifest.Branding;
+        manifest.Assets = existingManifest?.Assets ?? manifest.Assets;
         manifest.UpdatedAtUtc = DateTimeOffset.UtcNow;
 
         var manifestPath = GetManifestPath(workspacePath);
@@ -164,6 +197,37 @@ public sealed class CreatorManifestService
 
         sanitized = sanitized.Trim('-');
         return string.IsNullOrWhiteSpace(sanitized) ? "voidcraft-pack" : sanitized;
+    }
+
+    public async Task<bool> TryImportPublicBrandingAsync(string workspacePath, ModpackInfo modpack)
+    {
+        if (string.IsNullOrWhiteSpace(modpack.LogoUrl))
+        {
+            return false;
+        }
+
+        try
+        {
+            using var httpClient = new HttpClient();
+            httpClient.Timeout = TimeSpan.FromSeconds(10);
+
+            var logoBytes = await httpClient.GetByteArrayAsync(modpack.LogoUrl);
+            var tempLogoPath = Path.Combine(Path.GetTempPath(), $"logo_{Guid.NewGuid()}.png");
+            await File.WriteAllBytesAsync(tempLogoPath, logoBytes);
+
+            var logoResult = await _creatorAssetsService.UploadAssetAsync(workspacePath, BrandingAssetSlot.Logo, tempLogoPath);
+            if (logoResult.Success && logoResult.Metadata != null)
+            {
+                await _creatorAssetsService.UploadAssetAsync(workspacePath, BrandingAssetSlot.SquareIcon, tempLogoPath);
+            }
+
+            File.Delete(tempLogoPath);
+            return logoResult.Success;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     public static List<string> NormalizeAuthors(IEnumerable<string> authors)

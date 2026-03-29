@@ -30,4 +30,10 @@ public sealed class CreatorManifest
     public DateTimeOffset CreatedAtUtc { get; set; } = DateTimeOffset.UtcNow;
 
     public DateTimeOffset UpdatedAtUtc { get; set; } = DateTimeOffset.UtcNow;
+
+    public CreatorBrandingProfile? Branding { get; set; }
+
+    public CreatorBrandProfile? BrandProfile { get; set; }
+
+    public List<CreatorAssetMetadata> Assets { get; set; } = new();
 }

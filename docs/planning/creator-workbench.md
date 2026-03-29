@@ -214,19 +214,30 @@ Cil: dostat do launcheru plnohodnotnou spravu loga, coveru a dalsich media asset
 
 Task list:
 
-- [ ] Pridat upload pro `logo`, `cover`, `square icon`, `wide hero`, `social preview`.
-- [ ] Dopsat asset storage pravidla a vazbu na `creator_manifest.json`.
-- [ ] Pridat preview variant primo v launcheru.
-- [ ] Pridat resize/crop pipeline a zakladni validace rozliseni, pomeru stran a transparency.
+- [x] Pridat upload pro `logo`, `cover`, `square icon`, `wide hero`, `social preview`.
+- [x] Dopsat asset storage pravidla a vazbu na `creator_manifest.json`.
+- [x] Pridat preview variant primo v launcheru.
+- [x] Pridat resize/crop pipeline a zakladni validace rozliseni, pomeru stran a transparency.
 - [ ] Oznacovat screenshoty jako `official`, `release candidate`, `archive`.
-- [ ] Pridat export media kitu pro release materialy.
-- [ ] Rozsirit `Metadata` zalozku o vizualni `Branding` blok, aby textova metadata a obrazky patrily do jednoho workflow.
-- [ ] Napojit branding na launcher card/header preview.
+- [x] Pridat export media kitu pro release materialy.
+- [x] Rozsirit `Metadata` zalozku o vizualni `Branding` blok, aby textova metadata a obrazky patrily do jednoho workflow.
+- [x] Napojit branding na launcher card/header preview.
+- [x] Automaticky importovat verejne logo z CF/MR packu pri prvnim generovani manifestu.
+
+Aktualni stav implementace slice `2026-03-25`:
+
+- `CreatorBrandingModels.cs` definuje `CreatorBrandingProfile`, `CreatorAssetMetadata`, `BrandingAssetSlot` a `BrandingAssetRequirement` s doporucenymi rozlisenimi a pomery stran
+- `CreatorManifest` uz obsahuje `Branding` profil a `Assets` kolekci pro metadata nahraných assetu
+- `CreatorAssetsService` resi upload, validaci (rozliseni, pomer stran, alpha kanal pres SkiaSharp), storage do `assets/branding` a export media kitu
+- `CreatorManifestService` pri absenci manifestu u stazenych CF/MR packu vytvari fallback z dostupnych dat (nazev, autor, popis, verze) a pri prvnim generovani manifestu automaticky stahuje verejne logo
+- `MainViewModel.CreatorStudio.Branding.cs` pridava upload/replace/remove/export commandy a live preview pro vsechny branding sloty
+- tlacitko v metadata tabu se meni na "Vygenerovat z existujiciho" pokud manifest chybi a jde o importovany pack
+- branding preview se propaguje do instance workspace hlavicky
 
 Exit criteria:
 
-- [ ] autor umi nahrat a spravovat identitu modpacku bez exploreru
-- [ ] assety maji stabilni ulozeni a preview
+- [x] autor umi nahrat a spravovat identitu modpacku bez exploreru
+- [x] assety maji stabilni ulozeni a preview
 
 ## Faze 3 - Structured Editors a Diff Host
 

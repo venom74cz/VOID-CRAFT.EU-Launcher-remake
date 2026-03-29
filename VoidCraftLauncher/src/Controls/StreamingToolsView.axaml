@@ -152,6 +152,7 @@
             <TabItem Header="Metadata">
                 <ScrollViewer HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Spacing="16" Margin="8,4,8,40" MaxWidth="1080">
+                        <!-- SOURCE OF TRUTH -->
                         <Border Classes="card">
                             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                                 <StackPanel Spacing="14">
@@ -161,7 +162,8 @@
                                         <StackPanel Spacing="6">
                                             <TextBlock Text="{Binding CreatorWorkspaceContext.CreatorManifestPath}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
                                             <TextBlock Text="{Binding CreatorManifestStatus}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryBBrush}"/>
-                                            <TextBlock Text="{Binding CreatorMetadataValidationMessage}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                            <TextBlock Text="Metadata jsou synchronni s aktualnim workspace manifestem." FontSize="10" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                            <TextBlock Text="Zacni logem nebo coverem a launcher si zazevi utoc na workspace." FontSize="10" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
                                         </StackPanel>
                                     </Border>
                                 </StackPanel>
@@ -255,6 +257,211 @@
                                 </StackPanel>
                             </Border>
                         </Grid>
+
+                        <!-- BRAND PROFILE & LAUNCHER PREVIEW -->
+                        <Grid ColumnDefinitions="*,16,*">
+                            <!-- Brand Profile (Left) -->
+                            <Border Classes="card">
+                                <StackPanel Spacing="14">
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Text="Brand profile" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                            <TextBlock Text="Textovy profil packu se uklada spolu s asset pipeline do creator_manifest.json." FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                        <Button Grid.Column="1" Classes="secondary" Padding="14,8" VerticalAlignment="Top">
+                                            <TextBlock Text="Brand slozka"/>
+                                        </Button>
+                                    </Grid>
+                                    
+                                    <Grid ColumnDefinitions="*,12,*">
+                                        <StackPanel Spacing="6">
+                                            <TextBlock Text="Accent color" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                            <TextBox Text="{Binding CreatorBrandAccentColor}" Watermark="#3AA0FF"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Spacing="6">
+                                            <TextBlock Text="Launcher card title" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                            <TextBox Text="{Binding CreatorBrandLauncherCardTitle}" Watermark="Kratsi marketingovy nazev pro karty a seznamy"/>
+                                        </StackPanel>
+                                    </Grid>
+                                    
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Text="One-liner" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                        <TextBox Text="{Binding CreatorBrandOneLiner}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="60" Watermark="Jedna veta, ktera vysvetli atmosferu a pointu packu."/>
+                                    </StackPanel>
+                                    
+                                    <Grid ColumnDefinitions="*,12,*" RowDefinitions="Auto,12,Auto">
+                                        <StackPanel Spacing="6">
+                                            <TextBlock Text="Website" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                            <TextBox Text="{Binding CreatorBrandWebsite}" Watermark="https://..."/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Spacing="6">
+                                            <TextBlock Text="Discord" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                            <TextBox Text="{Binding CreatorBrandDiscord}" Watermark="https://discord.gg/..."/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Row="2" Spacing="6">
+                                            <TextBlock Text="GitHub" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                            <TextBox Text="{Binding CreatorBrandGitHub}" Watermark="https://github.com/owner/repo"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Row="2" Grid.Column="2" Spacing="6">
+                                            <TextBlock Text="Support link" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                            <TextBox Text="{Binding CreatorBrandSupportLink}" Watermark="https://..."/>
+                                        </StackPanel>
+                                    </Grid>
+                                    
+                                    <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="14,12">
+                                        <StackPanel Spacing="6">
+                                            <TextBlock Text="Brand storage" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                            <TextBlock Text="{Binding BrandStoragePath}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding BrandStorageStatus}" FontSize="11" Foreground="{DynamicResource PrimaryBBrush}"/>
+                                            <TextBlock Text="Assety jsou v doporucenenem rozsahu nebo zatim nejsou nahrane." FontSize="10" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Launcher Preview (Right) -->
+                            <Border Grid.Column="2" Classes="card">
+                                <StackPanel Spacing="14">
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Text="Launcher preview" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                            <TextBlock Text="Nahled ukazuje, jak se branding propise do hero a identity packu uvnitr launcheru." FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                        <Button Grid.Column="1" Command="{Binding ExportMediaKitCommand}" Classes="secondary" Padding="14,8" VerticalAlignment="Top">
+                                            <TextBlock Text="Export media kitu"/>
+                                        </Button>
+                                    </Grid>
+
+                                    <Border Background="#2A7FDB" CornerRadius="12" Padding="20,24" Height="280">
+                                        <Grid RowDefinitions="Auto,*,Auto">
+                                            <Border Background="#1A1A1A" CornerRadius="16" Width="80" Height="80" HorizontalAlignment="Center">
+                                                <Grid>
+                                                    <Image Source="{Binding BrandingLogoFallback}" Stretch="Uniform" IsVisible="{Binding HasBrandingLogo}"/>
+                                                    <TextBlock Text="VC" FontSize="32" FontWeight="Black" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasBrandingLogo}"/>
+                                                </Grid>
+                                            </Border>
+                                            <StackPanel Grid.Row="1" Spacing="8" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding LauncherPreviewTitle}" FontSize="20" FontWeight="ExtraBold" Foreground="White" TextAlignment="Center" TextWrapping="Wrap"/>
+                                                <TextBlock Text="{Binding LauncherPreviewDescription}" FontSize="11" Foreground="#E0E0E0" TextAlignment="Center" TextWrapping="Wrap" MaxHeight="60" TextTrimming="CharacterEllipsis"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="2" Spacing="8">
+                                                <Grid ColumnDefinitions="Auto,*">
+                                                    <Border Background="#1E5A9D" CornerRadius="12" Padding="10,4">
+                                                        <TextBlock Text="{Binding LauncherPreviewAssetStatus}" FontSize="10" Foreground="White"/>
+                                                    </Border>
+                                                    <Border Grid.Column="1" Background="#1E5A9D" CornerRadius="12" Padding="10,4" HorizontalAlignment="Right">
+                                                        <TextBlock Text="{Binding LauncherPreviewChannel}" FontSize="10" Foreground="White"/>
+                                                    </Border>
+                                                </Grid>
+                                                <TextBlock Text="Assety jsou v doporucenenem rozsahu nebo zatim nejsou nahrane." FontSize="9" Foreground="#B0B0B0" TextAlignment="Center" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <!-- BRANDING ASSETS -->
+                        <Border Classes="card">
+                            <StackPanel Spacing="16">
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="Branding &amp; Assets" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                        <TextBlock Text="Nahraj logo, cover a dalsi assety primo v launcheru. Validace rozliseni, pomeru stran a transparency pres SkiaSharp." FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                    <Button Grid.Column="1" Command="{Binding SaveCreatorMetadataCommand}" Classes="primary" Padding="16,10" VerticalAlignment="Top" IsEnabled="{Binding CanSaveCreatorMetadata}">
+                                        <TextBlock Text="Vytvorit creator manifest"/>
+                                    </Button>
+                                </Grid>
+
+                                <Grid ColumnDefinitions="*,16,*,16,*" RowDefinitions="Auto,16,Auto">
+                                    <!-- Logo -->
+                                    <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="14" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                                        <StackPanel Spacing="10">
+                                            <TextBlock Text="Logo (512x512)" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                            <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="8" Height="120" Width="120" HorizontalAlignment="Center">
+                                                <Grid>
+                                                    <Image Source="{Binding BrandingLogoFallback}" Stretch="Uniform" IsVisible="{Binding HasBrandingLogo}"/>
+                                                    <TextBlock Text="No logo" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasBrandingLogo}"/>
+                                                </Grid>
+                                            </Border>
+                                            <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                                                <Button Command="{Binding UploadBrandingAssetCommand}" CommandParameter="Logo" Classes="secondary" Padding="10,6" FontSize="11" Content="Nahraj"/>
+                                                <Button Command="{Binding RemoveBrandingAssetCommand}" CommandParameter="Logo" Classes="secondary" Padding="10,6" FontSize="11" IsVisible="{Binding HasBrandingLogo}" Content="Odebrat"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Cover -->
+                                    <Border Grid.Column="2" Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="14" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                                        <StackPanel Spacing="10">
+                                            <TextBlock Text="Cover (16:9)" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                            <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="8" Height="120" Width="213" HorizontalAlignment="Center">
+                                                <Grid>
+                                                    <Image Source="{Binding BrandingCoverPreview}" Stretch="UniformToFill" IsVisible="{Binding HasBrandingCover}"/>
+                                                    <TextBlock Text="No cover" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasBrandingCover}"/>
+                                                </Grid>
+                                            </Border>
+                                            <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                                                <Button Command="{Binding UploadBrandingAssetCommand}" CommandParameter="Cover" Classes="secondary" Padding="10,6" FontSize="11" Content="Nahraj"/>
+                                                <Button Command="{Binding RemoveBrandingAssetCommand}" CommandParameter="Cover" Classes="secondary" Padding="10,6" FontSize="11" IsVisible="{Binding HasBrandingCover}" Content="Odebrat"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Square Icon -->
+                                    <Border Grid.Column="4" Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="14" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                                        <StackPanel Spacing="10">
+                                            <TextBlock Text="Square Icon (256x256)" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                            <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="8" Height="80" Width="80" HorizontalAlignment="Center">
+                                                <Grid>
+                                                    <Image Source="{Binding BrandingSquareIconPreview}" Stretch="Uniform" IsVisible="{Binding HasBrandingSquareIcon}"/>
+                                                    <TextBlock Text="No icon" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasBrandingSquareIcon}"/>
+                                                </Grid>
+                                            </Border>
+                                            <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                                                <Button Command="{Binding UploadBrandingAssetCommand}" CommandParameter="SquareIcon" Classes="secondary" Padding="10,6" FontSize="11" Content="Nahraj"/>
+                                                <Button Command="{Binding RemoveBrandingAssetCommand}" CommandParameter="SquareIcon" Classes="secondary" Padding="10,6" FontSize="11" IsVisible="{Binding HasBrandingSquareIcon}" Content="Odebrat"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Wide Hero -->
+                                    <Border Grid.Row="2" Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="14" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                                        <StackPanel Spacing="10">
+                                            <TextBlock Text="Wide Hero (32:9)" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                            <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="8" Height="80" Width="284" HorizontalAlignment="Center">
+                                                <Grid>
+                                                    <Image Source="{Binding BrandingWideHeroPreview}" Stretch="UniformToFill" IsVisible="{Binding HasBrandingWideHero}"/>
+                                                    <TextBlock Text="No hero" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasBrandingWideHero}"/>
+                                                </Grid>
+                                            </Border>
+                                            <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                                                <Button Command="{Binding UploadBrandingAssetCommand}" CommandParameter="WideHero" Classes="secondary" Padding="10,6" FontSize="11" Content="Nahraj"/>
+                                                <Button Command="{Binding RemoveBrandingAssetCommand}" CommandParameter="WideHero" Classes="secondary" Padding="10,6" FontSize="11" IsVisible="{Binding HasBrandingWideHero}" Content="Odebrat"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Social Preview -->
+                                    <Border Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="3" Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="14" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                                        <StackPanel Spacing="10">
+                                            <TextBlock Text="Social Preview (1200x630)" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                            <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="8" Height="120" Width="228" HorizontalAlignment="Center">
+                                                <Grid>
+                                                    <Image Source="{Binding BrandingSocialPreviewPreview}" Stretch="UniformToFill" IsVisible="{Binding HasBrandingSocialPreview}"/>
+                                                    <TextBlock Text="No social preview" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasBrandingSocialPreview}"/>
+                                                </Grid>
+                                            </Border>
+                                            <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                                                <Button Command="{Binding UploadBrandingAssetCommand}" CommandParameter="SocialPreview" Classes="secondary" Padding="10,6" FontSize="11" Content="Nahraj"/>
+                                                <Button Command="{Binding RemoveBrandingAssetCommand}" CommandParameter="SocialPreview" Classes="secondary" Padding="10,6" FontSize="11" IsVisible="{Binding HasBrandingSocialPreview}" Content="Odebrat"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
 
                         <controls:EmptyState IsVisible="{Binding HasCreatorMissingFolders}" Icon="{StaticResource IconWarning}" Title="Workspace jeste nema cilovou strukturu" Subtitle="F0 uz umi zkontrolovat standardni slozky a drzet release warning signal v creator shellu."/>
                     </StackPanel>

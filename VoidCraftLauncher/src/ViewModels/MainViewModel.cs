@@ -19,6 +19,7 @@ using System.Collections.Specialized;
 using System.Text.RegularExpressions;
 using VoidCraftLauncher.Models.CreatorStudio;
 using VoidCraftLauncher.Services.CreatorStudio;
+using VoidCraftLauncher.Views;
 
 namespace VoidCraftLauncher.ViewModels;
 
@@ -84,10 +85,13 @@ public partial class MainViewModel : ViewModelBase
     private readonly CreatorWorkbenchService _creatorWorkbenchService;
     private readonly CreatorWorkspaceService _creatorWorkspaceService;
     private readonly CreatorManifestService _creatorManifestService;
+    private readonly CreatorAssetsService _creatorAssetsService;
     private ModpackManifestInfo _lastManifestInfo;
     private readonly SemaphoreSlim _modpackUpdateCheckLock = new(1, 1);
     private static readonly TimeSpan ModpackUpdateCheckInterval = TimeSpan.FromSeconds(5);
     private ModpackInfo? _observedCurrentModpack;
+
+    public static MainWindow? MainWindow { get; set; }
 
     // ===== CORE STATE =====
 
@@ -553,6 +557,7 @@ public partial class MainViewModel : ViewModelBase
         _creatorWorkbenchService = sl.Resolve<CreatorWorkbenchService>();
         _creatorWorkspaceService = sl.Resolve<CreatorWorkspaceService>();
         _creatorManifestService = sl.Resolve<CreatorManifestService>();
+        _creatorAssetsService = sl.Resolve<CreatorAssetsService>();
         _discordRpcService.Initialize();
         _discordRpcService.PresenceChanged += () => Avalonia.Threading.Dispatcher.UIThread.Post(NotifyStreamingToolsStateChanged);
         

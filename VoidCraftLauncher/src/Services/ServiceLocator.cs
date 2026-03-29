@@ -104,7 +104,8 @@ public sealed class ServiceLocator
         RegisterFactory(() => new SocialFeedService(Resolve<HttpClient>(), Resolve<LauncherService>(), Resolve<ObservabilityService>()));
         RegisterFactory(() => new CreatorWorkbenchService());
         RegisterFactory(() => new CreatorWorkspaceService(Resolve<LauncherService>()));
-        RegisterFactory(() => new CreatorManifestService(Resolve<CreatorWorkspaceService>()));
+        RegisterFactory(() => new CreatorAssetsService());
+        RegisterFactory(() => new CreatorManifestService(Resolve<CreatorWorkspaceService>(), Resolve<CreatorAssetsService>()));
         RegisterFactory(() => new AchievementHubService(Resolve<HttpClient>(), Resolve<LauncherService>(), Resolve<ObservabilityService>()));
         RegisterFactory(() => new ServerDiscoveryService(Resolve<LauncherService>(), Resolve<ObservabilityService>()));
         RegisterFactory(() => new InstanceExportService());

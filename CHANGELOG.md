@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.1.3 - 2026-03-29
+
+### Branding & Creator Studio
+- Přidána UI podpora pro upload `logo`, `cover`, `square icon`, `wide hero` a `social preview`.
+- Live preview variant brandingu přímo v launcheru.
+- Zaveden resize/crop pipeline a základní validace (rozlišení, poměr stran, průhlednost) přes SkiaSharp.
+- Assety ukládány do `assets/branding` a navázány na `creator_manifest.json`.
+- Přidána možnost exportu media kitu pro release materiály.
+- Automatický import veřejného loga z CF/MR packu při prvním generování manifestu.
+- Branding se nyní propaguje do launcher card/header preview.
+
 ## 3.1.1 - 2026-03-23
 
 ### Hotfix detailu instance a Server Hubu

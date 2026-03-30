@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -100,18 +101,34 @@ public sealed class AchievementHubService
         if (playersArray != null)
         {
             snapshot.Players = playersArray
-                .Select((node, index) => new AchievementPlayerStats
+                .Select((node, index) =>
                 {
-                    Rank = index + 1,
-                    Name = node?["name"]?.GetValue<string>() ?? string.Empty,
-                    Uuid = node?["uuid"]?.GetValue<string>(),
-                    Playtime = node?["playtime"]?.GetValue<string>(),
-                    QuestProgress = node?["questProgress"]?.GetValue<double?>() ?? 0,
-                    CompletedQuests = node?["completedQuests"]?.GetValue<int?>() ?? 0,
-                    TotalQuests = node?["totalQuests"]?.GetValue<int?>() ?? snapshot.TotalQuests,
-                    CompletedDate = node?["completedDate"]?.GetValue<string>(),
-                    TeamName = node?["teamName"]?.GetValue<string>(),
-                    IsOnline = node?["isOnline"]?.GetValue<bool?>() ?? false
+                    // parse lastSeen if present
+                    DateTime? lastSeen = null;
+                    var lastSeenStr = node?["lastSeen"]?.GetValue<string>();
+                    if (!string.IsNullOrWhiteSpace(lastSeenStr))
+                    {
+                        if (DateTime.TryParse(lastSeenStr, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var parsed))
+                        {
+                            lastSeen = parsed;
+                        }
+                    }
+
+                    return new AchievementPlayerStats
+                    {
+                        Rank = index + 1,
+                        Name = node?["name"]?.GetValue<string>() ?? string.Empty,
+                        Uuid = node?["uuid"]?.GetValue<string>(),
+                        Playtime = node?["playtime"]?.GetValue<string>(),
+                        QuestProgress = node?["questProgress"]?.GetValue<double?>() ?? 0,
+                        CompletedQuests = node?["completedQuests"]?.GetValue<int?>() ?? 0,
+                        TotalQuests = node?["totalQuests"]?.GetValue<int?>() ?? snapshot.TotalQuests,
+                        CompletedDate = node?["completedDate"]?.GetValue<string>(),
+                        TeamName = node?["teamName"]?.GetValue<string>(),
+                        TeamId = node?["teamId"]?.GetValue<string>(),
+                        LastSeen = lastSeen,
+                        IsOnline = node?["isOnline"]?.GetValue<bool?>() ?? false
+                    };
                 })
                 .Where(player => !string.IsNullOrWhiteSpace(player.Name))
                 .ToList();

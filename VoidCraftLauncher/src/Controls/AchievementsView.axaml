@@ -99,7 +99,11 @@
                             BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" Padding="20">
                         <StackPanel Spacing="6">
                             <TextBlock Text="{Binding AchievementSummaryTeamTitle}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
-                            <TextBlock Text="{Binding AchievementSummaryTeamValue}" FontSize="20" FontWeight="ExtraBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                            <Border ClipToBounds="True" Padding="0" Background="Transparent" MinHeight="1">
+                                <ScrollViewer x:Name="TeamScrollViewer" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled" Background="Transparent">
+                                    <TextBlock x:Name="TeamNameTextBlock" Text="{Binding AchievementSummaryTeamValue}" FontSize="20" FontWeight="ExtraBold" Foreground="{DynamicResource TextPrimaryBrush}" TextTrimming="None" TextWrapping="NoWrap"/>
+                                </ScrollViewer>
+                            </Border>
                             <TextBlock Text="{Binding AchievementSourceMeta}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
                         </StackPanel>
                     </Border>

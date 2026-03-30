@@ -91,7 +91,7 @@ public partial class MainViewModel
 
     public string AchievementSummaryRankValue => AchievementCurrentPlayer == null
         ? L("Achievements.Summary.NotRanked")
-        : $"#{AchievementCurrentPlayer.Rank}";
+        : $"#{GetTeamRankForPlayer(AchievementCurrentPlayer)}";
 
     public string AchievementSummaryProgressValue => AchievementCurrentPlayer == null
         ? "0%"
@@ -125,7 +125,8 @@ public partial class MainViewModel
     {
         RebuildAchievementFilterOptions();
         SyncSelectedAchievementFilter();
-        _ = LoadAchievementSnapshotAsync();
+        // Force a live fetch on initialization to keep launcher in sync with web
+        _ = LoadAchievementSnapshotAsync(true);
     }
 
     partial void OnSelectedAchievementFilterChanged(SelectionOption? value)
@@ -269,22 +270,51 @@ public partial class MainViewModel
 
     private AchievementBadgeCard BuildAchievementCard(AchievementRule rule, AchievementPlayerStats player)
     {
-        var currentValue = Math.Max(0, rule.CurrentValue(player));
         var progressMaximum = Math.Max(1, rule.TargetValue);
-        var isUnlocked = rule.UnlockPredicate?.Invoke(player) ?? currentValue >= rule.TargetValue;
-        var clampedProgress = Math.Min(progressMaximum, currentValue);
         var isPercentRule = rule.TargetValue > 1 && rule.TargetValue <= 100 && !rule.Id.Equals("first-quest", StringComparison.OrdinalIgnoreCase);
-        var isRankRule = rule.Id.Equals("podium", StringComparison.OrdinalIgnoreCase);
         var isHoursRule = rule.Id.StartsWith("voidium-", StringComparison.OrdinalIgnoreCase);
-        var progressLabel = rule.Id switch
+
+        double currentValue;
+        bool isUnlocked;
+        double clampedProgress;
+        string progressLabel;
+
+        if (rule.Id.Equals("podium", StringComparison.OrdinalIgnoreCase))
         {
-            "podium" => LF("Achievements.Progress.Rank", player.Rank, (int)rule.TargetValue),
-            "online-now" => LF("Achievements.Progress.Online", player.IsOnline ? L("Achievements.Progress.Online.Yes") : L("Achievements.Progress.Online.No")),
-            "teamplay" => LF("Achievements.Progress.Team", string.IsNullOrWhiteSpace(player.TeamName) ? L("Achievements.Summary.NoTeam") : player.TeamName),
-            _ when isHoursRule => LF("Achievements.Progress.Hours", FormatHourValue(Math.Min(currentValue, rule.TargetValue)), FormatHourValue(rule.TargetValue)),
-            _ when isPercentRule => LF("Achievements.Progress.Percent", Math.Round(Math.Min(player.QuestProgress, rule.TargetValue), 0), rule.TargetValue),
-            _ => LF("Achievements.Progress.Quests", player.CompletedQuests, player.TotalQuests)
-        };
+            // Use team-based ranking for podium: teams count as a single position
+            var teamRank = GetTeamRankForPlayer(player);
+            currentValue = teamRank > 0 && teamRank <= (int)rule.TargetValue ? (rule.TargetValue - (teamRank - 1)) : 0;
+            isUnlocked = teamRank > 0 && teamRank <= (int)rule.TargetValue;
+            clampedProgress = Math.Min(progressMaximum, currentValue);
+            progressLabel = LF("Achievements.Progress.Rank", teamRank > 0 ? teamRank : player.Rank, (int)rule.TargetValue);
+        }
+        else
+        {
+            currentValue = Math.Max(0, rule.CurrentValue(player));
+            isUnlocked = rule.UnlockPredicate?.Invoke(player) ?? currentValue >= rule.TargetValue;
+            clampedProgress = Math.Min(progressMaximum, currentValue);
+
+            if (rule.Id.Equals("online-now", StringComparison.OrdinalIgnoreCase))
+            {
+                progressLabel = LF("Achievements.Progress.Online", player.IsOnline ? L("Achievements.Progress.Online.Yes") : L("Achievements.Progress.Online.No"));
+            }
+            else if (rule.Id.Equals("teamplay", StringComparison.OrdinalIgnoreCase))
+            {
+                progressLabel = LF("Achievements.Progress.Team", string.IsNullOrWhiteSpace(player.TeamName) ? L("Achievements.Summary.NoTeam") : player.TeamName);
+            }
+            else if (isHoursRule)
+            {
+                progressLabel = LF("Achievements.Progress.Hours", FormatHourValue(Math.Min(currentValue, rule.TargetValue)), FormatHourValue(rule.TargetValue));
+            }
+            else if (isPercentRule)
+            {
+                progressLabel = LF("Achievements.Progress.Percent", Math.Round(Math.Min(player.QuestProgress, rule.TargetValue), 0), rule.TargetValue);
+            }
+            else
+            {
+                progressLabel = LF("Achievements.Progress.Quests", player.CompletedQuests, player.TotalQuests);
+            }
+        }
 
         var card = new AchievementBadgeCard
         {
@@ -498,35 +528,88 @@ public partial class MainViewModel
             return new List<AchievementLeaderboardEntry>();
         }
 
-        return snapshot.Players
-            .GroupBy(player => string.IsNullOrWhiteSpace(player.TeamName) ? $"solo:{player.Name}" : $"team:{player.TeamName}", StringComparer.OrdinalIgnoreCase)
+        // Group players from the snapshot without filtering by last-seen/online status.
+        // Prefer `TeamId` for grouping when present, then `TeamName`, otherwise fall back to the player's name.
+        var grouped = snapshot.Players
+            .GroupBy(player => !string.IsNullOrWhiteSpace(player.TeamId)
+                                ? $"teamid:{player.TeamId}"
+                                : !string.IsNullOrWhiteSpace(player.TeamName)
+                                    ? $"team:{player.TeamName}"
+                                    : $"solo:{player.Name}", StringComparer.OrdinalIgnoreCase)
             .Select(group =>
             {
                 var members = group.OrderBy(player => player.Rank).ThenBy(player => player.Name, StringComparer.OrdinalIgnoreCase).ToList();
                 var leader = members.First();
-                var isTeamEntry = !string.IsNullOrWhiteSpace(leader.TeamName) && members.Count > 1;
-                var playtime = members
-                    .Select(member => ParsePlaytimeHours(member.Playtime))
-                    .Sum();
+                var isTeamEntry = members.Count > 1;
+                var avgQuestProgress = members.Average(m => m.QuestProgress);
+                var maxQuestProgress = members.Max(m => m.QuestProgress);
 
-                return new AchievementLeaderboardEntry
+                var displayLabel = !string.IsNullOrWhiteSpace(leader.TeamName)
+                    ? leader.TeamName!
+                    : !string.IsNullOrWhiteSpace(leader.TeamId)
+                        ? leader.TeamId!
+                        : leader.Name;
+
+                var entry = new AchievementLeaderboardEntry
                 {
-                    Rank = leader.Rank,
-                    PrimaryLabel = isTeamEntry ? leader.TeamName! : leader.Name,
+                    Rank = 0,
+                    PrimaryLabel = isTeamEntry ? displayLabel : leader.Name,
                     SecondaryLabel = isTeamEntry
                         ? string.Join(", ", members.Select(member => member.Name))
-                        : (string.IsNullOrWhiteSpace(leader.TeamName) ? (leader.Playtime ?? string.Empty) : leader.TeamName!),
-                    QuestProgress = leader.QuestProgress,
+                        : (!string.IsNullOrWhiteSpace(leader.TeamName) ? leader.TeamName! : (leader.Playtime ?? string.Empty)),
+                    QuestProgress = avgQuestProgress,
                     BadgeLabel = isTeamEntry
                         ? LF("Achievements.Leaderboard.TeamBadge", members.Count)
                         : string.IsNullOrWhiteSpace(leader.Playtime) ? string.Empty : leader.Playtime!,
                     CompletedLabel = $"{leader.CompletedQuests} q",
                     IsTeamEntry = isTeamEntry
                 };
+
+                return new { Entry = entry, Avg = avgQuestProgress, Max = maxQuestProgress };
             })
-            .OrderBy(entry => entry.Rank)
-            .ThenByDescending(entry => entry.QuestProgress)
+            .OrderByDescending(x => x.Avg)
+            .ThenByDescending(x => x.Max)
+            .ThenBy(x => x.Entry.PrimaryLabel, StringComparer.CurrentCultureIgnoreCase)
+            .Select((x, idx) => { x.Entry.Rank = idx + 1; return x.Entry; })
             .Take(5)
             .ToList();
+
+        return grouped;
+    }
+
+    private int GetTeamRankForPlayer(AchievementPlayerStats player)
+    {
+        if (AchievementSnapshot?.Players == null || AchievementSnapshot.Players.Count == 0)
+            return player.Rank;
+
+        var players = AchievementSnapshot.Players.ToList();
+
+        var grouped = players
+            .GroupBy(p => !string.IsNullOrWhiteSpace(p.TeamId) ? $"teamid:{p.TeamId}" : !string.IsNullOrWhiteSpace(p.TeamName) ? $"team:{p.TeamName}" : $"solo:{p.Name}", StringComparer.OrdinalIgnoreCase)
+            .Select(g => new
+            {
+                Key = g.Key,
+                Members = g.ToList(),
+                QuestProgressAvg = g.Average(p => p.QuestProgress),
+                QuestProgressMax = g.Max(p => p.QuestProgress)
+            })
+            .OrderByDescending(t => t.QuestProgressAvg)
+            .ThenByDescending(t => t.QuestProgressMax)
+            .ToList();
+
+        // Try to find the group which contains this player by UUID or Name first (more robust)
+        for (int i = 0; i < grouped.Count; i++)
+        {
+            var grp = grouped[i];
+            if (grp.Members.Any(m => !string.IsNullOrWhiteSpace(player.Uuid) && !string.IsNullOrWhiteSpace(m.Uuid) && string.Equals(m.Uuid, player.Uuid, StringComparison.OrdinalIgnoreCase)))
+                return i + 1;
+            if (grp.Members.Any(m => string.Equals(m.Name?.Trim(), player.Name?.Trim(), StringComparison.OrdinalIgnoreCase)))
+                return i + 1;
+        }
+
+        // Fallback: match by team key if available
+        var playerKey = !string.IsNullOrWhiteSpace(player.TeamId) ? $"teamid:{player.TeamId}" : !string.IsNullOrWhiteSpace(player.TeamName) ? $"team:{player.TeamName}" : $"solo:{player.Name}";
+        var idx = grouped.FindIndex(t => string.Equals(t.Key, playerKey, StringComparison.OrdinalIgnoreCase));
+        return idx >= 0 ? idx + 1 : player.Rank;
     }
 }

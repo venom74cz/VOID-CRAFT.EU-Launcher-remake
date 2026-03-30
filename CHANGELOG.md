@@ -1,5 +1,18 @@
 # Changelog
 
+## 3.1.4 - 2026-03-30
+
+### Achievement Hub & Leaderboard
+- Leaderboard se nyní primárně seskupuje podle `TeamId` (pokud je k dispozici); týmy se počítají jako jedna příčka.
+- `Podium finish` (badge) nyní hodnotí postavení podle týmové pozice a souhrnná karta "Pozice" zobrazuje týmovou pozici.
+
+### UI opravy
+- Přidán posuvný efekt (marquee) pro dlouhá jména týmů v Achievements view.?
+
+### Další
+- Zachováno parsování `TeamId` a `LastSeen` ze snapshotu pro budoucí logiku / debug.
+- Menší kompilacní a build opravy po změnách v Achievement hubu.
+
 ## 3.1.3 - 2026-03-29
 
 ### Branding & Creator Studio

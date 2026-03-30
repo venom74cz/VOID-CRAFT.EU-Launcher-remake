@@ -35,6 +35,8 @@ public sealed class AchievementPlayerStats
     public string? CompletedDate { get; set; }
 
     public string? TeamName { get; set; }
+    public string? TeamId { get; set; }
+    public DateTime? LastSeen { get; set; }
 
     public bool IsOnline { get; set; }
 

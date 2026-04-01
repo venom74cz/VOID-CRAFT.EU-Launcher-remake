@@ -43,24 +43,72 @@ public sealed class CreatorAssetsService
         var brandingPath = GetBrandingPath(workspacePath);
         Directory.CreateDirectory(brandingPath);
 
-        var extension = Path.GetExtension(sourceFilePath);
+        var extension = Path.GetExtension(sourceFilePath).ToLowerInvariant();
         var targetFileName = $"{slot.ToString().ToLowerInvariant()}{extension}";
         var targetPath = Path.Combine(brandingPath, targetFileName);
 
+        foreach (var existingFile in Directory.GetFiles(brandingPath, $"{slot.ToString().ToLowerInvariant()}.*"))
+        {
+            if (string.Equals(existingFile, targetPath, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            File.Delete(existingFile);
+        }
+
         await Task.Run(() => File.Copy(sourceFilePath, targetPath, true));
 
-        var metadata = new CreatorAssetMetadata
-        {
-            Slot = slot.ToString(),
-            RelativePath = Path.Combine(BrandingFolderName, targetFileName).Replace('\\', '/'),
-            Width = validation.Width,
-            Height = validation.Height,
-            FileSizeBytes = new FileInfo(targetPath).Length,
-            HasTransparency = validation.HasTransparency,
-            UploadedUtc = DateTimeOffset.UtcNow
-        };
+        var metadata = BuildAssetMetadata(slot, targetPath, validation.Width, validation.Height, validation.HasTransparency);
 
         return (true, null, metadata);
+    }
+
+    public string? GetAssetRelativePath(string workspacePath, BrandingAssetSlot slot)
+    {
+        var assetPath = GetAssetPath(workspacePath, slot);
+        if (string.IsNullOrWhiteSpace(assetPath) || string.IsNullOrWhiteSpace(workspacePath))
+        {
+            return null;
+        }
+
+        return Path.GetRelativePath(workspacePath, assetPath).Replace('\\', '/');
+    }
+
+    public CreatorBrandingProfile BuildBrandingProfile(string workspacePath)
+    {
+        return new CreatorBrandingProfile
+        {
+            LogoPath = GetAssetRelativePath(workspacePath, BrandingAssetSlot.Logo),
+            CoverPath = GetAssetRelativePath(workspacePath, BrandingAssetSlot.Cover),
+            SquareIconPath = GetAssetRelativePath(workspacePath, BrandingAssetSlot.SquareIcon),
+            WideHeroPath = GetAssetRelativePath(workspacePath, BrandingAssetSlot.WideHero),
+            SocialPreviewPath = GetAssetRelativePath(workspacePath, BrandingAssetSlot.SocialPreview),
+            LastUpdatedUtc = DateTimeOffset.UtcNow
+        };
+    }
+
+    public IReadOnlyList<CreatorAssetMetadata> GetAssetMetadata(string workspacePath)
+    {
+        var metadata = new List<CreatorAssetMetadata>();
+        foreach (var requirement in BrandingAssetRequirement.GetStandardRequirements())
+        {
+            var assetPath = GetAssetPath(workspacePath, requirement.Slot);
+            if (string.IsNullOrWhiteSpace(assetPath))
+            {
+                continue;
+            }
+
+            var imageInfo = ReadImageInfo(assetPath);
+            if (!imageInfo.IsValid)
+            {
+                continue;
+            }
+
+            metadata.Add(BuildAssetMetadata(requirement.Slot, assetPath, imageInfo.Width, imageInfo.Height, imageInfo.HasTransparency));
+        }
+
+        return metadata;
     }
 
     public bool RemoveAsset(string workspacePath, BrandingAssetSlot slot)
@@ -98,7 +146,9 @@ public sealed class CreatorAssetsService
 
         var pattern = $"{slot.ToString().ToLowerInvariant()}.*";
         var files = Directory.GetFiles(brandingPath, pattern);
-        return files.FirstOrDefault();
+        return files
+            .OrderByDescending(File.GetLastWriteTimeUtc)
+            .FirstOrDefault();
     }
 
     public async Task<string?> ExportMediaKitAsync(string workspacePath, string targetDirectory)
@@ -190,5 +240,38 @@ public sealed class CreatorAssetsService
         }
 
         return false;
+    }
+
+    private CreatorAssetMetadata BuildAssetMetadata(BrandingAssetSlot slot, string absolutePath, int width, int height, bool hasTransparency)
+    {
+        return new CreatorAssetMetadata
+        {
+            Slot = slot.ToString(),
+            RelativePath = Path.Combine(BrandingFolderName, Path.GetFileName(absolutePath)).Replace('\\', '/'),
+            Width = width,
+            Height = height,
+            FileSizeBytes = new FileInfo(absolutePath).Length,
+            HasTransparency = hasTransparency,
+            UploadedUtc = new DateTimeOffset(File.GetLastWriteTimeUtc(absolutePath), TimeSpan.Zero)
+        };
+    }
+
+    private (bool IsValid, int Width, int Height, bool HasTransparency) ReadImageInfo(string filePath)
+    {
+        try
+        {
+            using var stream = File.OpenRead(filePath);
+            using var bitmap = SKBitmap.Decode(stream);
+            if (bitmap == null)
+            {
+                return (false, 0, 0, false);
+            }
+
+            return (true, bitmap.Width, bitmap.Height, HasAlphaChannel(bitmap));
+        }
+        catch
+        {
+            return (false, 0, 0, false);
+        }
     }
 }

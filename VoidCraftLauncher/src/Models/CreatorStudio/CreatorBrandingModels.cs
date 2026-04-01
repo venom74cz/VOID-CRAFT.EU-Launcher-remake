@@ -63,8 +63,8 @@ public sealed class BrandingAssetRequirement
             RecommendedWidth = 512,
             RecommendedHeight = 512,
             AspectRatio = 1.0,
-            RequiresTransparency = true,
-            Description = "Hlavní logo packu, čtvercové s průhledným pozadím"
+            RequiresTransparency = false,
+            Description = "Hlavní logo packu, čtvercové a dobře čitelné i bez průhledného pozadí"
         },
         new BrandingAssetRequirement
         {
@@ -83,8 +83,8 @@ public sealed class BrandingAssetRequirement
             RecommendedWidth = 256,
             RecommendedHeight = 256,
             AspectRatio = 1.0,
-            RequiresTransparency = true,
-            Description = "Malá ikona pro karty a seznamy"
+            RequiresTransparency = false,
+            Description = "Malá ikona pro karty a seznamy; průhledné pozadí je volitelné"
         },
         new BrandingAssetRequirement
         {

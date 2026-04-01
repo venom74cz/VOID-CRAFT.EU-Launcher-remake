@@ -1230,6 +1230,11 @@ Prakticky zapis pak muze vypadat takhle:
 > - Úschova navázaná na VOID ID — funguje napříč zařízeními; jasná pravidla pro expiraci a export dat (grace period, export možnost, ne okamžité smazání).
 > - Transparentní komunikace: kam peníze jdou (hosting, vývoj, storage) a co uživatel získá za předplatné.
 >
+> **Aktualni stav implementace (2026-04-01)**
+> - [x] Webova stranka podpory projektu s jednorazovou PayPal podporou, bankovnim prevodem a QR platbou
+> - [ ] PayPal mesicni predplatne
+> - [ ] Placena uschova dat / archive vrstva
+>
 > **Proc to dava smysl**
 > - Projekt potřebuje udržitelný příjem pro provoz infrastruktury a storage.
 > - Zpeněžení delší úschovy dat je férové vzhledem k reálným nákladům na storage.

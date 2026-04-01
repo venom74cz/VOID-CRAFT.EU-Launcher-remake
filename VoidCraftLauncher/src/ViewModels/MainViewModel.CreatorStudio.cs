@@ -115,11 +115,11 @@ public partial class MainViewModel
 
     public string CreatorManifestStatus => CreatorWorkspaceContext.HasCreatorManifest
         ? IsCreatorMetadataDirty
-            ? "creator_manifest.json ma lokalni zmeny"
-            : "creator_manifest.json je dostupny"
+            ? "creator_manifest.json má lokální změny"
+            : "creator_manifest.json je dostupný"
         : IsCreatorMetadataDirty
-            ? "creator_manifest.json je pripraven k vytvoreni"
-            : "creator_manifest.json zatim chybi";
+            ? "creator_manifest.json je připraven k vytvoření"
+            : "creator_manifest.json zatím chybí";
 
     public string CreatorWorkspaceFoldersSummary => CreatorWorkspaceContext.WorkspaceFoldersSummary;
 
@@ -147,16 +147,16 @@ public partial class MainViewModel
 
     public string CurrentWorkspaceDisplayName => !string.IsNullOrWhiteSpace(CurrentModpackCreatorManifest?.PackName)
         ? CurrentModpackCreatorManifest.PackName
-        : CurrentModpack?.Name ?? "Bez instance";
+        : GetCreatorStudioSelectedModpack()?.DisplayLabel ?? CurrentModpack?.DisplayLabel ?? "Bez instance";
 
     public string CurrentWorkspaceDescription => !string.IsNullOrWhiteSpace(CurrentModpackCreatorManifest?.Summary)
         ? CurrentModpackCreatorManifest.Summary
-        : CurrentModpack?.Description ?? string.Empty;
+        : GetCreatorStudioSelectedModpack()?.Description ?? CurrentModpack?.Description ?? string.Empty;
 
     public string CurrentWorkspaceAuthorLabel => CurrentModpackCreatorManifest?.Authors.Count > 0
         ? string.Join(", ", CurrentModpackCreatorManifest.Authors)
-        : !string.IsNullOrWhiteSpace(CurrentModpack?.Author)
-            ? CurrentModpack.Author
+        : !string.IsNullOrWhiteSpace(GetCreatorStudioSelectedModpack()?.Author)
+            ? GetCreatorStudioSelectedModpack()!.Author
             : "Neznámý";
 
     public string CurrentWorkspaceMetadataSummary => CurrentModpackCreatorManifest == null
@@ -185,9 +185,13 @@ public partial class MainViewModel
 
     public string CreatorMetadataActionLabel => CreatorWorkspaceContext.HasCreatorManifest
         ? "Ulozit creator manifest"
-        : IsExistingImportedPack
-            ? "Vygenerovat z existujícího"
-            : "Vytvorit creator manifest";
+        : "Vytvorit creator manifest";
+
+    public bool CanImportCreatorSourceMetadata => HasCreatorWorkspaceContext && !IsCreatorMetadataSaving && IsExistingImportedPack;
+
+    public string CreatorSourceMetadataActionLabel => CreatorWorkspaceContext.HasCreatorManifest
+        ? "Obnovit metadata ze zdroje"
+        : "Načíst metadata ze zdroje";
 
     private bool IsExistingImportedPack
     {
@@ -240,15 +244,12 @@ public partial class MainViewModel
                 return "Brand storage ceka na workspace";
             }
 
-            var assetCount = 0;
-            if (Directory.Exists(BrandStoragePath))
-            {
-                assetCount = Directory.GetFiles(BrandStoragePath, "*.*", SearchOption.AllDirectories).Length;
-            }
+            var assetCount = _creatorAssetsService.GetAssetMetadata(CreatorWorkspaceContext.WorkspacePath).Count;
+            var totalSlots = BrandingAssetRequirement.GetStandardRequirements().Count;
 
             return assetCount == 0
-                ? "0/5 asset slotu pripraveno"
-                : $"{assetCount}/5 asset slotu pripraveno";
+                ? $"0/{totalSlots} branding slotů připraveno"
+                : $"{assetCount}/{totalSlots} branding slotů připraveno";
         }
     }
 
@@ -314,13 +315,14 @@ public partial class MainViewModel
 
     private void RefreshCurrentModpackCreatorManifest()
     {
-        if (CurrentModpack == null || string.IsNullOrWhiteSpace(CurrentModpack.Name))
+        var workspaceId = SelectedSkinStudioInstance?.Id ?? CreatorPreferences.SelectedWorkspaceId ?? CurrentModpack?.Name;
+        if (string.IsNullOrWhiteSpace(workspaceId))
         {
             CurrentModpackCreatorManifest = null;
             return;
         }
 
-        CurrentModpackCreatorManifest = _creatorManifestService.LoadManifest(_launcherService.GetModpackPath(CurrentModpack.Name));
+        CurrentModpackCreatorManifest = _creatorManifestService.LoadManifest(_launcherService.GetModpackPath(workspaceId));
     }
 
     private void NotifyCreatorShellVisualStateChanged()
@@ -344,6 +346,8 @@ public partial class MainViewModel
         OnPropertyChanged(nameof(CreatorDockSubtitle));
         OnPropertyChanged(nameof(CanSaveCreatorMetadata));
         OnPropertyChanged(nameof(CreatorMetadataActionLabel));
+        OnPropertyChanged(nameof(CanImportCreatorSourceMetadata));
+        OnPropertyChanged(nameof(CreatorSourceMetadataActionLabel));
         OnPropertyChanged(nameof(CreatorMetadataValidationMessage));
         OnPropertyChanged(nameof(CreatorMetadataAuthorsPreview));
         OnPropertyChanged(nameof(BrandStoragePath));
@@ -487,7 +491,8 @@ public partial class MainViewModel
 
     private void OnCreatorWorkspaceSelectionChanged(SelectionOption? value)
     {
-        CreatorPreferences.SelectedWorkspaceId = value?.Id;
+        var workspaceId = value?.Id ?? CreatorPreferences.SelectedWorkspaceId;
+        CreatorPreferences.SelectedWorkspaceId = workspaceId;
         if (value != null)
         {
             RememberRecentWorkspace(value.Id, value.Label);
@@ -499,6 +504,7 @@ public partial class MainViewModel
         }
 
         RefreshCreatorWorkspaceContext();
+        _ = EnsureCreatorWorkspaceMetadataAsync(workspaceId);
     }
 
     private void SyncCreatorWorkbenchFocus(CreatorWorkbenchFile? file)
@@ -537,6 +543,69 @@ public partial class MainViewModel
         NotifyCreatorShellVisualStateChanged();
     }
 
+    private async Task EnsureCreatorWorkspaceMetadataAsync(string? workspaceId)
+    {
+        if (string.IsNullOrWhiteSpace(workspaceId))
+        {
+            return;
+        }
+
+        var modpack = InstalledModpacks.FirstOrDefault(candidate =>
+                string.Equals(candidate.Name, workspaceId, StringComparison.OrdinalIgnoreCase))
+            ?? GetCreatorStudioSelectedModpack();
+        if (modpack == null)
+        {
+            return;
+        }
+
+        var localChanged = HydrateModpackFromInstalledManifest(modpack);
+        var remoteChanged = false;
+        if (ShouldAutoRefreshCreatorSourceMetadata(modpack))
+        {
+            remoteChanged = await TryRefreshModpackSourceMetadataAsync(modpack);
+        }
+
+        var brandingImported = await EnsureCreatorWorkspacePublicBrandingAsync(workspaceId, modpack);
+
+        if (!localChanged && !remoteChanged && !brandingImported)
+        {
+            return;
+        }
+
+        await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            var currentWorkspaceId = SelectedSkinStudioInstance?.Id ?? CreatorPreferences.SelectedWorkspaceId;
+            if (!string.Equals(currentWorkspaceId, workspaceId, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            if (localChanged && !remoteChanged && !brandingImported)
+            {
+                SaveModpacks();
+            }
+
+            RefreshCurrentModpackCreatorManifest();
+            RefreshCreatorWorkspaceContext();
+        });
+    }
+
+    private static bool ShouldAutoRefreshCreatorSourceMetadata(ModpackInfo modpack)
+    {
+        var hasRemoteIdentity = modpack.ProjectId > 0 || !string.IsNullOrWhiteSpace(modpack.ModrinthId);
+        if (!hasRemoteIdentity)
+        {
+            return false;
+        }
+
+        return string.IsNullOrWhiteSpace(modpack.DisplayName)
+            || ShouldReplaceCurrentModpackName(modpack.DisplayLabel)
+            || string.IsNullOrWhiteSpace(modpack.Author)
+            || string.IsNullOrWhiteSpace(modpack.Description)
+            || string.IsNullOrWhiteSpace(modpack.LogoUrl)
+            || string.IsNullOrWhiteSpace(modpack.WebLink);
+    }
+
     private void OnCreatorMetadataEditorChanged()
     {
         if (_isSyncingCreatorMetadataEditor)
@@ -565,7 +634,7 @@ public partial class MainViewModel
             return;
         }
 
-        if (!workspaceChanged && !string.IsNullOrWhiteSpace(CreatorMetadataPackName))
+        if (!workspaceChanged && CreatorWorkspaceContext.HasCreatorManifest && !string.IsNullOrWhiteSpace(CreatorMetadataPackName))
         {
             return;
         }
@@ -573,12 +642,10 @@ public partial class MainViewModel
         var loaderVersion = modpack?.IsCustomProfile == true
             ? modpack.CustomModLoaderVersion
             : string.Empty;
-        var creatorManifest = _creatorManifestService.LoadManifest(CreatorWorkspaceContext.WorkspacePath)
-            ?? _creatorManifestService.CreateFallbackManifest(
-                modpack,
-                CreatorWorkspaceContext.MinecraftVersion,
-                CreatorWorkspaceContext.LoaderLabel,
-                loaderVersion ?? string.Empty);
+        var existingManifest = _creatorManifestService.LoadManifest(CreatorWorkspaceContext.WorkspacePath);
+        var creatorManifest = existingManifest != null
+            ? MergeCreatorManifestWithSourceFallback(existingManifest, modpack, loaderVersion ?? string.Empty)
+            : CreateCreatorFallbackManifest(modpack, null, loaderVersion ?? string.Empty);
 
         ApplyCreatorMetadata(creatorManifest);
         
@@ -589,6 +656,74 @@ public partial class MainViewModel
         }
         
         _creatorMetadataWorkspaceId = CreatorWorkspaceContext.WorkspaceId;
+    }
+
+    private CreatorManifest MergeCreatorManifestWithSourceFallback(CreatorManifest existingManifest, ModpackInfo? modpack, string? preferredLoaderVersion = null)
+    {
+        if (modpack == null)
+        {
+            return existingManifest;
+        }
+
+        var fallbackManifest = CreateCreatorFallbackManifest(modpack, existingManifest, preferredLoaderVersion);
+
+        if (ShouldReplaceCurrentModpackName(existingManifest.PackName))
+        {
+            existingManifest.PackName = fallbackManifest.PackName;
+        }
+
+        if (string.IsNullOrWhiteSpace(existingManifest.Slug))
+        {
+            existingManifest.Slug = fallbackManifest.Slug;
+        }
+
+        if (string.IsNullOrWhiteSpace(existingManifest.Summary))
+        {
+            existingManifest.Summary = fallbackManifest.Summary;
+        }
+
+        if (existingManifest.Authors.Count == 0)
+        {
+            existingManifest.Authors = fallbackManifest.Authors;
+        }
+
+        if (string.IsNullOrWhiteSpace(existingManifest.Version))
+        {
+            existingManifest.Version = fallbackManifest.Version;
+        }
+
+        if (string.IsNullOrWhiteSpace(existingManifest.MinecraftVersion))
+        {
+            existingManifest.MinecraftVersion = fallbackManifest.MinecraftVersion;
+        }
+
+        if (string.IsNullOrWhiteSpace(existingManifest.ModLoader))
+        {
+            existingManifest.ModLoader = fallbackManifest.ModLoader;
+        }
+
+        if (string.IsNullOrWhiteSpace(existingManifest.ModLoaderVersion))
+        {
+            existingManifest.ModLoaderVersion = fallbackManifest.ModLoaderVersion;
+        }
+
+        if (existingManifest.RecommendedRamMb <= 0)
+        {
+            existingManifest.RecommendedRamMb = fallbackManifest.RecommendedRamMb;
+        }
+
+        if (string.IsNullOrWhiteSpace(existingManifest.PrimaryServer))
+        {
+            existingManifest.PrimaryServer = fallbackManifest.PrimaryServer;
+        }
+
+        if (string.IsNullOrWhiteSpace(existingManifest.ReleaseChannel))
+        {
+            existingManifest.ReleaseChannel = fallbackManifest.ReleaseChannel;
+        }
+
+        existingManifest.BrandProfile ??= fallbackManifest.BrandProfile;
+        return existingManifest;
     }
 
     private void ApplyCreatorMetadata(CreatorManifest manifest)
@@ -672,6 +807,114 @@ public partial class MainViewModel
 
         error = string.Empty;
         return true;
+    }
+
+    private CreatorBrandProfile BuildCurrentBrandProfile()
+    {
+        return new CreatorBrandProfile
+        {
+            AccentColor = CreatorBrandAccentColor,
+            LauncherCardTitle = CreatorBrandLauncherCardTitle,
+            OneLiner = CreatorBrandOneLiner,
+            Website = CreatorBrandWebsite,
+            Discord = CreatorBrandDiscord,
+            GitHub = CreatorBrandGitHub,
+            SupportLink = CreatorBrandSupportLink
+        };
+    }
+
+    private CreatorManifest BuildCreatorManifestFromEditor(CreatorManifest? existingManifest)
+    {
+        var modpack = GetCreatorStudioSelectedModpack();
+        var runtime = ResolveCreatorRuntimeDefaults(modpack, existingManifest);
+        var manifest = _creatorManifestService.CreateManifest(
+            CreatorMetadataPackName,
+            CreatorMetadataSlug,
+            CreatorMetadataSummary,
+            CreatorMetadataAuthors.Split(new[] { ',', ';', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries),
+            CreatorMetadataVersion,
+            runtime.MinecraftVersion,
+            runtime.ModLoader,
+            runtime.ModLoaderVersion,
+            int.Parse(CreatorMetadataRecommendedRamMb),
+            CreatorMetadataPrimaryServer,
+            CreatorMetadataReleaseChannel,
+            existingManifest?.CreatedAtUtc);
+
+        manifest.BrandProfile = BuildCurrentBrandProfile();
+        return manifest;
+    }
+
+    private CreatorManifest CreateCreatorFallbackManifest(ModpackInfo? modpack, CreatorManifest? existingManifest, string? preferredLoaderVersion = null)
+    {
+        var runtime = ResolveCreatorRuntimeDefaults(modpack, existingManifest, preferredLoaderVersion);
+        var manifest = _creatorManifestService.CreateFallbackManifest(
+            modpack,
+            runtime.MinecraftVersion,
+            runtime.ModLoader,
+            runtime.ModLoaderVersion);
+
+        manifest.BrandProfile = existingManifest?.BrandProfile ?? BuildCurrentBrandProfile();
+        return manifest;
+    }
+
+    private (string MinecraftVersion, string ModLoader, string ModLoaderVersion) ResolveCreatorRuntimeDefaults(
+        ModpackInfo? modpack,
+        CreatorManifest? existingManifest,
+        string? preferredLoaderVersion = null)
+    {
+        var installedManifest = GetCreatorStudioSelectedManifest();
+        var loaderLabel = FirstNonEmpty(installedManifest?.ModLoaderId, CreatorWorkspaceContext.LoaderLabel);
+
+        var minecraftVersion = FirstNonEmpty(
+            existingManifest?.MinecraftVersion,
+            installedManifest?.MinecraftVersion,
+            modpack?.CustomMcVersion,
+            CreatorWorkspaceContext.MinecraftVersion);
+
+        var modLoader = FirstNonEmpty(
+            existingManifest?.ModLoader,
+            modpack?.CustomModLoader,
+            ExtractCreatorModLoaderType(loaderLabel));
+
+        var modLoaderVersion = FirstNonEmpty(
+            existingManifest?.ModLoaderVersion,
+            preferredLoaderVersion,
+            modpack?.CustomModLoaderVersion,
+            ExtractCreatorModLoaderVersion(loaderLabel));
+
+        return (minecraftVersion, modLoader, modLoaderVersion);
+    }
+
+    private static string ExtractCreatorModLoaderType(string? loaderLabel)
+    {
+        if (string.IsNullOrWhiteSpace(loaderLabel))
+        {
+            return string.Empty;
+        }
+
+        var trimmed = loaderLabel.Trim();
+        var separatorIndex = trimmed.IndexOf('-');
+        return separatorIndex > 0 ? trimmed[..separatorIndex] : trimmed;
+    }
+
+    private static string ExtractCreatorModLoaderVersion(string? loaderLabel)
+    {
+        if (string.IsNullOrWhiteSpace(loaderLabel))
+        {
+            return string.Empty;
+        }
+
+        var trimmed = loaderLabel.Trim();
+        var separatorIndex = trimmed.IndexOf('-');
+        return separatorIndex > 0 && separatorIndex < trimmed.Length - 1
+            ? trimmed[(separatorIndex + 1)..]
+            : string.Empty;
+    }
+
+    private static string FirstNonEmpty(params string?[] values)
+    {
+        return values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value))?.Trim() ?? string.Empty;
     }
 
     private async Task<bool> ConfirmSnapshotBeforeCreatorApplyAsync(string reason, CreatorScopeKind scopeKind, IEnumerable<string>? relativePaths = null)
@@ -869,12 +1112,6 @@ public partial class MainViewModel
             return;
         }
 
-        if (!CreatorWorkspaceContext.HasCreatorManifest && IsExistingImportedPack)
-        {
-            await GenerateManifestFromExisting();
-            return;
-        }
-
         if (!ValidateCreatorMetadata(out var validationError))
         {
             ShowToast("Creator Studio", validationError, ToastSeverity.Warning, 2800);
@@ -893,31 +1130,7 @@ public partial class MainViewModel
         try
         {
             var existingManifest = _creatorManifestService.LoadManifest(CreatorWorkspaceContext.WorkspacePath);
-            var manifest = _creatorManifestService.CreateManifest(
-                CreatorMetadataPackName,
-                CreatorMetadataSlug,
-                CreatorMetadataSummary,
-                CreatorMetadataAuthors.Split(new[] { ',', ';', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries),
-                CreatorMetadataVersion,
-                CreatorWorkspaceContext.MinecraftVersion,
-                CreatorWorkspaceContext.LoaderLabel,
-                GetCreatorStudioSelectedModpack()?.CustomModLoaderVersion ?? string.Empty,
-                int.Parse(CreatorMetadataRecommendedRamMb),
-                CreatorMetadataPrimaryServer,
-                CreatorMetadataReleaseChannel,
-                existingManifest?.CreatedAtUtc);
-
-            // Apply brand profile
-            manifest.BrandProfile = new CreatorBrandProfile
-            {
-                AccentColor = CreatorBrandAccentColor,
-                LauncherCardTitle = CreatorBrandLauncherCardTitle,
-                OneLiner = CreatorBrandOneLiner,
-                Website = CreatorBrandWebsite,
-                Discord = CreatorBrandDiscord,
-                GitHub = CreatorBrandGitHub,
-                SupportLink = CreatorBrandSupportLink
-            };
+            var manifest = BuildCreatorManifestFromEditor(existingManifest);
 
             var savedManifest = await _creatorManifestService.SaveManifestAsync(CreatorWorkspaceContext.WorkspacePath, manifest);
             ApplyCreatorMetadata(savedManifest);

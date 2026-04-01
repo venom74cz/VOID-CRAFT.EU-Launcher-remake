@@ -2,6 +2,21 @@
 
 Všechny důležité změny v projektu jsou dokumentovány v tomto souboru.
 
+## [3.1.5] - 2026-04-01
+
+### 🛠️ Creator Studio Metadata & Branding Hotfix
+
+### Opraveno
+- **Workspace metadata resolve**: `Creator Studio` uz bere pack identitu z realne vybrane instance nebo persistovaneho workspace id, ne z nahodneho fallback `CurrentModpack` kontextu.
+- **Placeholder `Načítání...` v creator overview**: metadata editor i workspace baseline se po otevreni znovu synchronizuji nad spravnym packem a neuviznou na placeholder stavu.
+- **CF/MR source hydration**: importovane packy umi pri otevreni workspace doplnit autory, summary, odkazy a logo z lokalniho `manifest_info.json` i z verejnych API zdroju.
+- **Branding preview render**: Creator branding preview uz pouziva stejnou async image pipeline jako zbytek launcheru, takze lokalni branding assety i source logo se skutecne vykresli.
+- **Auto-import loga**: pokud workspace nema vlastni branding, verejne logo packu se umi zapsat do `assets/branding` jako `logo` a `square icon` uz pri prvnim otevreni.
+
+### Změněno
+- **Branding validace**: `logo` a `square icon` uz nevyzaduji pruhledne pozadi jako hard fail; alpha kanal je pouze doporuceny.
+- **Release metadata**: projekt, installer a dokumentace jsou srovnane na verzi `3.1.5`.
+
 ## [3.1.1] - 2026-03-23
 
 ### 🛠️ Hotfix Instance Workspace a Server Hub

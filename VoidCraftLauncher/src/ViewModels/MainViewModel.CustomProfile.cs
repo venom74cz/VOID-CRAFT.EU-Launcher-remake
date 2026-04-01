@@ -615,6 +615,7 @@ public partial class MainViewModel
             var newProfile = new ModpackInfo
             {
                 Name = sanitizedName,
+                DisplayName = creatorManifest.PackName,
                 Source = "Custom",
                 IsCustomProfile = true,
                 IsDeletable = true,
@@ -1176,6 +1177,10 @@ public partial class MainViewModel
         {
             authors = existingManifest.Authors.ToArray();
         }
+        else if (authors.Length == 0 && !string.IsNullOrWhiteSpace(bootstrapManifestInfo?.Author))
+        {
+            authors = new[] { bootstrapManifestInfo.Author.Trim() };
+        }
 
         var version = string.IsNullOrWhiteSpace(NewProfileVersion)
             ? existingManifest?.Version ?? DefaultCreateProfileVersion
@@ -1330,6 +1335,7 @@ public partial class MainViewModel
 
     private void ApplyCreatorManifestToModpack(ModpackInfo modpack, CreatorManifest manifest)
     {
+        modpack.DisplayName = manifest.PackName;
         modpack.Author = manifest.Authors.Count > 0 ? string.Join(", ", manifest.Authors) : modpack.Author;
         modpack.Description = manifest.Summary;
         modpack.CustomMcVersion = manifest.MinecraftVersion;
@@ -1350,6 +1356,7 @@ public partial class MainViewModel
         else
         {
             existing.Source = modpack.Source;
+            existing.DisplayName = modpack.DisplayName;
             existing.IsCustomProfile = modpack.IsCustomProfile;
             existing.IsDeletable = modpack.IsDeletable;
             existing.Author = modpack.Author;
@@ -1373,6 +1380,14 @@ public partial class MainViewModel
         }
 
         ApplyCreatorManifestToModpack(modpack, manifest);
+
+        var workspacePath = _launcherService.GetModpackPath(workspaceId);
+        var localLogoPath = _creatorAssetsService.GetAssetPath(workspacePath, BrandingAssetSlot.Logo);
+        if (!string.IsNullOrWhiteSpace(localLogoPath))
+        {
+            modpack.LogoUrl = localLogoPath;
+        }
+
         SaveModpacks();
 
         if (CurrentModpack != null && string.Equals(CurrentModpack.Name, workspaceId, StringComparison.OrdinalIgnoreCase))

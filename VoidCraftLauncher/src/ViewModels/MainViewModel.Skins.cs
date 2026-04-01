@@ -292,12 +292,12 @@ public partial class MainViewModel
         SkinStudioInstanceOptions.Clear();
         foreach (var modpack in InstalledModpacks
             .OrderByDescending(modpack => string.Equals(modpack.Name, currentModpackName, StringComparison.OrdinalIgnoreCase))
-            .ThenBy(modpack => modpack.Name, StringComparer.OrdinalIgnoreCase))
+            .ThenBy(modpack => modpack.DisplayLabel, StringComparer.OrdinalIgnoreCase))
         {
             SkinStudioInstanceOptions.Add(new SelectionOption
             {
                 Id = modpack.Name,
-                Label = modpack.Name
+                Label = modpack.DisplayLabel
             });
         }
 

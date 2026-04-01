@@ -3,6 +3,7 @@
              xmlns:vm="using:VoidCraftLauncher.ViewModels"
              xmlns:models="using:VoidCraftLauncher.Models"
              xmlns:controls="using:VoidCraftLauncher.Controls"
+             xmlns:asyncImage="clr-namespace:AsyncImageLoader;assembly=AsyncImageLoader.Avalonia"
              x:Class="VoidCraftLauncher.Controls.StreamingToolsView"
              x:DataType="vm:MainViewModel">
 
@@ -11,7 +12,7 @@
             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                 <StackPanel Spacing="6">
                     <TextBlock Text="Creator Studio" FontSize="28" FontWeight="ExtraBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                    <TextBlock Text="Workflow shell pro workspace, metadata, soubory, notes, Git a release bez nekonecne long-page navigace." FontSize="13" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                    <TextBlock Text="Sdilene prostredi pro metadata, soubory, notes, Git a release bez prepirani mezi oddelenymi obrazovkami." FontSize="13" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
                     <WrapPanel Orientation="Horizontal">
                         <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusPill}" Padding="12,6" Margin="0,0,8,0">
                             <TextBlock Text="{Binding CreatorStudioInstanceLabel}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource PrimaryBBrush}"/>
@@ -48,7 +49,7 @@
                                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                                     <StackPanel Spacing="4">
                                         <TextBlock Text="Pracovni workspace" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                        <TextBlock Text="Vyber instanci, nad kterou bude Creator shell drzet sdileny context pro vsechny workflow zalozky." FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                        <TextBlock Text="Vyber instanci, nad kterou bude Creator Studio drzet sdileny context pro vsechny zalozky." FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
                                     </StackPanel>
                                     <Border Grid.Column="1" Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusPill}" Padding="12,6">
                                         <TextBlock Text="{Binding CreatorGitStatusSummary}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
@@ -114,7 +115,7 @@
                                     <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="16" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
                                         <StackPanel Spacing="10">
                                             <TextBlock Text="{StaticResource IconGallery}" FontSize="24"/>
-                                            <TextBlock Text="Screenshot workflow" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                            <TextBlock Text="Screenshoty" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                             <Button Content="Otevrit screenshoty" Command="{Binding OpenStreamingScreenshotsFolderCommand}" Classes="secondary" FontSize="11" Padding="12,6" IsEnabled="{Binding HasStreamingContextModpack}"/>
                                         </StackPanel>
                                     </Border>
@@ -157,19 +158,24 @@
                             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                                 <StackPanel Spacing="14">
                                     <TextBlock Text="Source of truth" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                    <TextBlock Text="F1 uz umi bootstrapnout a upravovat creator_manifest.json primo z launcheru misto cekani na dalsi externi editor." FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                    <TextBlock Text="Creator manifest je centralni zdroj metadat, release identity a branding profilu pro aktualni workspace." FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
                                     <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="14,12">
                                         <StackPanel Spacing="6">
                                             <TextBlock Text="{Binding CreatorWorkspaceContext.CreatorManifestPath}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
                                             <TextBlock Text="{Binding CreatorManifestStatus}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryBBrush}"/>
-                                            <TextBlock Text="Metadata jsou synchronni s aktualnim workspace manifestem." FontSize="10" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
-                                            <TextBlock Text="Zacni logem nebo coverem a launcher si zazevi utoc na workspace." FontSize="10" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                            <TextBlock Text="Metadata se ukladaji primo do aktualniho workspace manifestu." FontSize="10" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                            <TextBlock Text="U importovanych packu muzes jednim kliknutim znovu nacist nazev, autory a verejne branding podklady ze zdroje." FontSize="10" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
                                         </StackPanel>
                                     </Border>
                                 </StackPanel>
-                                <Button Grid.Column="1" Command="{Binding SaveCreatorMetadataCommand}" Classes="primary" Padding="16,10" VerticalAlignment="Top" IsEnabled="{Binding CanSaveCreatorMetadata}">
-                                    <TextBlock Text="{Binding CreatorMetadataActionLabel}"/>
-                                </Button>
+                                <StackPanel Grid.Column="1" Spacing="8" VerticalAlignment="Top">
+                                    <Button Command="{Binding GenerateManifestFromExistingCommand}" Classes="secondary" Padding="16,10" IsVisible="{Binding CanImportCreatorSourceMetadata}">
+                                        <TextBlock Text="{Binding CreatorSourceMetadataActionLabel}"/>
+                                    </Button>
+                                    <Button Command="{Binding SaveCreatorMetadataCommand}" Classes="primary" Padding="16,10" IsEnabled="{Binding CanSaveCreatorMetadata}">
+                                        <TextBlock Text="{Binding CreatorMetadataActionLabel}"/>
+                                    </Button>
+                                </StackPanel>
                             </Grid>
                         </Border>
 
@@ -266,9 +272,9 @@
                                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                                         <StackPanel Spacing="4">
                                             <TextBlock Text="Brand profile" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                            <TextBlock Text="Textovy profil packu se uklada spolu s asset pipeline do creator_manifest.json." FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                            <TextBlock Text="Textovy profil packu se uklada spolu s branding assety primo do creator manifestu." FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
                                         </StackPanel>
-                                        <Button Grid.Column="1" Classes="secondary" Padding="14,8" VerticalAlignment="Top">
+                                        <Button Grid.Column="1" Command="{Binding OpenCreatorBrandingFolderCommand}" Classes="secondary" Padding="14,8" VerticalAlignment="Top">
                                             <TextBlock Text="Brand slozka"/>
                                         </Button>
                                     </Grid>
@@ -313,7 +319,7 @@
                                             <TextBlock Text="Brand storage" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                             <TextBlock Text="{Binding BrandStoragePath}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
                                             <TextBlock Text="{Binding BrandStorageStatus}" FontSize="11" Foreground="{DynamicResource PrimaryBBrush}"/>
-                                            <TextBlock Text="Assety jsou v doporucenenem rozsahu nebo zatim nejsou nahrane." FontSize="10" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                            <TextBlock Text="Assety se ukladaji do branding slozky workspace a okamzite se propisuji do preview i manifestu." FontSize="10" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
                                         </StackPanel>
                                     </Border>
                                 </StackPanel>
@@ -325,7 +331,7 @@
                                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                                         <StackPanel Spacing="4">
                                             <TextBlock Text="Launcher preview" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                            <TextBlock Text="Nahled ukazuje, jak se branding propise do hero a identity packu uvnitr launcheru." FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                            <TextBlock Text="Nahled ukazuje, jak se aktualni branding a metadata propisi do identity packu uvnitr launcheru." FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
                                         </StackPanel>
                                         <Button Grid.Column="1" Command="{Binding ExportMediaKitCommand}" Classes="secondary" Padding="14,8" VerticalAlignment="Top">
                                             <TextBlock Text="Export media kitu"/>
@@ -336,7 +342,7 @@
                                         <Grid RowDefinitions="Auto,*,Auto">
                                             <Border Background="#1A1A1A" CornerRadius="16" Width="80" Height="80" HorizontalAlignment="Center">
                                                 <Grid>
-                                                    <Image Source="{Binding BrandingLogoFallback}" Stretch="Uniform" IsVisible="{Binding HasBrandingLogo}"/>
+                                                    <asyncImage:AdvancedImage Source="{Binding BrandingLogoFallback}" Stretch="Uniform" IsVisible="{Binding HasBrandingLogo}"/>
                                                     <TextBlock Text="VC" FontSize="32" FontWeight="Black" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasBrandingLogo}"/>
                                                 </Grid>
                                             </Border>
@@ -353,7 +359,7 @@
                                                         <TextBlock Text="{Binding LauncherPreviewChannel}" FontSize="10" Foreground="White"/>
                                                     </Border>
                                                 </Grid>
-                                                <TextBlock Text="Assety jsou v doporucenenem rozsahu nebo zatim nejsou nahrane." FontSize="9" Foreground="#B0B0B0" TextAlignment="Center" TextWrapping="Wrap"/>
+                                                <TextBlock Text="Preview pouziva aktualni data z workspace a pomuze rychle odhalit chybejici assety." FontSize="9" Foreground="#B0B0B0" TextAlignment="Center" TextWrapping="Wrap"/>
                                             </StackPanel>
                                         </Grid>
                                     </Border>
@@ -367,10 +373,10 @@
                                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                                     <StackPanel Spacing="4">
                                         <TextBlock Text="Branding &amp; Assets" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                        <TextBlock Text="Nahraj logo, cover a dalsi assety primo v launcheru. Validace rozliseni, pomeru stran a transparency pres SkiaSharp." FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                        <TextBlock Text="Nahraj logo, cover a dalsi assety primo v launcheru. Transparentni pozadi je doporucene, ne povinne." FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
                                     </StackPanel>
                                     <Button Grid.Column="1" Command="{Binding SaveCreatorMetadataCommand}" Classes="primary" Padding="16,10" VerticalAlignment="Top" IsEnabled="{Binding CanSaveCreatorMetadata}">
-                                        <TextBlock Text="Vytvorit creator manifest"/>
+                                        <TextBlock Text="{Binding CreatorMetadataActionLabel}"/>
                                     </Button>
                                 </Grid>
 
@@ -381,13 +387,13 @@
                                             <TextBlock Text="Logo (512x512)" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                             <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="8" Height="120" Width="120" HorizontalAlignment="Center">
                                                 <Grid>
-                                                    <Image Source="{Binding BrandingLogoFallback}" Stretch="Uniform" IsVisible="{Binding HasBrandingLogo}"/>
+                                                    <asyncImage:AdvancedImage Source="{Binding BrandingLogoFallback}" Stretch="Uniform" IsVisible="{Binding HasBrandingLogo}"/>
                                                     <TextBlock Text="No logo" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasBrandingLogo}"/>
                                                 </Grid>
                                             </Border>
                                             <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
                                                 <Button Command="{Binding UploadBrandingAssetCommand}" CommandParameter="Logo" Classes="secondary" Padding="10,6" FontSize="11" Content="Nahraj"/>
-                                                <Button Command="{Binding RemoveBrandingAssetCommand}" CommandParameter="Logo" Classes="secondary" Padding="10,6" FontSize="11" IsVisible="{Binding HasBrandingLogo}" Content="Odebrat"/>
+                                                <Button Command="{Binding RemoveBrandingAssetCommand}" CommandParameter="Logo" Classes="secondary" Padding="10,6" FontSize="11" IsVisible="{Binding HasBrandingLogoAsset}" Content="Odebrat"/>
                                             </StackPanel>
                                         </StackPanel>
                                     </Border>
@@ -398,7 +404,7 @@
                                             <TextBlock Text="Cover (16:9)" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                             <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="8" Height="120" Width="213" HorizontalAlignment="Center">
                                                 <Grid>
-                                                    <Image Source="{Binding BrandingCoverPreview}" Stretch="UniformToFill" IsVisible="{Binding HasBrandingCover}"/>
+                                                    <asyncImage:AdvancedImage Source="{Binding BrandingCoverPreview}" Stretch="UniformToFill" IsVisible="{Binding HasBrandingCover}"/>
                                                     <TextBlock Text="No cover" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasBrandingCover}"/>
                                                 </Grid>
                                             </Border>
@@ -415,7 +421,7 @@
                                             <TextBlock Text="Square Icon (256x256)" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                             <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="8" Height="80" Width="80" HorizontalAlignment="Center">
                                                 <Grid>
-                                                    <Image Source="{Binding BrandingSquareIconPreview}" Stretch="Uniform" IsVisible="{Binding HasBrandingSquareIcon}"/>
+                                                    <asyncImage:AdvancedImage Source="{Binding BrandingSquareIconPreview}" Stretch="Uniform" IsVisible="{Binding HasBrandingSquareIcon}"/>
                                                     <TextBlock Text="No icon" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasBrandingSquareIcon}"/>
                                                 </Grid>
                                             </Border>
@@ -432,7 +438,7 @@
                                             <TextBlock Text="Wide Hero (32:9)" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                             <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="8" Height="80" Width="284" HorizontalAlignment="Center">
                                                 <Grid>
-                                                    <Image Source="{Binding BrandingWideHeroPreview}" Stretch="UniformToFill" IsVisible="{Binding HasBrandingWideHero}"/>
+                                                    <asyncImage:AdvancedImage Source="{Binding BrandingWideHeroPreview}" Stretch="UniformToFill" IsVisible="{Binding HasBrandingWideHero}"/>
                                                     <TextBlock Text="No hero" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasBrandingWideHero}"/>
                                                 </Grid>
                                             </Border>
@@ -449,7 +455,7 @@
                                             <TextBlock Text="Social Preview (1200x630)" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                             <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="8" Height="120" Width="228" HorizontalAlignment="Center">
                                                 <Grid>
-                                                    <Image Source="{Binding BrandingSocialPreviewPreview}" Stretch="UniformToFill" IsVisible="{Binding HasBrandingSocialPreview}"/>
+                                                    <asyncImage:AdvancedImage Source="{Binding BrandingSocialPreviewPreview}" Stretch="UniformToFill" IsVisible="{Binding HasBrandingSocialPreview}"/>
                                                     <TextBlock Text="No social preview" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasBrandingSocialPreview}"/>
                                                 </Grid>
                                             </Border>
@@ -463,7 +469,7 @@
                             </StackPanel>
                         </Border>
 
-                        <controls:EmptyState IsVisible="{Binding HasCreatorMissingFolders}" Icon="{StaticResource IconWarning}" Title="Workspace jeste nema cilovou strukturu" Subtitle="F0 uz umi zkontrolovat standardni slozky a drzet release warning signal v creator shellu."/>
+                        <controls:EmptyState IsVisible="{Binding HasCreatorMissingFolders}" Icon="{StaticResource IconWarning}" Title="Workspace jeste nema cilovou strukturu" Subtitle="Dopln standardni slozky, aby snapshoty, exporty a notes mely stabilni workspace zaklad."/>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
@@ -475,7 +481,7 @@
                             <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
                                 <StackPanel Spacing="3">
                                     <TextBlock Text="Obsah instance" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                    <TextBlock Text="F0 znovu pouziva existujici mod workflow jako samostatnou creator zalozku misto skryteho odkazu jinam." FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                    <TextBlock Text="Spravuj obsah aktualni instance bez opousteni Creator Studia." FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
                                 </StackPanel>
                                 <Button Grid.Column="1" Command="{Binding RefreshInstalledModsCommand}" Classes="secondary" Padding="14,8">
                                     <TextBlock Text="Obnovit seznam"/>
@@ -521,7 +527,7 @@
                                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                                     <StackPanel Spacing="2">
                                         <TextBlock Text="Creator Workbench" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                        <TextBlock Text="Soucasny plain-text workbench je oddeleny do samostatne Files workflow zalozky a pripraveny na budouci editor host." FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                        <TextBlock Text="Rychly pristup k manifestum, configum a dalsim souborum instance na jednom miste." FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                                         <Button Content="Obnovit soubory" Command="{Binding RefreshCreatorWorkbenchCommand}" Classes="secondary" Padding="12,6" FontSize="11"/>
@@ -575,7 +581,7 @@
                             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                                 <StackPanel Spacing="4">
                                     <TextBlock Text="Notes a handoff" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                    <TextBlock Text="F0 pripravuje notes workspace a drawer contract tak, aby dalsi faze nepridavaly dalsi oddeleny planning flow mimo shell." FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                    <TextBlock Text="Notes drawer a workspace slozka drzi handoff, poznamky a plan bez dalsiho odbocovani mimo Creator Studio." FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
                                 </StackPanel>
                                 <Button Grid.Column="1" Command="{Binding OpenCreatorNotesDrawerCommand}" Classes="primary" Padding="14,8">
                                     <TextBlock Text="Otevrit drawer"/>
@@ -622,7 +628,7 @@
                         <Border Classes="card">
                             <StackPanel Spacing="12">
                                 <TextBlock Text="Git contract" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                <TextBlock Text="F0 uz drzi repository signal, branch context a dirty indicator v creator workspace contextu. Dalsi faze na to muze navazat bez dalsiho hledani napric viewmodely." FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                <TextBlock Text="Git panel ukazuje stav repozitare, branch a dirty signal aktualniho workspace na jednom miste." FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
                                 <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="14,12">
                                     <StackPanel Spacing="6">
                                         <TextBlock Text="{Binding CreatorGitStatusSummary}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
@@ -642,7 +648,7 @@
                         <Border Classes="card">
                             <StackPanel Spacing="12">
                                 <TextBlock Text="Release baseline" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                <TextBlock Text="Release shell uz ma snapshot, export a warning signal na jednom miste. Dalsi faze muze pridat validatory a export profiles bez dalsiho prekopavani layoutu." FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                <TextBlock Text="Snapshoty, exporty a release signal jsou dostupne primo nad aktualni instanci." FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
                                 <Grid ColumnDefinitions="*,16,*">
                                     <Border Grid.Column="0" Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="14,12">
                                         <StackPanel Spacing="4">

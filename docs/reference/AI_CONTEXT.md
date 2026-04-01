@@ -2,7 +2,7 @@
 
 ## 1) Project Snapshot
 - **Name**: VoidCraft Launcher
-- **Current version**: **3.1.2**
+- **Current version**: **3.1.5**
 - **Stack**: .NET 9 + Avalonia UI 11.3 + CommunityToolkit.Mvvm 8.4
 - **MC Core**: CmlLib.Core 4.0.6
 - **Auth**: Microsoft.Identity.Client (MSAL) + custom Xbox/XSTS/MC token chain
@@ -150,6 +150,7 @@ Documents/.voidcraft/
 ## 8) Release History
 | Version | Changes |
 |---------|---------|
+| 3.1.5 | Creator Studio hotfix: spravne rozliseni workspace metadata, auto-hydration CF/MR pack info a render/import branding preview assetu |
 | 3.1.1 | Hotfix pro metadata detailu instance a ciste renderovani server ikon v Server Hubu |
 | 3.1.0 | Creator Studio F0/F1: workflow shell, creator_manifest.json, bootstrap modes, metadata sync, snapshot-before-apply |
 | 3.0.0 | Kompletní redesign shellu, Dashboard, Server Hub, Achievement Hub, Skin Studio, Context Dock, runtime themes/localization |
@@ -159,4 +160,4 @@ Documents/.voidcraft/
 | 1.2.8 | Linux Device Code-first flow + robust code parsing |
 
 ---
-*Last updated: 2026-03-23*
+*Last updated: 2026-04-01*

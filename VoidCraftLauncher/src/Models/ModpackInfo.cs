@@ -28,7 +28,12 @@ namespace VoidCraftLauncher.Models
         private string _webLink = ""; // URL to the modpack page
 
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(DisplayLabel))]
         private string _name = "Načítání...";
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(DisplayLabel))]
+        private string _displayName = "";
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(PlayButtonText))]
@@ -56,6 +61,8 @@ namespace VoidCraftLauncher.Models
         private string _logoUrl = "";
         
         public string ImageUrl => LogoUrl;
+
+        public string DisplayLabel => string.IsNullOrWhiteSpace(DisplayName) ? Name : DisplayName;
 
         [ObservableProperty]
         private string _description = "";

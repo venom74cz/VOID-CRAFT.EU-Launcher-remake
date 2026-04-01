@@ -88,9 +88,9 @@ public sealed class CreatorManifestService
             return CreateDefaultManifest("Unnamed Pack", minecraftVersion, modLoader, modLoaderVersion);
         }
 
-        var packName = !string.IsNullOrWhiteSpace(modpack.Name) ? modpack.Name : "Unnamed Pack";
+        var packName = !string.IsNullOrWhiteSpace(modpack.DisplayLabel) ? modpack.DisplayLabel : "Unnamed Pack";
         var slug = BuildSlug(packName);
-        var authors = !string.IsNullOrWhiteSpace(modpack.Author) ? new[] { modpack.Author } : Array.Empty<string>();
+        var authors = SplitAuthorLabel(modpack.Author);
         var summary = !string.IsNullOrWhiteSpace(modpack.Description) ? modpack.Description : string.Empty;
         var version = modpack.CurrentVersion?.Name ?? "0.1.0";
 
@@ -143,9 +143,23 @@ public sealed class CreatorManifestService
         EnsureWorkspaceStructure(workspacePath);
 
         var existingManifest = LoadManifest(workspacePath);
+        var hasExplicitBrandingState = manifest.Branding != null || manifest.Assets.Count > 0;
+
         manifest.CreatedAtUtc = existingManifest?.CreatedAtUtc ?? manifest.CreatedAtUtc;
-        manifest.Branding = existingManifest?.Branding ?? manifest.Branding;
-        manifest.Assets = existingManifest?.Assets ?? manifest.Assets;
+        manifest.PackName = manifest.PackName.Trim();
+        manifest.Slug = string.IsNullOrWhiteSpace(manifest.Slug) ? BuildSlug(manifest.PackName) : BuildSlug(manifest.Slug);
+        manifest.Summary = manifest.Summary.Trim();
+        manifest.Authors = NormalizeAuthors(manifest.Authors);
+        manifest.PrimaryServer = manifest.PrimaryServer.Trim();
+        manifest.ReleaseChannel = string.IsNullOrWhiteSpace(manifest.ReleaseChannel) ? "alpha" : manifest.ReleaseChannel.Trim();
+        manifest.BrandProfile ??= existingManifest?.BrandProfile;
+
+        if (!hasExplicitBrandingState)
+        {
+            manifest.Branding = existingManifest?.Branding ?? manifest.Branding;
+            manifest.Assets = existingManifest?.Assets ?? manifest.Assets;
+        }
+
         manifest.UpdatedAtUtc = DateTimeOffset.UtcNow;
 
         var manifestPath = GetManifestPath(workspacePath);
@@ -212,17 +226,36 @@ public sealed class CreatorManifestService
             httpClient.Timeout = TimeSpan.FromSeconds(10);
 
             var logoBytes = await httpClient.GetByteArrayAsync(modpack.LogoUrl);
-            var tempLogoPath = Path.Combine(Path.GetTempPath(), $"logo_{Guid.NewGuid()}.png");
-            await File.WriteAllBytesAsync(tempLogoPath, logoBytes);
-
-            var logoResult = await _creatorAssetsService.UploadAssetAsync(workspacePath, BrandingAssetSlot.Logo, tempLogoPath);
-            if (logoResult.Success && logoResult.Metadata != null)
+            var extension = ".png";
+            if (Uri.TryCreate(modpack.LogoUrl, UriKind.Absolute, out var logoUri))
             {
-                await _creatorAssetsService.UploadAssetAsync(workspacePath, BrandingAssetSlot.SquareIcon, tempLogoPath);
+                var remoteExtension = Path.GetExtension(logoUri.AbsolutePath);
+                if (!string.IsNullOrWhiteSpace(remoteExtension))
+                {
+                    extension = remoteExtension;
+                }
             }
 
-            File.Delete(tempLogoPath);
-            return logoResult.Success;
+            var tempLogoPath = Path.Combine(Path.GetTempPath(), $"logo_{Guid.NewGuid()}{extension}");
+            await File.WriteAllBytesAsync(tempLogoPath, logoBytes);
+
+            try
+            {
+                var logoResult = await _creatorAssetsService.UploadAssetAsync(workspacePath, BrandingAssetSlot.Logo, tempLogoPath);
+                if (logoResult.Success && logoResult.Metadata != null)
+                {
+                    await _creatorAssetsService.UploadAssetAsync(workspacePath, BrandingAssetSlot.SquareIcon, tempLogoPath);
+                }
+
+                return logoResult.Success;
+            }
+            finally
+            {
+                if (File.Exists(tempLogoPath))
+                {
+                    File.Delete(tempLogoPath);
+                }
+            }
         }
         catch
         {
@@ -237,5 +270,15 @@ public sealed class CreatorManifestService
             .Where(author => !string.IsNullOrWhiteSpace(author))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
+    }
+
+    private static IEnumerable<string> SplitAuthorLabel(string? authorLabel)
+    {
+        if (string.IsNullOrWhiteSpace(authorLabel))
+        {
+            return Array.Empty<string>();
+        }
+
+        return authorLabel.Split(new[] { ',', ';', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
     }
 }

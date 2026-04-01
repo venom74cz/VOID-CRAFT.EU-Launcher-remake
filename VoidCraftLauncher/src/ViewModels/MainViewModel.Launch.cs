@@ -88,7 +88,7 @@ public partial class MainViewModel
 
                                     // Install
                                     LaunchStatus = "Instaluji...";
-                                    _lastManifestInfo = await _modpackInstaller.InstallOrUpdateAsync(tempPath, modpackDir);
+                                    _lastManifestInfo = await _modpackInstaller.InstallOrUpdateAsync(tempPath, modpackDir, fileId, displayName);
 
                                     // Update current version
                                     if (_lastManifestInfo != null)
@@ -157,7 +157,7 @@ public partial class MainViewModel
                                 await File.WriteAllBytesAsync(tempPath, data);
 
                                 LaunchStatus = "Instaluji...";
-                                _lastManifestInfo = await _modpackInstaller.InstallOrUpdateAsync(tempPath, modpackDir);
+                                _lastManifestInfo = await _modpackInstaller.InstallOrUpdateAsync(tempPath, modpackDir, targetVersion: versionName);
 
                                 if (_lastManifestInfo != null)
                                 {

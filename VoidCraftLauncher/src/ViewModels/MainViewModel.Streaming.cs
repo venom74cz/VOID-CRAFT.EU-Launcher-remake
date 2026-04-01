@@ -37,7 +37,7 @@ public partial class MainViewModel
 
     private string _creatorWorkbenchLoadedContent = string.Empty;
 
-    public string CreatorStudioInstanceLabel => SelectedSkinStudioInstance?.Label ?? "Bez zvolené instance";
+    public string CreatorStudioInstanceLabel => GetCreatorStudioSelectedModpack()?.DisplayLabel ?? SelectedSkinStudioInstance?.Label ?? "Bez zvolené instance";
 
     public string CreatorStudioInstancePath => SkinStudioSelectedInstancePath;
 
@@ -78,7 +78,8 @@ public partial class MainViewModel
     public string CreatorStudioMinecraftVersion => GetCreatorStudioSelectedManifest()?.MinecraftVersion switch
     {
         { Length: > 0 } version => version,
-        _ => GetCreatorStudioSelectedModpack()?.CurrentVersion?.Name ?? "Nezjištěno"
+        _ when !string.IsNullOrWhiteSpace(GetCreatorStudioSelectedModpack()?.CustomMcVersion) => GetCreatorStudioSelectedModpack()!.CustomMcVersion,
+        _ => "Nezjištěno"
     };
 
     public string CreatorStudioModLoader => FormatCreatorStudioLoaderLabel(GetCreatorStudioSelectedManifest()?.ModLoaderId, GetCreatorStudioSelectedModpack());
@@ -479,13 +480,14 @@ public partial class MainViewModel
 
     private ModpackInfo? GetCreatorStudioSelectedModpack()
     {
-        if (SelectedSkinStudioInstance == null)
+        var workspaceId = SelectedSkinStudioInstance?.Id ?? CreatorPreferences.SelectedWorkspaceId;
+        if (!string.IsNullOrWhiteSpace(workspaceId))
         {
-            return GetStreamingContextModpack();
+            return InstalledModpacks.FirstOrDefault(modpack => string.Equals(modpack.Name, workspaceId, System.StringComparison.OrdinalIgnoreCase))
+                ?? GetStreamingContextModpack();
         }
 
-        return InstalledModpacks.FirstOrDefault(modpack => string.Equals(modpack.Name, SelectedSkinStudioInstance.Id, System.StringComparison.OrdinalIgnoreCase))
-            ?? GetStreamingContextModpack();
+        return GetStreamingContextModpack();
     }
 
     private ModpackManifestInfo? GetCreatorStudioSelectedManifest()

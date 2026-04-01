@@ -1,5 +1,20 @@
 # Changelog
 
+## 3.1.5 - 2026-04-01
+
+### Creator Studio hotfix
+- `Creator Studio` uz pri obnoveni posledni instance nepada do placeholder stavu `Načítání...`; workspace metadata se znovu skladaji nad realne vybranou instanci misto nahodneho fallback kontextu.
+- Importovane `CurseForge` a `Modrinth` packy si umi pri otevreni Creator Studia automaticky dohydrat nazev, autory, popis, odkaz a logo ze zdroje nebo z lokalniho `manifest_info.json`.
+- Existujici `creator_manifest.json` uz pri fallback syncu neblokuje opravena source metadata, pokud v nem zustaly placeholder nebo prazdne hodnoty.
+
+### Branding & preview
+- Verejne logo importovaneho packu se pri prvnim otevreni workspace umi samo zapsat do `assets/branding` jako `logo` a `square icon`, pokud lokalni branding jeste chybi.
+- Branding preview v `Creator Studiu` preslo na stejnou image pipeline jako zbytek launcheru, takze URL i lokalni soubory se skutecne renderuji misto prazdneho boxu.
+- `Logo` a `Square icon` uz nevyzaduji alpha kanal; pruhlednost je jen doporucena.
+
+### Release metadata
+- Srovnana release verze na `3.1.5` v launcher projektu, installeru a referencni dokumentaci.
+
 ## 3.1.4 - 2026-03-30
 
 ### Achievement Hub & Leaderboard
@@ -8,10 +23,6 @@
 
 ### UI opravy
 - Přidán posuvný efekt (marquee) pro dlouhá jména týmů v Achievements view.?
-
-### Další
-- Zachováno parsování `TeamId` a `LastSeen` ze snapshotu pro budoucí logiku / debug.
-- Menší kompilacní a build opravy po změnách v Achievement hubu.
 
 ## 3.1.3 - 2026-03-29
 

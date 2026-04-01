@@ -198,6 +198,7 @@ public partial class MainViewModel
         var newModpack = new ModpackInfo
         {
             Name = item.Name,
+            DisplayName = item.Name,
             LogoUrl = item.IconUrl,
             Description = item.Description,
             Author = item.Author,
@@ -225,6 +226,7 @@ public partial class MainViewModel
                 string downloadUrl = "";
                 string fileName = "modpack.zip";
                 string versionId = "0";
+                string versionDisplayName = "Latest";
 
                 using (var httpClient = new System.Net.Http.HttpClient())
                 {
@@ -242,6 +244,7 @@ public partial class MainViewModel
                         downloadUrl = file["downloadUrl"]?.ToString();
                         fileName = file["fileName"]?.ToString() ?? "modpack.zip";
                         versionId = file["id"]?.ToString() ?? "0";
+                        versionDisplayName = file["displayName"]?.ToString() ?? "Latest";
                     }
                     else // Modrinth
                     {
@@ -261,6 +264,7 @@ public partial class MainViewModel
                         downloadUrl = primaryFile["url"]?.ToString();
                         fileName = primaryFile["filename"]?.ToString() ?? "modpack.mrpack";
                         versionId = version["id"]?.ToString();
+                        versionDisplayName = version["version_number"]?.ToString() ?? versionId ?? "1.0";
                     }
 
                     if (string.IsNullOrEmpty(downloadUrl)) throw new Exception("Chybí URL.");
@@ -284,7 +288,15 @@ public partial class MainViewModel
                     ModpackManifestInfo manifestInfo = new ModpackManifestInfo();
                     try 
                     {
-                        manifestInfo = await _modpackInstaller.InstallOrUpdateAsync(tempPath, installPath);
+                        int? targetFileId = item.Source == "CurseForge" && int.TryParse(versionId, out var parsedFileId)
+                            ? parsedFileId
+                            : null;
+
+                        manifestInfo = await _modpackInstaller.InstallOrUpdateAsync(
+                            tempPath,
+                            installPath,
+                            targetFileId,
+                            versionDisplayName);
                     }
                     catch (Exception ex)
                     {
@@ -304,13 +316,14 @@ public partial class MainViewModel
                     {
                         var versionInfo = new ModpackVersion 
                         { 
-                            Name = item.Source == "CurseForge" ? "Latest" : (versionId ?? "1.0"), 
+                            Name = versionDisplayName,
                             FileId = versionId ?? "0"
                         };
                         
                         CurrentModpack = new ModpackInfo
                         {
                             Name = safeName,
+                            DisplayName = item.Name,
                             ProjectId = item.Source == "CurseForge" ? int.Parse(item.Id) : 0,
                             Source = item.Source,
                             ModrinthId = item.Source == "Modrinth" ? item.Id : "",

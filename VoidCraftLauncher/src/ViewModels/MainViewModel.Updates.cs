@@ -222,6 +222,7 @@ public partial class MainViewModel
                 ProjectId = id ?? VOID_BOX_PROJECT_ID,
                 Source = "CurseForge",
                 Name = name ?? "VOID-BOX 2",
+                DisplayName = name ?? "VOID-BOX 2",
                 LogoUrl = logo ?? "",
                 Description = summary ?? "",
                 Author = modpack?["authors"]?[0]?["name"]?.ToString() ?? modpack?["author"]?.ToString() ?? "",
@@ -438,6 +439,12 @@ public partial class MainViewModel
                 
                 if (list != null)
                 {
+                    var hydratedAny = false;
+                    foreach (var modpack in list)
+                    {
+                        hydratedAny |= HydrateModpackFromInstalledManifest(modpack);
+                    }
+
                     Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                     {
                         foreach (var modpack in list)
@@ -446,6 +453,11 @@ public partial class MainViewModel
                             {
                                 InstalledModpacks.Add(modpack);
                             }
+                        }
+
+                        if (hydratedAny)
+                        {
+                            SaveModpacks();
                         }
                     });
                     Debug.WriteLine($"[LoadSavedModpacks] Loaded {list.Count} modpacks.");
@@ -508,6 +520,14 @@ public partial class MainViewModel
             {
                 var metadataChanged = false;
 
+                if (!string.IsNullOrWhiteSpace(fetchedName) &&
+                    (string.IsNullOrWhiteSpace(CurrentModpack.DisplayName) ||
+                     string.Equals(CurrentModpack.DisplayName, CurrentModpack.Name, StringComparison.OrdinalIgnoreCase)))
+                {
+                    CurrentModpack.DisplayName = fetchedName;
+                    metadataChanged = true;
+                }
+
                 if (ShouldReplaceCurrentModpackName(CurrentModpack.Name) && !string.IsNullOrWhiteSpace(fetchedName))
                 {
                     CurrentModpack.Name = fetchedName;
@@ -560,6 +580,8 @@ public partial class MainViewModel
 
     private void HydrateCurrentModpackIdentity(ModpackInfo modpack)
     {
+        HydrateModpackFromInstalledManifest(modpack);
+
         var existing = InstalledModpacks.FirstOrDefault(candidate =>
             !ReferenceEquals(candidate, modpack) &&
             ((modpack.ProjectId > 0 && candidate.ProjectId == modpack.ProjectId) ||
@@ -591,6 +613,11 @@ public partial class MainViewModel
             modpack.WebLink = existing.WebLink;
         }
 
+        if (string.IsNullOrWhiteSpace(modpack.DisplayName))
+        {
+            modpack.DisplayName = existing.DisplayName;
+        }
+
         if (ShouldReplaceCurrentModpackName(modpack.Name) && !string.IsNullOrWhiteSpace(existing.Name))
         {
             modpack.Name = existing.Name;
@@ -610,6 +637,92 @@ public partial class MainViewModel
         {
             modpack.Description = existing.Description;
         }
+    }
+
+    private bool HydrateModpackFromInstalledManifest(ModpackInfo modpack)
+    {
+        if (modpack == null || string.IsNullOrWhiteSpace(modpack.Name) || ShouldReplaceCurrentModpackName(modpack.Name))
+        {
+            return false;
+        }
+
+        var manifest = ModpackInstaller.LoadManifestInfo(_launcherService.GetModpackPath(modpack.Name));
+        if (manifest == null)
+        {
+            return false;
+        }
+
+        var metadataChanged = false;
+
+        if (string.IsNullOrWhiteSpace(modpack.DisplayName) && !string.IsNullOrWhiteSpace(manifest.PackName))
+        {
+            modpack.DisplayName = manifest.PackName;
+            metadataChanged = true;
+        }
+
+        if (string.IsNullOrWhiteSpace(modpack.Author) && !string.IsNullOrWhiteSpace(manifest.Author))
+        {
+            modpack.Author = manifest.Author;
+            metadataChanged = true;
+        }
+
+        if (string.IsNullOrWhiteSpace(modpack.CustomMcVersion) && !string.IsNullOrWhiteSpace(manifest.MinecraftVersion))
+        {
+            modpack.CustomMcVersion = manifest.MinecraftVersion;
+            metadataChanged = true;
+        }
+
+        if (string.IsNullOrWhiteSpace(modpack.CustomModLoader) && !string.IsNullOrWhiteSpace(manifest.ModLoaderType))
+        {
+            modpack.CustomModLoader = manifest.ModLoaderType;
+            metadataChanged = true;
+        }
+
+        var loaderVersion = ExtractManifestLoaderVersion(manifest.ModLoaderId);
+        if (string.IsNullOrWhiteSpace(modpack.CustomModLoaderVersion) && !string.IsNullOrWhiteSpace(loaderVersion))
+        {
+            modpack.CustomModLoaderVersion = loaderVersion;
+            metadataChanged = true;
+        }
+
+        if (modpack.CurrentVersion == null && (!string.IsNullOrWhiteSpace(manifest.Version) || manifest.FileId > 0))
+        {
+            modpack.CurrentVersion = new ModpackVersion
+            {
+                Name = string.IsNullOrWhiteSpace(manifest.Version) ? $"File {manifest.FileId}" : manifest.Version,
+                FileId = manifest.FileId > 0 ? manifest.FileId.ToString() : "0"
+            };
+            metadataChanged = true;
+        }
+
+        if (string.IsNullOrWhiteSpace(modpack.Source))
+        {
+            if (modpack.ProjectId > 0)
+            {
+                modpack.Source = "CurseForge";
+                metadataChanged = true;
+            }
+            else if (!string.IsNullOrWhiteSpace(modpack.ModrinthId))
+            {
+                modpack.Source = "Modrinth";
+                metadataChanged = true;
+            }
+        }
+
+        return metadataChanged;
+    }
+
+    private static string ExtractManifestLoaderVersion(string? modLoaderId)
+    {
+        if (string.IsNullOrWhiteSpace(modLoaderId))
+        {
+            return string.Empty;
+        }
+
+        var separatorIndex = modLoaderId.IndexOf('-');
+        return separatorIndex > 0 && separatorIndex < modLoaderId.Length - 1
+            ? modLoaderId[(separatorIndex + 1)..]
+            : string.Empty;
     }
 
     private static bool ShouldReplaceCurrentModpackName(string? value)

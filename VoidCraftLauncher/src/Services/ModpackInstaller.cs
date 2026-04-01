@@ -16,6 +16,8 @@ namespace VoidCraftLauncher.Services
     // Result of modpack installation containing manifest info
     public class ModpackManifestInfo
     {
+        public string PackName { get; set; } = "";
+        public string Author { get; set; } = "";
         public string MinecraftVersion { get; set; } = "";
         public string ModLoaderId { get; set; } = ""; // e.g. "neoforge-21.1.90"
         public string ModLoaderType { get; set; } = ""; // "neoforge", "forge", "fabric"
@@ -40,12 +42,13 @@ namespace VoidCraftLauncher.Services
             _httpClient.DefaultRequestHeaders.Add("Accept", "application/octet-stream, */*");
         }
 
-        public async Task<ModpackManifestInfo> InstallOrUpdateAsync(string modpackZipPath, string installPath, int? targetFileId = null)
+        public async Task<ModpackManifestInfo> InstallOrUpdateAsync(string modpackZipPath, string installPath, int? targetFileId = null, string? targetVersion = null)
         {
             StatusChanged?.Invoke("Otevírám balíček...");
             
             ModpackManifestInfo manifestInfo = new ModpackManifestInfo();
             if (targetFileId.HasValue) manifestInfo.FileId = targetFileId.Value;
+            if (!string.IsNullOrWhiteSpace(targetVersion)) manifestInfo.Version = targetVersion;
             
             using (var archive = ZipFile.OpenRead(modpackZipPath))
             {
@@ -55,7 +58,7 @@ namespace VoidCraftLauncher.Services
 
                 if (modrinthEntry != null)
                 {
-                    var mrInfo = await InstallModrinthAsync(archive, installPath, StatusChanged, ProgressChanged);
+                    var mrInfo = await InstallModrinthAsync(archive, installPath, StatusChanged, ProgressChanged, targetVersion);
                     return mrInfo;
                 }
 
@@ -70,8 +73,14 @@ namespace VoidCraftLauncher.Services
                 if (manifest == null) throw new Exception("Nepodařilo se načíst manifest.");
                 
                 // Extract manifest info for launcher
+                manifestInfo.PackName = manifest.Name ?? string.Empty;
+                manifestInfo.Author = manifest.Author ?? string.Empty;
                 manifestInfo.MinecraftVersion = manifest.Minecraft?.Version ?? "1.21.1";
                 manifestInfo.ModCount = manifest.Files?.Count ?? 0;
+                if (string.IsNullOrWhiteSpace(manifestInfo.Version) && !string.IsNullOrWhiteSpace(manifest.Version))
+                {
+                    manifestInfo.Version = manifest.Version;
+                }
                 
                 var primaryLoader = manifest.Minecraft?.ModLoaders?.FirstOrDefault(m => m.Primary) 
                                    ?? manifest.Minecraft?.ModLoaders?.FirstOrDefault();
@@ -578,7 +587,7 @@ namespace VoidCraftLauncher.Services
             
             return false;
         }
-        private async Task<ModpackManifestInfo> InstallModrinthAsync(ZipArchive archive, string installPath, Action<string> statusCallback, Action<double> progressCallback)
+        private async Task<ModpackManifestInfo> InstallModrinthAsync(ZipArchive archive, string installPath, Action<string> statusCallback, Action<double> progressCallback, string? targetVersion)
         {
             var indexEntry = archive.GetEntry("modrinth.index.json");
             if (indexEntry == null) throw new Exception("Neplatný Modrinth balíček: chybí modrinth.index.json");
@@ -594,7 +603,9 @@ namespace VoidCraftLauncher.Services
             // Extract manifest info from dependencies
             var manifestInfo = new ModpackManifestInfo
             {
-                ModCount = index.Files?.Count ?? 0
+                PackName = index.Name ?? string.Empty,
+                ModCount = index.Files?.Count ?? 0,
+                Version = targetVersion ?? ""
             };
             
             // Parse dependencies (e.g. "minecraft": "1.20.1", "fabric-loader": "0.14.21")

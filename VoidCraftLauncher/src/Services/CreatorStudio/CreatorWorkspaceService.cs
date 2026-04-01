@@ -84,13 +84,13 @@ public sealed class CreatorWorkspaceService
         return new CreatorWorkspaceContext
         {
             WorkspaceId = workspaceId ?? string.Empty,
-            WorkspaceLabel = modpack?.Name ?? workspaceId ?? "Bez zvolene instance",
+            WorkspaceLabel = ResolveWorkspaceLabel(modpack, workspaceId),
             WorkspacePath = normalizedPath,
             CreatorManifestPath = manifestPath,
             HasCreatorManifest = !string.IsNullOrWhiteSpace(normalizedPath) && File.Exists(manifestPath),
-            MinecraftVersion = manifest?.MinecraftVersion ?? modpack?.CurrentVersion?.Name ?? "Nezjisteno",
+            MinecraftVersion = ResolveMinecraftVersion(manifest, modpack),
             LoaderLabel = BuildLoaderLabel(manifest, modpack),
-            ModpackVersion = modpack?.VersionTransitionText ?? manifest?.MinecraftVersion ?? "Nezjisteno",
+            ModpackVersion = ResolvePackVersion(manifest, modpack),
             ModCount = manifest?.ModCount ?? 0,
             LinkedServersLabel = linkedServerCount == 0 ? "Zadne navazane servery" : $"{linkedServerCount} navazanych serveru",
             EditableFileCount = workbenchFiles.Count,
@@ -187,6 +187,46 @@ public sealed class CreatorWorkspaceService
         }
 
         return "Nezjisteno";
+    }
+
+    private static string ResolveMinecraftVersion(ModpackManifestInfo? manifest, ModpackInfo? modpack)
+    {
+        if (!string.IsNullOrWhiteSpace(manifest?.MinecraftVersion))
+        {
+            return manifest.MinecraftVersion;
+        }
+
+        if (!string.IsNullOrWhiteSpace(modpack?.CustomMcVersion))
+        {
+            return modpack.CustomMcVersion;
+        }
+
+        return "Nezjisteno";
+    }
+
+    private static string ResolvePackVersion(ModpackManifestInfo? manifest, ModpackInfo? modpack)
+    {
+        if (!string.IsNullOrWhiteSpace(modpack?.CurrentVersion?.Name))
+        {
+            return modpack.CurrentVersion.Name;
+        }
+
+        if (!string.IsNullOrWhiteSpace(manifest?.Version))
+        {
+            return manifest.Version;
+        }
+
+        return "Nezjisteno";
+    }
+
+    private static string ResolveWorkspaceLabel(ModpackInfo? modpack, string? workspaceId)
+    {
+        if (!string.IsNullOrWhiteSpace(modpack?.DisplayLabel))
+        {
+            return modpack.DisplayLabel;
+        }
+
+        return workspaceId ?? "Bez zvolene instance";
     }
 
     private static (bool HasRepository, string BranchName, bool? HasDirtyWorkingTree) TryReadGitStatus(string workspacePath)

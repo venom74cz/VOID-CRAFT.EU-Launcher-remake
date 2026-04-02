@@ -162,7 +162,7 @@ North star pro tuhle cast je jednoducha:
 > - [x] Export media kitu pro release materialy
 > - [x] Automaticky import verejneho loga z CF/MR packu pri prvnim generovani manifestu
 > - [x] Napojeni brandingu na launcher card/header preview
-> - [ ] Screenshot tagging, favorite pin a official screenshot selection
+> - [x] Screenshot tagging, favorite pin a official screenshot selection
 >
 > **Proc to dava smysl**
 > - Uzivatel konkretne potrebuje nahrat logo modpacku a to je presne use case, ktery zvedne pocit "tohle je moje studio".

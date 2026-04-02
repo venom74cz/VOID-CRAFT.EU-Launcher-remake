@@ -102,9 +102,11 @@ public partial class MainViewModel
     [ObservableProperty]
     private double _importProgress;
 
+    public ObservableCollection<InstanceSaveWorldEntry> CurrentModpackSaveWorlds { get; } = new();
     public ObservableCollection<InstanceBackupSnapshot> CurrentModpackBackupSnapshots { get; } = new();
     public ObservableCollection<ServerInfo> CurrentModpackLinkedServers { get; } = new();
 
+    public bool HasCurrentModpackSaveWorlds => CurrentModpackSaveWorlds.Count > 0;
     public bool HasCurrentModpackBackups => CurrentModpackBackupSnapshots.Count > 0;
     public bool HasCurrentModpackLinkedServers => CurrentModpackLinkedServers.Count > 0;
 
@@ -484,12 +486,79 @@ public partial class MainViewModel
 
         return new InstanceBackupSnapshot
         {
-            Name = Path.GetFileName(backupPath).Replace(".config_backup_", "Snapshot "),
+            Name = Path.GetFileName(backupPath).Replace(".config_backup_", "Záloha "),
             FullPath = backupPath,
             CreatedAt = createdAt,
             FileCount = Directory.GetFiles(backupPath, "*", SearchOption.AllDirectories).Length,
             Summary = includedParts.Count > 0 ? string.Join(", ", includedParts) : "konfigurace instance"
         };
+    }
+
+    private static InstanceSaveWorldEntry CreateSaveWorldEntry(string worldPath, IEnumerable<InstanceWorldBackupSnapshot> backups)
+    {
+        var fileCount = Directory.EnumerateFiles(worldPath, "*", SearchOption.AllDirectories).Count();
+        var summaryParts = new List<string> { "Minecraft svět" };
+
+        if (Directory.Exists(Path.Combine(worldPath, "region"))) summaryParts.Add("region data");
+        if (Directory.Exists(Path.Combine(worldPath, "playerdata"))) summaryParts.Add("playerdata");
+
+        return new InstanceSaveWorldEntry
+        {
+            Name = Path.GetFileName(worldPath),
+            FullPath = worldPath,
+            LastModifiedAt = Directory.GetLastWriteTime(worldPath),
+            FileCount = fileCount,
+            Summary = string.Join(" • ", summaryParts),
+            Backups = backups.OrderByDescending(snapshot => snapshot.CreatedAt).ToList()
+        };
+    }
+
+    private static InstanceWorldBackupSnapshot CreateWorldBackupSnapshot(string worldName, string backupPath)
+    {
+        var directoryName = Path.GetFileName(backupPath);
+        var createdAt = Directory.GetCreationTime(backupPath);
+        var displayName = directoryName.StartsWith("pre_restore_", StringComparison.OrdinalIgnoreCase)
+            ? $"Pojistná záloha {directoryName["pre_restore_".Length..].Replace('_', ' ')}"
+            : $"Záloha {directoryName.Replace('_', ' ')}";
+
+        return new InstanceWorldBackupSnapshot
+        {
+            WorldName = worldName,
+            Name = displayName,
+            FullPath = backupPath,
+            CreatedAt = createdAt,
+            FileCount = Directory.EnumerateFiles(backupPath, "*", SearchOption.AllDirectories).Count(),
+            Summary = "Ruční nebo ochranná záloha světa"
+        };
+    }
+
+    private static IEnumerable<string> GetSaveWorldDirectories(string modpackPath)
+    {
+        var savesPath = Path.Combine(modpackPath, "saves");
+        if (!Directory.Exists(savesPath))
+        {
+            return Enumerable.Empty<string>();
+        }
+
+        return Directory.EnumerateDirectories(savesPath, "*", SearchOption.TopDirectoryOnly)
+            .Where(directory => File.Exists(Path.Combine(directory, "level.dat")));
+    }
+
+    private IEnumerable<string> GetWorldBackupDirectories(string modpackName, string worldName)
+    {
+        var worldBackupRoot = Path.Combine(
+            GetPersistentBackupRoot(modpackName),
+            "world_backups",
+            BuildCreateProfileDirectoryName(worldName));
+
+        if (!Directory.Exists(worldBackupRoot))
+        {
+            return Enumerable.Empty<string>();
+        }
+
+        return Directory.EnumerateDirectories(worldBackupRoot, "*", SearchOption.TopDirectoryOnly)
+            .Where(Directory.Exists)
+            .OrderByDescending(path => path, StringComparer.OrdinalIgnoreCase);
     }
 
     private IEnumerable<string> GetBackupSnapshotDirectories(string modpackName, string modpackPath)
@@ -518,15 +587,29 @@ public partial class MainViewModel
         {
             await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
             {
+                CurrentModpackSaveWorlds.Clear();
                 CurrentModpackBackupSnapshots.Clear();
                 CurrentModpackLinkedServers.Clear();
+                CurrentModpackCrashHistory.Clear();
+                OnPropertyChanged(nameof(HasCurrentModpackSaveWorlds));
                 OnPropertyChanged(nameof(HasCurrentModpackBackups));
                 OnPropertyChanged(nameof(HasCurrentModpackLinkedServers));
+                OnPropertyChanged(nameof(HasCurrentModpackCrashHistory));
+                OnPropertyChanged(nameof(CurrentModpackCrashHistoryEmptyTitle));
+                OnPropertyChanged(nameof(CurrentModpackCrashHistoryEmptySubtitle));
             });
             return;
         }
 
         var modpackPath = _launcherService.GetModpackPath(CurrentModpack.Name);
+        var saveWorlds = GetSaveWorldDirectories(modpackPath)
+            .Select(worldPath => CreateSaveWorldEntry(
+                worldPath,
+                GetWorldBackupDirectories(CurrentModpack.Name, Path.GetFileName(worldPath))
+                    .Select(path => CreateWorldBackupSnapshot(Path.GetFileName(worldPath), path))))
+            .OrderByDescending(world => world.LastModifiedAt)
+            .ToList();
+
         var backupSnapshots = GetBackupSnapshotDirectories(CurrentModpack.Name, modpackPath)
             .Select(CreateBackupSnapshot)
             .OrderByDescending(snapshot => snapshot.CreatedAt)
@@ -538,8 +621,14 @@ public partial class MainViewModel
             .ThenBy(server => server.Name)
             .ToList();
 
+        var crashHistoryEntries = GetCurrentModpackCrashHistoryEntries();
+
         await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
         {
+            CurrentModpackSaveWorlds.Clear();
+            foreach (var world in saveWorlds)
+                CurrentModpackSaveWorlds.Add(world);
+
             CurrentModpackBackupSnapshots.Clear();
             foreach (var snapshot in backupSnapshots)
                 CurrentModpackBackupSnapshots.Add(snapshot);
@@ -548,6 +637,9 @@ public partial class MainViewModel
             foreach (var server in linkedServers)
                 CurrentModpackLinkedServers.Add(server);
 
+            RefreshCurrentModpackCrashHistoryCollection(crashHistoryEntries);
+
+            OnPropertyChanged(nameof(HasCurrentModpackSaveWorlds));
             OnPropertyChanged(nameof(HasCurrentModpackBackups));
             OnPropertyChanged(nameof(HasCurrentModpackLinkedServers));
         });
@@ -1079,6 +1171,181 @@ public partial class MainViewModel
     }
 
     [RelayCommand]
+    private void OpenSaveWorldFolder(InstanceSaveWorldEntry? world)
+    {
+        if (world == null || string.IsNullOrWhiteSpace(world.FullPath) || !Directory.Exists(world.FullPath))
+        {
+            return;
+        }
+
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = world.FullPath,
+            UseShellExecute = true,
+            Verb = "open"
+        });
+    }
+
+    [RelayCommand]
+    private async Task BackupSaveWorld(InstanceSaveWorldEntry? world)
+    {
+        if (CurrentModpack == null || world == null || string.IsNullOrWhiteSpace(world.FullPath) || !Directory.Exists(world.FullPath))
+        {
+            return;
+        }
+
+        try
+        {
+            var worldBackupRoot = Path.Combine(
+                GetPersistentBackupRoot(CurrentModpack.Name),
+                "world_backups",
+                BuildCreateProfileDirectoryName(world.Name));
+
+            Directory.CreateDirectory(worldBackupRoot);
+            var backupPath = Path.Combine(worldBackupRoot, DateTime.Now.ToString("yyyyMMdd_HHmmss"));
+
+            await Task.Run(() => CopyDirectoryContents(world.FullPath, backupPath));
+
+            StructuredLog.Event("Backup", "World backup created", new
+            {
+                Modpack = CurrentModpack.Name,
+                World = world.Name,
+                BackupPath = backupPath
+            });
+
+            await RefreshCurrentModpackWorkspaceDataAsync();
+            ShowToast("Záloha světa vytvořena", $"{world.Name} byl úspěšně uložen do historie záloh.", ToastSeverity.Success, 3200);
+        }
+        catch (Exception ex)
+        {
+            LogService.Error("Creating save world backup failed", ex);
+            ShowToast("Záloha světa selhala", ex.Message, ToastSeverity.Error, 3600);
+        }
+    }
+
+    [RelayCommand]
+    private void OpenSaveWorldBackupFolder(InstanceSaveWorldEntry? world)
+    {
+        if (CurrentModpack == null || world == null)
+        {
+            return;
+        }
+
+        var backupFolder = Path.Combine(
+            GetPersistentBackupRoot(CurrentModpack.Name),
+            "world_backups",
+            BuildCreateProfileDirectoryName(world.Name));
+
+        Directory.CreateDirectory(backupFolder);
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = backupFolder,
+            UseShellExecute = true,
+            Verb = "open"
+        });
+    }
+
+    [RelayCommand]
+    private void OpenWorldBackupSnapshot(InstanceWorldBackupSnapshot? snapshot)
+    {
+        if (snapshot == null || string.IsNullOrWhiteSpace(snapshot.FullPath) || !Directory.Exists(snapshot.FullPath))
+        {
+            return;
+        }
+
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = snapshot.FullPath,
+            UseShellExecute = true,
+            Verb = "open"
+        });
+    }
+
+    [RelayCommand]
+    private async Task DeleteWorldBackupSnapshot(InstanceWorldBackupSnapshot? snapshot)
+    {
+        if (CurrentModpack == null || snapshot == null || string.IsNullOrWhiteSpace(snapshot.FullPath) || !Directory.Exists(snapshot.FullPath))
+        {
+            return;
+        }
+
+        try
+        {
+            Directory.Delete(snapshot.FullPath, true);
+            await RefreshCurrentModpackWorkspaceDataAsync();
+
+            StructuredLog.Event("Backup", "World backup deleted", new
+            {
+                Modpack = CurrentModpack.Name,
+                World = snapshot.WorldName,
+                BackupPath = snapshot.FullPath
+            });
+
+            ShowToast("Záloha smazána", $"Záloha pro {snapshot.WorldName} byla odstraněna.", ToastSeverity.Success, 2600);
+        }
+        catch (Exception ex)
+        {
+            LogService.Error("Deleting save world backup failed", ex);
+            ShowToast("Mazání zálohy selhalo", ex.Message, ToastSeverity.Error, 3600);
+        }
+    }
+
+    [RelayCommand]
+    private async Task RestoreWorldBackupSnapshot(InstanceWorldBackupSnapshot? snapshot)
+    {
+        if (CurrentModpack == null || snapshot == null || string.IsNullOrWhiteSpace(snapshot.FullPath) || !Directory.Exists(snapshot.FullPath))
+        {
+            return;
+        }
+
+        if (IsGameRunning && string.Equals(RunningModpack?.Name, CurrentModpack.Name, StringComparison.OrdinalIgnoreCase))
+        {
+            ShowToast("Restore světa blokován", "Nejdřív zavři běžící hru, ať launcher nepřepisuje aktivní save.", ToastSeverity.Warning, 3600);
+            return;
+        }
+
+        var worldPath = Path.Combine(_launcherService.GetModpackPath(CurrentModpack.Name), "saves", snapshot.WorldName);
+        try
+        {
+            var safetyBackupPath = string.Empty;
+            if (Directory.Exists(worldPath))
+            {
+                var worldBackupRoot = Path.Combine(
+                    GetPersistentBackupRoot(CurrentModpack.Name),
+                    "world_backups",
+                    BuildCreateProfileDirectoryName(snapshot.WorldName));
+
+                Directory.CreateDirectory(worldBackupRoot);
+                safetyBackupPath = Path.Combine(worldBackupRoot, $"pre_restore_{DateTime.Now:yyyyMMdd_HHmmss}");
+                await Task.Run(() => CopyDirectoryContents(worldPath, safetyBackupPath));
+                Directory.Delete(worldPath, true);
+            }
+
+            await Task.Run(() => CopyDirectoryContents(snapshot.FullPath, worldPath));
+            await RefreshCurrentModpackWorkspaceDataAsync();
+
+            StructuredLog.Event("Backup", "World backup restored", new
+            {
+                Modpack = CurrentModpack.Name,
+                World = snapshot.WorldName,
+                SourcePath = snapshot.FullPath,
+                SafetyBackupPath = safetyBackupPath
+            });
+
+            var toastMessage = string.IsNullOrWhiteSpace(safetyBackupPath)
+                ? $"{snapshot.WorldName} byl obnoven ze zvolené launcher zálohy."
+                : $"{snapshot.WorldName} byl obnoven a původní stav byl uložen jako safety backup.";
+
+            ShowToast("Svět obnoven", toastMessage, ToastSeverity.Success, 3800);
+        }
+        catch (Exception ex)
+        {
+            LogService.Error("Restoring save world backup failed", ex);
+            ShowToast("Obnova světa selhala", ex.Message, ToastSeverity.Error, 3800);
+        }
+    }
+
+    [RelayCommand]
     private async Task RefreshInstanceWorkspaceData()
     {
         await RefreshCurrentModpackWorkspaceDataAsync();
@@ -1122,10 +1389,10 @@ public partial class MainViewModel
                         InstalledModpacks.Add(new ModpackInfo
                         {
                             Name = importedName,
-                            Source = "Custom",
+                            Source = "VOID",
                             Author = "VOID-CRAFT Import",
                             Description = "Importováno z .voidpack archivu.",
-                            IsCustomProfile = true,
+                            IsCustomProfile = false,
                             IsDeletable = true,
                             CustomMcVersion = manifest.MinecraftVersion,
                             CustomModLoader = manifest.ModLoader,

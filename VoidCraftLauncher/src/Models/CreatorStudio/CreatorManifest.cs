@@ -36,4 +36,6 @@ public sealed class CreatorManifest
     public CreatorBrandProfile? BrandProfile { get; set; }
 
     public List<CreatorAssetMetadata> Assets { get; set; } = new();
+
+    public List<CreatorScreenshotMetadata> Screenshots { get; set; } = new();
 }

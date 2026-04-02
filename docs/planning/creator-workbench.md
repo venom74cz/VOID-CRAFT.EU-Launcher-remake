@@ -218,7 +218,7 @@ Task list:
 - [x] Dopsat asset storage pravidla a vazbu na `creator_manifest.json`.
 - [x] Pridat preview variant primo v launcheru.
 - [x] Pridat resize/crop pipeline a zakladni validace rozliseni, pomeru stran a transparency.
-- [ ] Oznacovat screenshoty jako `official`, `release candidate`, `archive`.
+- [x] Oznacovat screenshoty jako `official`, `release candidate`, `archive`.
 - [x] Pridat export media kitu pro release materialy.
 - [x] Rozsirit `Metadata` zalozku o vizualni `Branding` blok, aby textova metadata a obrazky patrily do jednoho workflow.
 - [x] Napojit branding na launcher card/header preview.
@@ -233,6 +233,8 @@ Aktualni stav implementace slice `2026-03-25`:
 - `MainViewModel.CreatorStudio.Branding.cs` pridava upload/replace/remove/export commandy a live preview pro vsechny branding sloty
 - tlacitko v metadata tabu se meni na "Vygenerovat z existujiciho" pokud manifest chybi a jde o importovany pack
 - branding preview se propaguje do instance workspace hlavicky
+- `creator_manifest.json` nově drží i kurátorovaná metadata screenshotů (`official`, `release candidate`, `archive`, favorit), takže se výběr promo galerie nepřepisuje běžným metadata save flow
+- `Metadata` tab nově ukazuje featured promo screenshot, rychlé tagovací akce nad galerií a export `media kitu` přibaluje curated screenshoty i alias `featured-screenshot.*`
 
 Exit criteria:
 

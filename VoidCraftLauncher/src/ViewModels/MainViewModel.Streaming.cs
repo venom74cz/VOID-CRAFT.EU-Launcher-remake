@@ -70,6 +70,7 @@ public partial class MainViewModel
         : $"{SelectedCreatorWorkbenchFile.Category} • {SelectedCreatorWorkbenchFile.SizeLabel}";
 
     public bool CanSaveCreatorWorkbenchFile =>
+        IsCreatorWorkspaceEditable &&
         SelectedCreatorWorkbenchFile != null &&
         !IsCreatorWorkbenchLoading &&
         !IsCreatorWorkbenchSaving &&
@@ -249,9 +250,7 @@ public partial class MainViewModel
         }
 
         var basePath = _launcherService.GetModpackPath(modpack.Name);
-        var screenshotsPath = Path.Combine(basePath, "screenshots");
-        var screenshotyPath = Path.Combine(basePath, "screenshoty");
-        var targetPath = Directory.Exists(screenshotyPath) ? screenshotyPath : screenshotsPath;
+        var targetPath = _creatorAssetsService.GetScreenshotGalleryPath(basePath, ensureExists: true);
         Directory.CreateDirectory(targetPath);
         OpenFolder(targetPath);
     }
@@ -335,6 +334,12 @@ public partial class MainViewModel
     [RelayCommand]
     private async Task SaveCreatorWorkbenchFile()
     {
+        if (!IsCreatorWorkspaceEditable)
+        {
+            ShowToast("Creator Studio", CreatorWorkspaceEditabilityMessage, ToastSeverity.Warning, 3200);
+            return;
+        }
+
         if (SelectedCreatorWorkbenchFile == null)
         {
             ShowToast("Creator Studio", "Nejdřív otevři soubor k úpravě.", ToastSeverity.Warning);

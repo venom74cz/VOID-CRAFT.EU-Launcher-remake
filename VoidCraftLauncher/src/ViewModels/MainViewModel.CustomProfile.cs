@@ -457,7 +457,28 @@ public partial class MainViewModel
     private ObservableCollection<ModpackItem> _installedMods = new();
 
     [ObservableProperty]
+    private ObservableCollection<ModpackItem> _filteredInstalledMods = new();
+
+    [ObservableProperty]
+    private string _installedModsSearchQuery = "";
+
+    partial void OnInstalledModsSearchQueryChanged(string value)
+    {
+        RefreshFilteredInstalledMods();
+    }
+
+    [ObservableProperty]
     private string _profileModSearchQuery = "";
+
+    public bool HasFilteredInstalledMods => FilteredInstalledMods.Count > 0;
+
+    public string InstalledModsEmptyTitle => string.IsNullOrWhiteSpace(InstalledModsSearchQuery)
+        ? "Zatím žádné mody"
+        : "Nic neodpovídá filtru";
+
+    public string InstalledModsEmptySubtitle => string.IsNullOrWhiteSpace(InstalledModsSearchQuery)
+        ? "Jakmile bude mít instance vlastní obsah, uvidíš ho tady."
+        : $"Pro filtr \"{InstalledModsSearchQuery.Trim()}\" se nenašel žádný nainstalovaný mod.";
 
     // ===== CUSTOM PROFILE COMMANDS =====
 
@@ -921,7 +942,7 @@ public partial class MainViewModel
             case CreateProfileBootstrapRestoreSnapshotId:
                 if (SelectedCreateProfileSnapshotOption == null || !Directory.Exists(SelectedCreateProfileSnapshotOption.Id))
                 {
-                    error = "Restore snapshot potřebuje existující snapshot z launcher backup workspace.";
+                    error = "Obnovení vyžaduje existující zálohu instance.";
                     return false;
                 }
 
@@ -1650,13 +1671,14 @@ public partial class MainViewModel
             {
                 try
                 {
+                    var installedFileName = mod.InstalledFileName;
                     File.Delete(filePath);
                     mod.IsInstalled = false;
                     mod.InstalledFileName = null;
                     Greeting = $"Mod {mod.Name} odstraněn.";
 
                     // Remove metadata
-                    var metaPath = Path.Combine(modsDir, ".mod_metadata", mod.InstalledFileName + ".json");
+                    var metaPath = Path.Combine(modsDir, ".mod_metadata", installedFileName + ".json");
                     if (File.Exists(metaPath)) File.Delete(metaPath);
 
                     LoadInstalledMods();
@@ -1705,6 +1727,7 @@ public partial class MainViewModel
     private void LoadInstalledMods()
     {
         InstalledMods.Clear();
+        RefreshFilteredInstalledMods();
 
         if (CurrentModpack == null) return;
 
@@ -1767,6 +1790,41 @@ public partial class MainViewModel
                 InstalledMods.Add(new ModpackItem { Name = FormatInstalledModDisplayName(fileName), IsInstalled = true, InstalledFileName = fileName });
             }
         }
+
+        RefreshFilteredInstalledMods();
+    }
+
+    private void RefreshFilteredInstalledMods()
+    {
+        var normalizedQuery = InstalledModsSearchQuery?.Trim() ?? string.Empty;
+        var filtered = string.IsNullOrWhiteSpace(normalizedQuery)
+            ? InstalledMods.ToList()
+            : InstalledMods.Where(mod => MatchesInstalledModSearch(mod, normalizedQuery)).ToList();
+
+        FilteredInstalledMods.Clear();
+        foreach (var mod in filtered)
+        {
+            FilteredInstalledMods.Add(mod);
+        }
+
+        OnPropertyChanged(nameof(HasFilteredInstalledMods));
+        OnPropertyChanged(nameof(InstalledModsEmptyTitle));
+        OnPropertyChanged(nameof(InstalledModsEmptySubtitle));
+    }
+
+    private static bool MatchesInstalledModSearch(ModpackItem mod, string query)
+    {
+        return ContainsSearchTerm(mod.Name, query) ||
+               ContainsSearchTerm(mod.Description, query) ||
+               ContainsSearchTerm(mod.Author, query) ||
+               ContainsSearchTerm(mod.Source, query) ||
+               ContainsSearchTerm(mod.InstalledFileName, query);
+    }
+
+    private static bool ContainsSearchTerm(string? value, string query)
+    {
+        return !string.IsNullOrWhiteSpace(value) &&
+               value.Contains(query, StringComparison.OrdinalIgnoreCase);
     }
 
     private Dictionary<string, ModMetadataEnvelope> LoadInstalledModMetadataIndex(string modpackPath, string metaDir)

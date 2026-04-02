@@ -71,21 +71,63 @@ public partial class MainViewModel
     [ObservableProperty]
     private CreatorManifest? _currentModpackCreatorManifest;
 
+    [ObservableProperty]
+    private string _currentWorkspaceDescriptionIntro = string.Empty;
+
+    private List<InstanceOverviewDescriptionSection> _currentWorkspaceDescriptionSections = new();
+
     partial void OnCurrentModpackCreatorManifestChanged(CreatorManifest? value)
     {
+        RefreshCurrentWorkspaceHeroState();
         OnPropertyChanged(nameof(HasCurrentWorkspaceCreatorMetadata));
         OnPropertyChanged(nameof(HasCurrentWorkspaceDescription));
+        OnPropertyChanged(nameof(HasCurrentWorkspaceFullDescription));
+        OnPropertyChanged(nameof(HasCurrentWorkspaceDescriptionIntro));
+        OnPropertyChanged(nameof(HasCurrentWorkspaceDescriptionSections));
+        OnPropertyChanged(nameof(HasPlainCurrentWorkspaceFullDescription));
         OnPropertyChanged(nameof(HasCurrentWorkspacePrimaryServer));
+        OnPropertyChanged(nameof(HasCurrentWorkspaceRecommendedRam));
+        OnPropertyChanged(nameof(HasCurrentWorkspaceWebLink));
         OnPropertyChanged(nameof(CurrentWorkspaceDisplayName));
         OnPropertyChanged(nameof(CurrentWorkspaceDescription));
+        OnPropertyChanged(nameof(CurrentWorkspaceFullDescription));
+        OnPropertyChanged(nameof(CurrentWorkspaceDescriptionIntro));
+        OnPropertyChanged(nameof(CurrentWorkspaceDescriptionSections));
         OnPropertyChanged(nameof(CurrentWorkspaceAuthorLabel));
         OnPropertyChanged(nameof(CurrentWorkspaceMetadataSummary));
+        OnPropertyChanged(nameof(CurrentWorkspaceMinecraftVersion));
+        OnPropertyChanged(nameof(CurrentWorkspaceLoaderLabel));
+        OnPropertyChanged(nameof(CurrentWorkspaceReleaseChannelLabel));
         OnPropertyChanged(nameof(CurrentWorkspacePrimaryServerLabel));
         OnPropertyChanged(nameof(CurrentWorkspaceRecommendedRamLabel));
+        OnPropertyChanged(nameof(CurrentWorkspaceHeroPreview));
+        OnPropertyChanged(nameof(HasCurrentWorkspaceHeroPreview));
+    }
+
+    partial void OnCurrentWorkspaceDescriptionIntroChanged(string value)
+    {
+        OnPropertyChanged(nameof(HasCurrentWorkspaceDescriptionIntro));
+        OnPropertyChanged(nameof(HasPlainCurrentWorkspaceFullDescription));
+    }
+
+    private void SetCurrentWorkspaceDescriptionSections(List<InstanceOverviewDescriptionSection> value)
+    {
+        if (ReferenceEquals(_currentWorkspaceDescriptionSections, value))
+        {
+            return;
+        }
+
+        _currentWorkspaceDescriptionSections = value;
+        OnPropertyChanged(nameof(CurrentWorkspaceDescriptionSections));
+        OnPropertyChanged(nameof(HasCurrentWorkspaceDescriptionSections));
+        OnPropertyChanged(nameof(HasPlainCurrentWorkspaceFullDescription));
     }
 
     private bool _isSyncingCreatorMetadataEditor;
     private string _creatorMetadataWorkspaceId = string.Empty;
+    private string? _currentWorkspaceHeroPreviewCache;
+    private string _currentWorkspaceSummaryOverride = string.Empty;
+    private string _currentWorkspaceFullDescriptionOverride = string.Empty;
 
     private CreatorStudioPreferences CreatorPreferences
     {
@@ -143,21 +185,126 @@ public partial class MainViewModel
 
     public bool HasCurrentWorkspaceDescription => !string.IsNullOrWhiteSpace(CurrentWorkspaceDescription);
 
+    public bool HasCurrentWorkspaceFullDescription => !string.IsNullOrWhiteSpace(CurrentWorkspaceFullDescription);
+
+    public bool HasCurrentWorkspaceDescriptionIntro => !string.IsNullOrWhiteSpace(CurrentWorkspaceDescriptionIntro);
+
+    public bool HasCurrentWorkspaceDescriptionSections => CurrentWorkspaceDescriptionSections.Count > 0;
+
+    public bool HasPlainCurrentWorkspaceFullDescription =>
+        !HasCurrentWorkspaceDescriptionIntro &&
+        !HasCurrentWorkspaceDescriptionSections &&
+        HasCurrentWorkspaceFullDescription;
+
     public bool HasCurrentWorkspacePrimaryServer => !string.IsNullOrWhiteSpace(CurrentModpackCreatorManifest?.PrimaryServer);
+
+    public bool HasCurrentWorkspaceRecommendedRam => !string.IsNullOrWhiteSpace(CurrentWorkspaceRecommendedRamLabel);
+
+    public bool HasCurrentWorkspaceWebLink => !string.IsNullOrWhiteSpace(CurrentModpack?.WebLink);
 
     public string CurrentWorkspaceDisplayName => !string.IsNullOrWhiteSpace(CurrentModpackCreatorManifest?.PackName)
         ? CurrentModpackCreatorManifest.PackName
-        : GetCreatorStudioSelectedModpack()?.DisplayLabel ?? CurrentModpack?.DisplayLabel ?? "Bez instance";
+        : GetCurrentWorkspaceSourceModpack()?.DisplayLabel ?? "Bez instance";
 
     public string CurrentWorkspaceDescription => !string.IsNullOrWhiteSpace(CurrentModpackCreatorManifest?.Summary)
-        ? CurrentModpackCreatorManifest.Summary
-        : GetCreatorStudioSelectedModpack()?.Description ?? CurrentModpack?.Description ?? string.Empty;
+        ? string.IsNullOrWhiteSpace(_currentWorkspaceSummaryOverride) ? CurrentModpackCreatorManifest.Summary : _currentWorkspaceSummaryOverride
+        : !string.IsNullOrWhiteSpace(_currentWorkspaceSummaryOverride)
+            ? _currentWorkspaceSummaryOverride
+        : GetCurrentWorkspaceSourceModpack()?.Description ?? string.Empty;
+
+    public string CurrentWorkspaceFullDescription
+    {
+        get
+        {
+            var longDescription = !string.IsNullOrWhiteSpace(_currentWorkspaceFullDescriptionOverride)
+                ? _currentWorkspaceFullDescriptionOverride.Trim()
+                : CurrentModpack?.Description?.Trim() ?? string.Empty;
+            var summary = CurrentWorkspaceDescription.Trim();
+
+            if (string.IsNullOrWhiteSpace(longDescription))
+            {
+                return string.Empty;
+            }
+
+            return string.Equals(longDescription, summary, StringComparison.Ordinal)
+                ? string.Empty
+                : longDescription;
+        }
+    }
+
+    public IReadOnlyList<InstanceOverviewDescriptionSection> CurrentWorkspaceDescriptionSections => _currentWorkspaceDescriptionSections;
+
+    private List<InstanceOverviewDescriptionSection> CurrentWorkspaceDescriptionSectionsInternal
+    {
+        get => _currentWorkspaceDescriptionSections;
+        set => SetCurrentWorkspaceDescriptionSections(value ?? new List<InstanceOverviewDescriptionSection>());
+    }
 
     public string CurrentWorkspaceAuthorLabel => CurrentModpackCreatorManifest?.Authors.Count > 0
         ? string.Join(", ", CurrentModpackCreatorManifest.Authors)
-        : !string.IsNullOrWhiteSpace(GetCreatorStudioSelectedModpack()?.Author)
-            ? GetCreatorStudioSelectedModpack()!.Author
+        : !string.IsNullOrWhiteSpace(GetCurrentWorkspaceSourceModpack()?.Author)
+            ? GetCurrentWorkspaceSourceModpack()!.Author
             : "Neznámý";
+
+    private ModpackInfo? GetCurrentWorkspaceSourceModpack()
+    {
+        if (CurrentMainView == MainViewType.InstanceDetail)
+        {
+            return CurrentModpack;
+        }
+
+        return GetCreatorStudioSelectedModpack() ?? CurrentModpack;
+    }
+
+    private void SetCurrentWorkspaceDescriptionOverrides(string? summary, string? fullDescription)
+    {
+        var nextSummary = summary?.Trim() ?? string.Empty;
+        var nextFullDescription = fullDescription?.Trim() ?? string.Empty;
+
+        if (string.Equals(_currentWorkspaceSummaryOverride, nextSummary, StringComparison.Ordinal) &&
+            string.Equals(_currentWorkspaceFullDescriptionOverride, nextFullDescription, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        _currentWorkspaceSummaryOverride = nextSummary;
+        _currentWorkspaceFullDescriptionOverride = nextFullDescription;
+
+        OnPropertyChanged(nameof(HasCurrentWorkspaceDescription));
+        OnPropertyChanged(nameof(CurrentWorkspaceDescription));
+        OnPropertyChanged(nameof(HasCurrentWorkspaceFullDescription));
+        OnPropertyChanged(nameof(CurrentWorkspaceFullDescription));
+        OnPropertyChanged(nameof(HasPlainCurrentWorkspaceFullDescription));
+    }
+
+    public string CurrentWorkspaceMinecraftVersion => FirstNonEmpty(
+        CurrentModpackCreatorManifest?.MinecraftVersion,
+        CurrentModpack?.CustomMcVersion,
+        "Nezjištěno");
+
+    public string CurrentWorkspaceLoaderLabel
+    {
+        get
+        {
+            var modpack = CurrentModpack;
+            var customLoader = ComposeModLoaderId(modpack?.CustomModLoader, modpack?.CustomModLoaderVersion);
+            if (!string.IsNullOrWhiteSpace(customLoader))
+            {
+                return customLoader;
+            }
+
+            var manifestLoader = ComposeModLoaderId(CurrentModpackCreatorManifest?.ModLoader, CurrentModpackCreatorManifest?.ModLoaderVersion);
+            return string.IsNullOrWhiteSpace(manifestLoader) ? "Nezjištěno" : manifestLoader;
+        }
+    }
+
+    public string CurrentWorkspaceReleaseChannelLabel => !string.IsNullOrWhiteSpace(CurrentModpackCreatorManifest?.ReleaseChannel)
+        ? CurrentModpackCreatorManifest.ReleaseChannel
+        : CurrentModpack?.IsCustomProfile == true
+            ? "custom"
+            : !string.IsNullOrWhiteSpace(CurrentModpack?.Source)
+                ? CurrentModpack!.Source
+                : "Neuvedeno";
 
     public string CurrentWorkspaceMetadataSummary => CurrentModpackCreatorManifest == null
         ? CurrentModpack?.VersionTransitionText ?? "-"
@@ -168,6 +315,10 @@ public partial class MainViewModel
     public string CurrentWorkspaceRecommendedRamLabel => CurrentModpackCreatorManifest == null
         ? string.Empty
         : $"{CurrentModpackCreatorManifest.RecommendedRamMb} MB RAM";
+
+    public string? CurrentWorkspaceHeroPreview => _currentWorkspaceHeroPreviewCache;
+
+    public bool HasCurrentWorkspaceHeroPreview => !string.IsNullOrWhiteSpace(_currentWorkspaceHeroPreviewCache);
 
     public string CreatorNotesWorkspaceStatus => CreatorWorkspaceContext.HasNotesWorkspace
         ? "Notes workspace je pripraven pro rychle poznamky a drawer handoff."
@@ -181,13 +332,25 @@ public partial class MainViewModel
         ? $"{CreatorCurrentTabLabel} • {CreatorActiveScopeSummary}"
         : "Vyber instanci v Creator Studiu a pravy dock prejde na sdileny workspace context.";
 
-    public bool CanSaveCreatorMetadata => HasCreatorWorkspaceContext && !IsCreatorMetadataSaving && ValidateCreatorMetadata(out _);
+    public bool IsCreatorWorkspaceEditable => CanEditCreatorWorkspace(GetCreatorStudioSelectedModpack());
+
+    public bool IsCreatorWorkspaceReadOnly => HasCreatorWorkspaceContext && !IsCreatorWorkspaceEditable;
+
+    public bool CanSaveCreatorMetadata =>
+        HasCreatorWorkspaceContext &&
+        IsCreatorWorkspaceEditable &&
+        !IsCreatorMetadataSaving &&
+        ValidateCreatorMetadata(out _);
 
     public string CreatorMetadataActionLabel => CreatorWorkspaceContext.HasCreatorManifest
         ? "Ulozit creator manifest"
         : "Vytvorit creator manifest";
 
-    public bool CanImportCreatorSourceMetadata => HasCreatorWorkspaceContext && !IsCreatorMetadataSaving && IsExistingImportedPack;
+    public bool CanImportCreatorSourceMetadata =>
+        HasCreatorWorkspaceContext &&
+        IsCreatorWorkspaceEditable &&
+        !IsCreatorMetadataSaving &&
+        IsExistingImportedPack;
 
     public string CreatorSourceMetadataActionLabel => CreatorWorkspaceContext.HasCreatorManifest
         ? "Obnovit metadata ze zdroje"
@@ -216,6 +379,11 @@ public partial class MainViewModel
                 return "Nejdřív vyber pracovní workspace, jinak metadata nemají kam zapisovat.";
             }
 
+            if (IsCreatorWorkspaceReadOnly)
+            {
+                return CreatorWorkspaceEditabilityMessage;
+            }
+
             if (!ValidateCreatorMetadata(out var error))
             {
                 return error;
@@ -227,6 +395,10 @@ public partial class MainViewModel
         }
     }
 
+    public string CreatorWorkspaceEditabilityMessage => IsCreatorWorkspaceReadOnly
+        ? "Stažené CurseForge, Modrinth a release .voidpack instance jsou v Creator Studiu jen pro náhled. Upravovat lze pouze custom profily a dev workspace instance."
+        : "Workspace je otevřený pro creator úpravy.";
+
     public string CreatorMetadataAuthorsPreview => string.IsNullOrWhiteSpace(CreatorMetadataAuthors)
         ? "Autor zatím není vyplněn."
         : CreatorMetadataAuthors;
@@ -235,23 +407,7 @@ public partial class MainViewModel
         ? Path.Combine(CreatorWorkspaceContext.WorkspacePath, "assets", "branding")
         : string.Empty;
 
-    public string BrandStorageStatus
-    {
-        get
-        {
-            if (string.IsNullOrWhiteSpace(BrandStoragePath))
-            {
-                return "Brand storage ceka na workspace";
-            }
-
-            var assetCount = _creatorAssetsService.GetAssetMetadata(CreatorWorkspaceContext.WorkspacePath).Count;
-            var totalSlots = BrandingAssetRequirement.GetStandardRequirements().Count;
-
-            return assetCount == 0
-                ? $"0/{totalSlots} branding slotů připraveno"
-                : $"{assetCount}/{totalSlots} branding slotů připraveno";
-        }
-    }
+    public string BrandStorageStatus => _brandStorageStatusCache;
 
     public string LauncherPreviewTitle => !string.IsNullOrWhiteSpace(CreatorBrandLauncherCardTitle)
         ? CreatorBrandLauncherCardTitle
@@ -270,6 +426,19 @@ public partial class MainViewModel
     public string LauncherPreviewChannel => !string.IsNullOrWhiteSpace(CreatorMetadataReleaseChannel)
         ? CreatorMetadataReleaseChannel
         : "alpha";
+
+    private void RefreshCurrentWorkspaceHeroState()
+    {
+        if (CurrentModpackCreatorManifest?.Branding == null || CurrentModpack == null || string.IsNullOrWhiteSpace(CurrentModpack.Name))
+        {
+            _currentWorkspaceHeroPreviewCache = null;
+            return;
+        }
+
+        var workspacePath = _launcherService.GetModpackPath(CurrentModpack.Name);
+        _currentWorkspaceHeroPreviewCache = _creatorAssetsService.ResolveWorkspaceRelativePath(workspacePath, CurrentModpackCreatorManifest.Branding.FeaturedScreenshotPath)
+            ?? _creatorAssetsService.ResolveWorkspaceRelativePath(workspacePath, CurrentModpackCreatorManifest.Branding.CoverPath);
+    }
 
     partial void OnCreatorMetadataPackNameChanged(string value) => OnCreatorMetadataEditorChanged();
 
@@ -315,7 +484,9 @@ public partial class MainViewModel
 
     private void RefreshCurrentModpackCreatorManifest()
     {
-        var workspaceId = SelectedSkinStudioInstance?.Id ?? CreatorPreferences.SelectedWorkspaceId ?? CurrentModpack?.Name;
+        var workspaceId = CurrentMainView == MainViewType.InstanceDetail && !string.IsNullOrWhiteSpace(CurrentModpack?.Name)
+            ? CurrentModpack.Name
+            : SelectedSkinStudioInstance?.Id ?? CreatorPreferences.SelectedWorkspaceId ?? CurrentModpack?.Name;
         if (string.IsNullOrWhiteSpace(workspaceId))
         {
             CurrentModpackCreatorManifest = null;
@@ -344,11 +515,14 @@ public partial class MainViewModel
         OnPropertyChanged(nameof(CreatorNotesWorkspaceStatus));
         OnPropertyChanged(nameof(CreatorDockHeadline));
         OnPropertyChanged(nameof(CreatorDockSubtitle));
+        OnPropertyChanged(nameof(IsCreatorWorkspaceEditable));
+        OnPropertyChanged(nameof(IsCreatorWorkspaceReadOnly));
         OnPropertyChanged(nameof(CanSaveCreatorMetadata));
         OnPropertyChanged(nameof(CreatorMetadataActionLabel));
         OnPropertyChanged(nameof(CanImportCreatorSourceMetadata));
         OnPropertyChanged(nameof(CreatorSourceMetadataActionLabel));
         OnPropertyChanged(nameof(CreatorMetadataValidationMessage));
+        OnPropertyChanged(nameof(CreatorWorkspaceEditabilityMessage));
         OnPropertyChanged(nameof(CreatorMetadataAuthorsPreview));
         OnPropertyChanged(nameof(BrandStoragePath));
         OnPropertyChanged(nameof(BrandStorageStatus));
@@ -356,6 +530,8 @@ public partial class MainViewModel
         OnPropertyChanged(nameof(LauncherPreviewDescription));
         OnPropertyChanged(nameof(LauncherPreviewAssetStatus));
         OnPropertyChanged(nameof(LauncherPreviewChannel));
+        OnPropertyChanged(nameof(CurrentWorkspaceHeroPreview));
+        OnPropertyChanged(nameof(HasCurrentWorkspaceHeroPreview));
     }
 
     private void RefreshCreatorWorkspaceContext()
@@ -388,9 +564,10 @@ public partial class MainViewModel
 
         CreatorShellState.HasWorkspaceChanges = CreatorWorkspaceContext.HasDirtyWorkingTree == true;
         CreatorShellState.HasReleaseWarnings = !CreatorWorkspaceContext.HasCreatorManifest || CreatorWorkspaceContext.MissingStandardFolders.Count > 0;
-        CreatorShellState.HasUnsavedFileChanges = CanSaveCreatorWorkbenchFile || IsCreatorMetadataDirty;
+        CreatorShellState.HasUnsavedFileChanges = CanSaveCreatorWorkbenchFile || (IsCreatorWorkspaceEditable && IsCreatorMetadataDirty);
         SyncCreatorMetadataEditor(previousWorkspaceId, modpack);
         RefreshBrandingPreviews();
+        RefreshCreatorScreenshotGallery();
         NotifyCreatorShellVisualStateChanged();
     }
 
@@ -537,8 +714,9 @@ public partial class MainViewModel
 
     private void UpdateCreatorDirtyIndicators()
     {
-        CreatorShellState.HasUnsavedFileChanges = CanSaveCreatorWorkbenchFile || IsCreatorMetadataDirty;
-        CreatorShellState.HasWorkspaceChanges = CreatorWorkspaceContext.HasDirtyWorkingTree == true || CanSaveCreatorWorkbenchFile || IsCreatorMetadataDirty;
+        var hasEditableMetadataChanges = IsCreatorWorkspaceEditable && IsCreatorMetadataDirty;
+        CreatorShellState.HasUnsavedFileChanges = CanSaveCreatorWorkbenchFile || hasEditableMetadataChanges;
+        CreatorShellState.HasWorkspaceChanges = CreatorWorkspaceContext.HasDirtyWorkingTree == true || CanSaveCreatorWorkbenchFile || hasEditableMetadataChanges;
         CreatorShellState.HasReleaseWarnings = !CreatorWorkspaceContext.HasCreatorManifest || CreatorWorkspaceContext.MissingStandardFolders.Count > 0;
         NotifyCreatorShellVisualStateChanged();
     }
@@ -565,7 +743,9 @@ public partial class MainViewModel
             remoteChanged = await TryRefreshModpackSourceMetadataAsync(modpack);
         }
 
-        var brandingImported = await EnsureCreatorWorkspacePublicBrandingAsync(workspaceId, modpack);
+        var brandingImported = CanEditCreatorWorkspace(modpack)
+            ? await EnsureCreatorWorkspacePublicBrandingAsync(workspaceId, modpack)
+            : false;
 
         if (!localChanged && !remoteChanged && !brandingImported)
         {
@@ -613,8 +793,39 @@ public partial class MainViewModel
             return;
         }
 
+        if (!IsCreatorWorkspaceEditable)
+        {
+            return;
+        }
+
         IsCreatorMetadataDirty = true;
         UpdateCreatorDirtyIndicators();
+    }
+
+    private bool CanEditCreatorWorkspace(ModpackInfo? modpack)
+    {
+        if (modpack == null)
+        {
+            return false;
+        }
+
+        if (!modpack.IsCustomProfile)
+        {
+            return false;
+        }
+
+        return !IsVoidpackReleaseImport(modpack);
+    }
+
+    private static bool IsVoidpackReleaseImport(ModpackInfo modpack)
+    {
+        if (string.Equals(modpack.Source, "VOID", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return string.Equals(modpack.Author, "VOID-CRAFT Import", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(modpack.Description, "Importováno z .voidpack archivu.", StringComparison.OrdinalIgnoreCase);
     }
 
     private void SyncCreatorMetadataEditor(string previousWorkspaceId, ModpackInfo? modpack, bool force = false)
@@ -842,6 +1053,7 @@ public partial class MainViewModel
             existingManifest?.CreatedAtUtc);
 
         manifest.BrandProfile = BuildCurrentBrandProfile();
+        manifest.Screenshots = CloneCreatorScreenshotMetadata(existingManifest?.Screenshots);
         return manifest;
     }
 
@@ -855,7 +1067,21 @@ public partial class MainViewModel
             runtime.ModLoaderVersion);
 
         manifest.BrandProfile = existingManifest?.BrandProfile ?? BuildCurrentBrandProfile();
+        manifest.Screenshots = CloneCreatorScreenshotMetadata(existingManifest?.Screenshots);
         return manifest;
+    }
+
+    private static List<CreatorScreenshotMetadata> CloneCreatorScreenshotMetadata(IEnumerable<CreatorScreenshotMetadata>? screenshots)
+    {
+        return screenshots?
+            .Select(screenshot => new CreatorScreenshotMetadata
+            {
+                RelativePath = screenshot.RelativePath,
+                Stage = screenshot.Stage,
+                IsFavorite = screenshot.IsFavorite,
+                UpdatedAtUtc = screenshot.UpdatedAtUtc
+            })
+            .ToList() ?? new List<CreatorScreenshotMetadata>();
     }
 
     private (string MinecraftVersion, string ModLoader, string ModLoaderVersion) ResolveCreatorRuntimeDefaults(
@@ -1109,6 +1335,12 @@ public partial class MainViewModel
         if (!HasCreatorWorkspaceContext || string.IsNullOrWhiteSpace(CreatorWorkspaceContext.WorkspacePath))
         {
             ShowToast("Creator Studio", "Nejdřív vyber pracovní workspace.", ToastSeverity.Warning);
+            return;
+        }
+
+        if (!IsCreatorWorkspaceEditable)
+        {
+            ShowToast("Creator Studio", CreatorWorkspaceEditabilityMessage, ToastSeverity.Warning, 3200);
             return;
         }
 

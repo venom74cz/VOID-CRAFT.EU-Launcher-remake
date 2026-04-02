@@ -2,6 +2,25 @@
 
 Všechny důležité změny v projektu jsou dokumentovány v tomto souboru.
 
+## [3.1.6] - 2026-04-02
+
+### ✨ Instance Workspace, Creator Studio a release polish
+
+### Přidáno
+- **Historie pádů**: `Performance` záložka teď ukládá reálné pády instance včetně exit code, délky běhu, výpisu logu a odkazu na log nebo crash-report.
+- **World backup flow**: detail instance umí zálohovat, obnovit i mazat jednotlivé světy a před restore automaticky vytváří pojistnou zálohu původního stavu.
+- **Promo screenshot curation**: `Creator Studio` umí tagovat `official`, `release candidate` a `archive` screenshoty, připnout favorit a exportovat curated screenshoty do media kitu.
+
+### Změněno
+- **Instance Workspace copy**: detail instance používá kratší hráčský copy, čistší přehled a samostatný full description rendering místo interních placeholder formulací.
+- **Installed mods filter**: vyhledávání v `Obsah` záložce teď filtruje jen nainstalované mody a nesdílí query se search flow pro přidávání nových modů.
+- **Creator Studio access rules**: importované `CurseForge`, `Modrinth` a release `.voidpack` instance jsou v creator režimu jen read-only preview.
+
+### Opraveno
+- **Launch fallback**: custom instance bez čerstvého `manifest_info.json` už neskončí jako čistá vanilla a launcher si správně dopočítá loader z creator/runtime metadata.
+- **Overview description flow**: summary a plný popis packu se už v detailu nemíchají ani neduplikují.
+- **Release metadata**: projekt, installer, fallback `User-Agent` verze a dokumentace jsou srovnané na `3.1.6`.
+
 ## [3.1.5] - 2026-04-01
 
 ### 🛠️ Creator Studio Metadata & Branding Hotfix

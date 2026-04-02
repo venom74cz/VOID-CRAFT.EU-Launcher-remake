@@ -66,6 +66,22 @@ namespace VoidCraftLauncher.Services
         {
             try
             {
+                var html = await GetProjectDescriptionHtmlAsync(modId);
+                if (!string.IsNullOrWhiteSpace(html))
+                {
+                    var htmlDoc = new HtmlAgilityPack.HtmlDocument();
+                    htmlDoc.LoadHtml(html);
+                    return System.Net.WebUtility.HtmlDecode(htmlDoc.DocumentNode.InnerText).Trim();
+                }
+            }
+            catch { }
+            return "";
+        }
+
+        public async Task<string> GetProjectDescriptionHtmlAsync(int modId)
+        {
+            try
+            {
                 var response = await _httpClient.GetAsync($"v1/mods/{modId}/description");
                 if (!response.IsSuccessStatusCode) return "";
 
@@ -73,16 +89,11 @@ namespace VoidCraftLauncher.Services
                 using var doc = System.Text.Json.JsonDocument.Parse(json);
                 if (doc.RootElement.TryGetProperty("data", out var dataElement))
                 {
-                    string html = dataElement.GetString() ?? "";
-                    if (!string.IsNullOrWhiteSpace(html))
-                    {
-                        var htmlDoc = new HtmlAgilityPack.HtmlDocument();
-                        htmlDoc.LoadHtml(html);
-                        return System.Net.WebUtility.HtmlDecode(htmlDoc.DocumentNode.InnerText).Trim();
-                    }
+                    return dataElement.GetString() ?? "";
                 }
             }
             catch { }
+
             return "";
         }
 

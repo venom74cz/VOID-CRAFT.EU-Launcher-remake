@@ -94,6 +94,27 @@
                         </Button.Flyout>
                     </Button>
                 </Grid>
+
+                <Border Margin="24,0,24,16" Height="164" CornerRadius="18" ClipToBounds="True" IsVisible="{Binding HasCurrentWorkspaceHeroPreview}">
+                    <Grid>
+                        <asyncImage:AdvancedImage Source="{Binding CurrentWorkspaceHeroPreview}" Stretch="UniformToFill"/>
+                        <Border Background="#A5121624"/>
+                        <Grid Margin="22,18,22,18" RowDefinitions="*,Auto">
+                            <StackPanel Spacing="10" VerticalAlignment="Top">
+                                <TextBlock Text="{Binding CurrentWorkspaceDisplayName}" FontSize="24" FontWeight="ExtraBold" Foreground="White" TextWrapping="Wrap" MaxWidth="520"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8">
+                                <Border Background="#2A141C2C" CornerRadius="999" Padding="10,4">
+                                    <TextBlock Text="{Binding CurrentWorkspaceMetadataSummary}" FontSize="10" Foreground="White"/>
+                                </Border>
+                                <Border Background="#2A141C2C" CornerRadius="999" Padding="10,4" IsVisible="{Binding HasCurrentWorkspacePrimaryServer}">
+                                    <TextBlock Text="{Binding CurrentWorkspacePrimaryServerLabel}" FontSize="10" Foreground="White"/>
+                                </Border>
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                </Border>
             </StackPanel>
         </Border>
 
@@ -106,26 +127,93 @@
                     <Border Padding="0,16,0,60">
                         <StackPanel Spacing="16" MaxWidth="900">
                             <Border Classes="card">
-                                <StackPanel Spacing="12">
-                                    <TextBlock Text="Popis" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="16"/>
-                                    <TextBlock Text="{Binding CurrentWorkspaceDescription}" FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" LineHeight="20"
-                                               IsVisible="{Binding HasCurrentWorkspaceDescription}"/>
-                                    <StackPanel IsVisible="{Binding !HasCurrentWorkspaceDescription}">
-                                        <TextBlock Text="Popis není k dispozici." Foreground="{DynamicResource TextMutedBrush}" FontStyle="Italic" FontSize="13"/>
-                                    </StackPanel>
-                                    <Border Height="1" Background="{DynamicResource StrokeSoftBrush}" Margin="0,4"/>
-                                    <Grid ColumnDefinitions="Auto,*,Auto">
-                                        <StackPanel Orientation="Horizontal" Spacing="6">
-                                            <TextBlock Text="Autor:" Foreground="{DynamicResource TextMutedBrush}" FontSize="12"/>
-                                            <TextBlock Text="{Binding CurrentWorkspaceAuthorLabel}" Foreground="{DynamicResource PrimaryBBrush}" FontWeight="Bold" FontSize="12"/>
+                                <Grid ColumnDefinitions="*,260" ColumnSpacing="20">
+                                    <StackPanel Spacing="14">
+                                        <StackPanel Spacing="8">
+                                            <TextBlock Text="Krátký popis" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="16"/>
+                                            <TextBlock Text="{Binding CurrentWorkspaceDescription}" FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" LineHeight="20"
+                                                       IsVisible="{Binding HasCurrentWorkspaceDescription}"/>
+                                            <StackPanel IsVisible="{Binding !HasCurrentWorkspaceDescription}">
+                                                <TextBlock Text="Popis není k dispozici." Foreground="{DynamicResource TextMutedBrush}" FontStyle="Italic" FontSize="13"/>
+                                            </StackPanel>
                                         </StackPanel>
-                                        <Button Grid.Column="2" Command="{Binding OpenUrlCommand}" CommandParameter="{Binding CurrentModpack.WebLink}"
-                                                IsVisible="{Binding !!CurrentModpack.WebLink.Length}"
-                                                Classes="secondary" FontSize="12" Padding="12,8">
-                                            <TextBlock Text="Navštívit web ↗"/>
-                                        </Button>
-                                    </Grid>
-                                </StackPanel>
+
+                                        <Border Height="1" Background="{DynamicResource StrokeSoftBrush}" Margin="0,2"/>
+
+                                        <StackPanel Spacing="10" IsVisible="{Binding HasCurrentWorkspaceFullDescription}">
+                                            <TextBlock Text="Podrobnosti" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="15"/>
+                                            <TextBlock Text="{Binding CurrentWorkspaceDescriptionIntro}" FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}"
+                                                       TextWrapping="Wrap" LineHeight="22"
+                                                       IsVisible="{Binding HasCurrentWorkspaceDescriptionIntro}"/>
+
+                                            <ItemsControl ItemsSource="{Binding CurrentWorkspaceDescriptionSections}" IsVisible="{Binding HasCurrentWorkspaceDescriptionSections}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:DataType="models:InstanceOverviewDescriptionSection">
+                                                        <Border Background="{DynamicResource BgElevatedBrush}"
+                                                                BorderBrush="{DynamicResource StrokeSoftBrush}"
+                                                                BorderThickness="1"
+                                                                CornerRadius="16"
+                                                                Padding="14">
+                                                            <StackPanel Spacing="6">
+                                                                <TextBlock Text="{Binding Title}" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                                                                <TextBlock Text="{Binding Body}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"
+                                                                           TextWrapping="Wrap" LineHeight="20"
+                                                                           IsVisible="{Binding HasBody}"/>
+                                                            </StackPanel>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+
+                                            <TextBlock Text="{Binding CurrentWorkspaceFullDescription}" FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}"
+                                                       TextWrapping="Wrap" LineHeight="22"
+                                                       IsVisible="{Binding HasPlainCurrentWorkspaceFullDescription}"/>
+                                        </StackPanel>
+                                    </StackPanel>
+
+                                    <Border Grid.Column="1"
+                                            Background="{DynamicResource BgElevatedBrush}"
+                                            BorderBrush="{DynamicResource StrokeSoftBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="18"
+                                            Padding="16">
+                                        <StackPanel Spacing="12">
+                                            <TextBlock Text="Info pro hráče" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="15"/>
+
+                                            <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="8">
+                                                <TextBlock Text="Pack" Foreground="{DynamicResource TextMutedBrush}" FontSize="12"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding CurrentWorkspaceDisplayName}" Foreground="{DynamicResource TextPrimaryBrush}" FontWeight="SemiBold" FontSize="12" TextWrapping="Wrap"/>
+
+                                                <TextBlock Grid.Row="1" Text="Autoři" Foreground="{DynamicResource TextMutedBrush}" FontSize="12"/>
+                                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding CurrentWorkspaceAuthorLabel}" Foreground="{DynamicResource PrimaryBBrush}" FontWeight="SemiBold" FontSize="12" TextWrapping="Wrap"/>
+
+                                                <TextBlock Grid.Row="2" Text="Minecraft" Foreground="{DynamicResource TextMutedBrush}" FontSize="12"/>
+                                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding CurrentWorkspaceMinecraftVersion}" Foreground="{DynamicResource TextPrimaryBrush}" FontWeight="SemiBold" FontSize="12" TextWrapping="Wrap"/>
+
+                                                <TextBlock Grid.Row="3" Text="Loader" Foreground="{DynamicResource TextMutedBrush}" FontSize="12"/>
+                                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding CurrentWorkspaceLoaderLabel}" Foreground="{DynamicResource TextPrimaryBrush}" FontWeight="SemiBold" FontSize="12" TextWrapping="Wrap"/>
+
+                                                <TextBlock Grid.Row="4" Text="Channel" Foreground="{DynamicResource TextMutedBrush}" FontSize="12"/>
+                                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding CurrentWorkspaceReleaseChannelLabel}" Foreground="{DynamicResource TextPrimaryBrush}" FontWeight="SemiBold" FontSize="12" TextWrapping="Wrap"/>
+                                            </Grid>
+
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <Border Background="{DynamicResource BgInteractiveBrush}" CornerRadius="999" Padding="10,5" IsVisible="{Binding HasCurrentWorkspacePrimaryServer}">
+                                                    <TextBlock Text="{Binding CurrentWorkspacePrimaryServerLabel}" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="10"/>
+                                                </Border>
+                                                <Border Background="{DynamicResource BgInteractiveBrush}" CornerRadius="999" Padding="10,5" IsVisible="{Binding HasCurrentWorkspaceRecommendedRam}">
+                                                    <TextBlock Text="{Binding CurrentWorkspaceRecommendedRamLabel}" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="10"/>
+                                                </Border>
+                                            </StackPanel>
+
+                                            <Button Command="{Binding OpenUrlCommand}" CommandParameter="{Binding CurrentModpack.WebLink}"
+                                                    IsVisible="{Binding HasCurrentWorkspaceWebLink}"
+                                                    Classes="secondary" FontSize="12" Padding="12,8" HorizontalAlignment="Stretch">
+                                                <TextBlock Text="Navštívit web ↗"/>
+                                            </Button>
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
                             </Border>
                         </StackPanel>
                     </Border>
@@ -143,7 +231,7 @@
                                         BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
                                     <Grid ColumnDefinitions="Auto,*">
                                         <TextBlock Text="{StaticResource IconSearch}" VerticalAlignment="Center" Margin="12,0,6,0" Foreground="{DynamicResource TextMutedBrush}" FontSize="13"/>
-                                        <TextBox Grid.Column="1" Text="{Binding ProfileModSearchQuery}" Watermark="Hledat v modech..."
+                                        <TextBox Grid.Column="1" Text="{Binding InstalledModsSearchQuery}" Watermark="Filtrovat nainstalované mody..."
                                                  BorderThickness="0" Background="Transparent" FontSize="12" Padding="4,8"/>
                                     </Grid>
                                 </Border>
@@ -161,20 +249,22 @@
                                 </Button>
                             </Grid>
 
-                            <!-- Mod table header -->
-                            <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,4,0,0">
-                                <CheckBox Grid.Column="0" Margin="2,0,12,0" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="1" Text="Název" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="2" Text="Aktualizováno" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center"/>
+                            <!-- Mod list header -->
+                            <Grid ColumnDefinitions="36,*,Auto" Margin="0,4,0,0" ColumnSpacing="10">
+                                <Border Width="32" Height="1" Background="Transparent"/>
+                                <TextBlock Grid.Column="1" Text="Nainstalované mody" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="2" Text="Akce" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center" HorizontalAlignment="Right"/>
                             </Grid>
 
                             <Border Height="1" Background="{DynamicResource StrokeSoftBrush}"/>
 
-                            <!-- No mods message -->
-                            <TextBlock Text="Zatím žádné mody." Foreground="{DynamicResource TextMutedBrush}" FontSize="12" IsVisible="{Binding !InstalledMods.Count}" Margin="0,8"/>
+                            <controls:EmptyState IsVisible="{Binding !HasFilteredInstalledMods}"
+                                                 Icon="{StaticResource IconSearch}"
+                                                 Title="{Binding InstalledModsEmptyTitle}"
+                                                 Subtitle="{Binding InstalledModsEmptySubtitle}"/>
 
                             <!-- Installed Mods List -->
-                            <ItemsControl ItemsSource="{Binding InstalledMods}">
+                            <ItemsControl ItemsSource="{Binding FilteredInstalledMods}" IsVisible="{Binding HasFilteredInstalledMods}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:CompileBindings="False">
                                         <Border Background="{DynamicResource BgShellBrush}" CornerRadius="{DynamicResource RadiusSmall}"
@@ -185,14 +275,13 @@
                                                     <Setter Property="Background" Value="{DynamicResource BgElevatedBrush}"/>
                                                 </Style>
                                             </Border.Styles>
-                                            <Grid ColumnDefinitions="Auto,36,*,Auto,Auto" ColumnSpacing="10">
-                                                <CheckBox Grid.Column="0" VerticalAlignment="Center"/>
-                                                <Border Grid.Column="1" Width="32" Height="32" CornerRadius="{DynamicResource RadiusSmall}" ClipToBounds="True"
+                                            <Grid ColumnDefinitions="36,*,Auto" ColumnSpacing="10">
+                                                <Border Grid.Column="0" Width="32" Height="32" CornerRadius="{DynamicResource RadiusSmall}" ClipToBounds="True"
                                                         Background="{DynamicResource BgInteractiveBrush}" VerticalAlignment="Center">
                                                     <asyncImage:AdvancedImage Source="{Binding IconUrl}" Width="32" Height="32" Stretch="UniformToFill"
                                                                             IsVisible="{Binding IconUrl, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
                                                 </Border>
-                                                <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="1">
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
                                                     <StackPanel Orientation="Horizontal" Spacing="6">
                                                         <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="13"/>
                                                         <TextBlock Text="{Binding Source}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center"/>
@@ -204,17 +293,13 @@
                                                                IsVisible="{Binding Author, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
                                                     <TextBlock Text="{Binding InstalledFileName}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" TextTrimming="CharacterEllipsis" MaxWidth="300"/>
                                                 </StackPanel>
-                                                <ToggleSwitch Grid.Column="3" OnContent="" OffContent="" VerticalAlignment="Center" IsChecked="True"/>
-                                                <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
                                                     <Button Command="{Binding DataContext.RemoveModFromProfileCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                             CommandParameter="{Binding}"
+                                                            IsVisible="{Binding DataContext.CurrentModpack.IsCustomProfile, RelativeSource={RelativeSource AncestorType=Window}}"
                                                             Background="Transparent" Foreground="{DynamicResource DangerBrush}" Padding="6" CornerRadius="6" Cursor="Hand"
                                                             ToolTip.Tip="Odebrat">
                                                         <TextBlock Text="{StaticResource IconTrash}" FontSize="13"/>
-                                                    </Button>
-                                                    <Button Background="Transparent" Foreground="{DynamicResource TextMutedBrush}" Padding="6" CornerRadius="6" Cursor="Hand"
-                                                            ToolTip.Tip="Více">
-                                                        <TextBlock Text="⋮" FontSize="13" FontWeight="Bold"/>
                                                     </Button>
                                                 </StackPanel>
                                             </Grid>
@@ -456,14 +541,60 @@
                                 </StackPanel>
                             </Border>
 
-                            <!-- Placeholder: Crash History -->
-                            <Border Classes="card" Opacity="0.6">
-                                <StackPanel Spacing="8">
-                                    <StackPanel Orientation="Horizontal" Spacing="8">
-                                        <TextBlock Text="{StaticResource IconCrash}" FontSize="14" VerticalAlignment="Center"/>
-                                        <TextBlock Text="Historie pádů" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="16"/>
-                                    </StackPanel>
-                                    <TextBlock Text="Žádné pády nebyly zaznamenány." FontSize="12" Foreground="{DynamicResource TextMutedBrush}"/>
+                            <Border Classes="card">
+                                <StackPanel Spacing="12">
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                        <StackPanel Spacing="2">
+                                            <TextBlock Text="Historie pádů" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="16"/>
+                                            <TextBlock Text="Launcher si ukládá poslední pády této instance včetně exit code, délky běhu a výpisu logu." FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                        <Button Grid.Column="1" Content="Obnovit" Command="{Binding RefreshCrashHistoryCommand}" Classes="secondary" FontSize="12" Padding="12,8"/>
+                                    </Grid>
+
+                                    <controls:EmptyState IsVisible="{Binding !HasCurrentModpackCrashHistory}"
+                                                         Icon="{StaticResource IconCrash}"
+                                                         Title="{Binding CurrentModpackCrashHistoryEmptyTitle}"
+                                                         Subtitle="{Binding CurrentModpackCrashHistoryEmptySubtitle}"/>
+
+                                    <ItemsControl ItemsSource="{Binding CurrentModpackCrashHistory}" IsVisible="{Binding HasCurrentModpackCrashHistory}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="models:CrashHistoryEntry">
+                                                <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="16"
+                                                        BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" Padding="14" Margin="0,0,0,8">
+                                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                                        <StackPanel Spacing="6">
+                                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                                <TextBlock Text="{Binding Summary}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap" MaxWidth="520"/>
+                                                                <Border Background="{DynamicResource BgInteractiveBrush}" CornerRadius="999" Padding="8,3">
+                                                                    <TextBlock Text="{Binding ExitCodeLabel}" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                                                </Border>
+                                                            </StackPanel>
+                                                            <TextBlock Text="{Binding OccurredAtLabel, StringFormat='{}Zaznamenáno {0}'}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                                            <TextBlock Text="{Binding RuntimeLabel, StringFormat='{}Běh hry: {0}'}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                                            <Border Background="{DynamicResource BgShellBrush}" CornerRadius="12" Padding="10" IsVisible="{Binding HasLogTail}">
+                                                                <TextBlock Text="{Binding LogTail}" FontSize="10" LineHeight="16" Foreground="{DynamicResource TextSecondaryBrush}" FontFamily="Consolas,monospace" TextWrapping="Wrap" MaxLines="6"/>
+                                                            </Border>
+                                                        </StackPanel>
+
+                                                        <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Center">
+                                                            <Button Classes="secondary" FontSize="11" Padding="12,6"
+                                                                    Command="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).OpenCrashHistoryArtifactCommand}"
+                                                                    CommandParameter="{Binding}"
+                                                                    IsVisible="{Binding HasOpenableArtifact}">
+                                                                <TextBlock Text="Otevřít log"/>
+                                                            </Button>
+                                                            <Button Classes="ghost" FontSize="11" Padding="12,6"
+                                                                    Command="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).CopyCrashHistoryLogCommand}"
+                                                                    CommandParameter="{Binding}"
+                                                                    IsVisible="{Binding HasLogTail}">
+                                                                <TextBlock Text="Kopírovat výpis"/>
+                                                            </Button>
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
                                 </StackPanel>
                             </Border>
                         </StackPanel>
@@ -482,7 +613,7 @@
                                     <Grid ColumnDefinitions="*,Auto">
                                         <StackPanel Spacing="2">
                                             <TextBlock Text="Uložené světy" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="16"/>
-                                            <TextBlock Text="Přímý přístup do složky saves aktuální instance" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                            <TextBlock Text="Přímý přístup ke světům této instance a možnost vytvořit ruční zálohu pro každý svět." FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
                                         </StackPanel>
                                         <Button Grid.Column="1" Command="{Binding OpenSavesFolderCommand}"
                                                 Classes="secondary" FontSize="12" Padding="14,8">
@@ -492,7 +623,99 @@
                                             </StackPanel>
                                         </Button>
                                     </Grid>
-                                    <TextBlock Text="Přímý přístup k uloženým světům v adresáři instance." FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+
+                                    <controls:EmptyState IsVisible="{Binding !HasCurrentModpackSaveWorlds}"
+                                                         Icon="{StaticResource IconFolder}"
+                                                         Title="Zatím žádné světy"
+                                                         Subtitle="Jakmile v instanci vznikne první svět, objeví se tady."/>
+
+                                    <ItemsControl ItemsSource="{Binding CurrentModpackSaveWorlds}" IsVisible="{Binding HasCurrentModpackSaveWorlds}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="models:InstanceSaveWorldEntry">
+                                                <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusControl}"
+                                                        BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" Padding="14" Margin="0,0,0,8">
+                                                    <StackPanel Spacing="12">
+                                                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                                            <StackPanel Spacing="4">
+                                                                <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                                                <TextBlock Text="{Binding Summary}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                                                <TextBlock Text="{Binding LastModifiedAt, StringFormat='{}Naposledy změněno {0:dd.MM.yyyy HH:mm}'}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                                                <TextBlock Text="{Binding BackupStatusLabel}" FontSize="11" Foreground="{DynamicResource PrimaryBBrush}"/>
+                                                            </StackPanel>
+                                                            <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Center">
+                                                                <Border Background="{DynamicResource BgInteractiveBrush}" CornerRadius="{DynamicResource RadiusPill}" Padding="10,4" HorizontalAlignment="Right">
+                                                                    <TextBlock Text="{Binding FileCount, StringFormat='{}{0} souborů'}" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                                                </Border>
+                                                                <Button Classes="secondary" FontSize="11" Padding="12,6"
+                                                                        Command="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).BackupSaveWorldCommand}"
+                                                                        CommandParameter="{Binding}">
+                                                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                                                        <TextBlock Text="{StaticResource IconBackup}"/>
+                                                                        <TextBlock Text="Zálohovat svět"/>
+                                                                    </StackPanel>
+                                                                </Button>
+                                                                <Button Classes="ghost" FontSize="11" Padding="12,6"
+                                                                        Command="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).OpenSaveWorldFolderCommand}"
+                                                                        CommandParameter="{Binding}">
+                                                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                                                        <TextBlock Text="{StaticResource IconFolder}"/>
+                                                                        <TextBlock Text="Otevřít svět"/>
+                                                                    </StackPanel>
+                                                                </Button>
+                                                                <Button Classes="ghost" FontSize="11" Padding="12,6"
+                                                                        Command="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).OpenSaveWorldBackupFolderCommand}"
+                                                                        CommandParameter="{Binding}">
+                                                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                                                        <TextBlock Text="{StaticResource IconFolder}"/>
+                                                                        <TextBlock Text="Otevřít backupy"/>
+                                                                    </StackPanel>
+                                                                </Button>
+                                                            </StackPanel>
+                                                        </Grid>
+
+                                                        <Border Height="1" Background="{DynamicResource StrokeSoftBrush}" IsVisible="{Binding HasBackups}"/>
+
+                                                        <StackPanel Spacing="8" IsVisible="{Binding HasBackups}">
+                                                            <TextBlock Text="Zálohy tohoto světa" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                                            <ItemsControl ItemsSource="{Binding Backups}">
+                                                                <ItemsControl.ItemTemplate>
+                                                                    <DataTemplate x:DataType="models:InstanceWorldBackupSnapshot">
+                                                                        <Border Background="{DynamicResource BgShellBrush}" CornerRadius="14"
+                                                                                BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" Padding="12" Margin="0,0,0,6">
+                                                                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                                                                <StackPanel Spacing="3">
+                                                                                    <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                                                                    <TextBlock Text="{Binding CreatedAt, StringFormat='{}Vytvořeno {0:dd.MM.yyyy HH:mm}'}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                                                                    <TextBlock Text="{Binding FileCount, StringFormat='{}{0} souborů'}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                                                                </StackPanel>
+                                                                                <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Center">
+                                                                                    <Button Classes="secondary" FontSize="11" Padding="12,6"
+                                                                                            Command="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).RestoreWorldBackupSnapshotCommand}"
+                                                                                            CommandParameter="{Binding}">
+                                                                                        <TextBlock Text="Obnovit svět"/>
+                                                                                    </Button>
+                                                                                    <Button Classes="ghost" FontSize="11" Padding="12,6"
+                                                                                            Command="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).OpenWorldBackupSnapshotCommand}"
+                                                                                            CommandParameter="{Binding}">
+                                                                                        <TextBlock Text="Otevřít zálohu"/>
+                                                                                    </Button>
+                                                                                    <Button Classes="danger" FontSize="11" Padding="12,6"
+                                                                                            Command="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).DeleteWorldBackupSnapshotCommand}"
+                                                                                            CommandParameter="{Binding}">
+                                                                                        <TextBlock Text="Smazat zálohu"/>
+                                                                                    </Button>
+                                                                                </StackPanel>
+                                                                            </Grid>
+                                                                        </Border>
+                                                                    </DataTemplate>
+                                                                </ItemsControl.ItemTemplate>
+                                                            </ItemsControl>
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
                                 </StackPanel>
                             </Border>
 
@@ -500,8 +723,8 @@
                                 <StackPanel Spacing="14">
                                     <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
                                         <StackPanel Spacing="2">
-                                            <TextBlock Text="Snapshoty konfigurace" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="16"/>
-                                            <TextBlock Text="Rychlé zálohy configů, světů, shaderů a dalších uživatelských dat do launcher backup workspace" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                            <TextBlock Text="Zálohy instance" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="16"/>
+                                            <TextBlock Text="Rychlé zálohy configů, shaderů, nastavení a dalších dat této instance." FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
                                         </StackPanel>
                                         <Button Grid.Column="1" Content="↻ Obnovit" Command="{Binding RefreshInstanceWorkspaceDataCommand}"
                                                 Classes="secondary" FontSize="12" Padding="12,8"/>
@@ -509,15 +732,15 @@
                                                 Classes="accent" FontSize="12" Padding="14,8">
                                             <StackPanel Orientation="Horizontal" Spacing="6">
                                                 <TextBlock Text="{StaticResource IconBackup}"/>
-                                                <TextBlock Text="Vytvořit snapshot"/>
+                                                <TextBlock Text="Vytvořit zálohu"/>
                                             </StackPanel>
                                         </Button>
                                     </Grid>
 
                                     <controls:EmptyState IsVisible="{Binding !HasCurrentModpackBackups}"
                                                          Icon="{StaticResource IconBackup}"
-                                                         Title="Zatím žádné snapshoty"
-                                                         Subtitle="Po vytvoření snapshotu nebo ochranné zálohy se tu zobrazí přehled."/>
+                                                         Title="Zatím žádné zálohy"
+                                                         Subtitle="Po vytvoření první zálohy se tu zobrazí přehled."/>
 
                                     <ItemsControl ItemsSource="{Binding CurrentModpackBackupSnapshots}" IsVisible="{Binding HasCurrentModpackBackups}">
                                         <ItemsControl.ItemTemplate>
@@ -534,7 +757,7 @@
                                                             <Border Background="{DynamicResource BgInteractiveBrush}" CornerRadius="{DynamicResource RadiusPill}" Padding="10,4">
                                                                 <TextBlock Text="{Binding FileCount, StringFormat='{}{0} souborů'}" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
                                                             </Border>
-                                                            <Button Content="Otevřít ↗" Classes="secondary" FontSize="11" Padding="12,6"
+                                                                <Button Content="Otevřít zálohu ↗" Classes="secondary" FontSize="11" Padding="12,6"
                                                                     Command="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).OpenBackupSnapshotCommand}"
                                                                     CommandParameter="{Binding}"/>
                                                         </StackPanel>
@@ -550,7 +773,7 @@
                                 <StackPanel Spacing="14">
                                     <StackPanel Spacing="2">
                                         <TextBlock Text="Export / Import" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="16"/>
-                                        <TextBlock Text="Export vytvoří .voidpack archiv na plochu. Import načte archiv zpět do launcheru jako lokální instanci." FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                        <TextBlock Text="Export vytvoří .voidpack archiv. Import načte archiv zpět jako lokální instanci." FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
                                     </StackPanel>
 
                                     <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
@@ -613,7 +836,7 @@
                                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
                                         <StackPanel Spacing="2">
                                             <TextBlock Text="Servery navázané na modpack" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="16"/>
-                                            <TextBlock Text="Quick Connect teď respektuje vazbu server → modpack i auto-connect při startu hry" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                            <TextBlock Text="Spusť správnou instanci a připoj se na vybraný server jedním kliknutím." FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
                                         </StackPanel>
                                         <Button Grid.Column="1" Content="Server Hub" Command="{Binding GoToServerHubCommand}" Classes="secondary" FontSize="12" Padding="12,8"/>
                                     </Grid>

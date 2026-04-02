@@ -29,7 +29,12 @@ public partial class MainViewModel
     private string? _brandingSocialPreviewPreview;
 
     [ObservableProperty]
+    private string? _brandingFeaturedScreenshotPreview;
+
+    [ObservableProperty]
     private bool _isBrandingUploading;
+
+    private string _brandStorageStatusCache = "Brand storage ceka na workspace";
 
     partial void OnBrandingLogoPreviewChanged(string? value)
     {
@@ -41,6 +46,13 @@ public partial class MainViewModel
     partial void OnBrandingSquareIconPreviewChanged(string? value) => OnPropertyChanged(nameof(HasBrandingSquareIcon));
     partial void OnBrandingWideHeroPreviewChanged(string? value) => OnPropertyChanged(nameof(HasBrandingWideHero));
     partial void OnBrandingSocialPreviewPreviewChanged(string? value) => OnPropertyChanged(nameof(HasBrandingSocialPreview));
+    partial void OnBrandingFeaturedScreenshotPreviewChanged(string? value)
+    {
+        OnPropertyChanged(nameof(HasBrandingFeaturedScreenshot));
+        OnPropertyChanged(nameof(LauncherPreviewBackdrop));
+        OnPropertyChanged(nameof(HasLauncherPreviewBackdrop));
+        OnPropertyChanged(nameof(BrandingPromoScreenshotStatus));
+    }
 
     public bool HasBrandingLogo => !string.IsNullOrWhiteSpace(BrandingLogoFallback);
     public bool HasBrandingLogoAsset => !string.IsNullOrWhiteSpace(BrandingLogoPreview);
@@ -48,6 +60,12 @@ public partial class MainViewModel
     public bool HasBrandingSquareIcon => !string.IsNullOrWhiteSpace(BrandingSquareIconPreview);
     public bool HasBrandingWideHero => !string.IsNullOrWhiteSpace(BrandingWideHeroPreview);
     public bool HasBrandingSocialPreview => !string.IsNullOrWhiteSpace(BrandingSocialPreviewPreview);
+    public bool HasBrandingFeaturedScreenshot => !string.IsNullOrWhiteSpace(BrandingFeaturedScreenshotPreview);
+    public string? LauncherPreviewBackdrop => BrandingFeaturedScreenshotPreview ?? BrandingCoverPreview;
+    public bool HasLauncherPreviewBackdrop => !string.IsNullOrWhiteSpace(LauncherPreviewBackdrop);
+    public string BrandingPromoScreenshotStatus => HasBrandingFeaturedScreenshot
+        ? "Promo screenshot je propojeny s brandingem a preview flow."
+        : "Zatím není vybraný promo screenshot z galerie.";
 
     public string BrandingLogoFallback => BrandingLogoPreview ?? GetCreatorStudioSelectedModpack()?.LogoUrl ?? CurrentModpack?.LogoUrl ?? string.Empty;
 
@@ -60,16 +78,45 @@ public partial class MainViewModel
             BrandingSquareIconPreview = null;
             BrandingWideHeroPreview = null;
             BrandingSocialPreviewPreview = null;
+            BrandingFeaturedScreenshotPreview = null;
+            RefreshBrandStorageStatusCache();
             NotifyBrandingStateChanged();
             return;
         }
 
+        var manifest = _creatorManifestService.LoadManifest(CreatorWorkspaceContext.WorkspacePath) ?? CurrentModpackCreatorManifest;
         BrandingLogoPreview = _creatorAssetsService.GetAssetPath(CreatorWorkspaceContext.WorkspacePath, BrandingAssetSlot.Logo);
         BrandingCoverPreview = _creatorAssetsService.GetAssetPath(CreatorWorkspaceContext.WorkspacePath, BrandingAssetSlot.Cover);
         BrandingSquareIconPreview = _creatorAssetsService.GetAssetPath(CreatorWorkspaceContext.WorkspacePath, BrandingAssetSlot.SquareIcon);
         BrandingWideHeroPreview = _creatorAssetsService.GetAssetPath(CreatorWorkspaceContext.WorkspacePath, BrandingAssetSlot.WideHero);
         BrandingSocialPreviewPreview = _creatorAssetsService.GetAssetPath(CreatorWorkspaceContext.WorkspacePath, BrandingAssetSlot.SocialPreview);
+        BrandingFeaturedScreenshotPreview = _creatorAssetsService.ResolveWorkspaceRelativePath(
+            CreatorWorkspaceContext.WorkspacePath,
+            manifest?.Branding?.FeaturedScreenshotPath);
+        RefreshBrandStorageStatusCache();
         NotifyBrandingStateChanged();
+    }
+
+    private void RefreshBrandStorageStatusCache()
+    {
+        if (string.IsNullOrWhiteSpace(BrandStoragePath) || !HasCreatorWorkspaceContext || string.IsNullOrWhiteSpace(CreatorWorkspaceContext.WorkspacePath))
+        {
+            _brandStorageStatusCache = "Brand storage ceka na workspace";
+            return;
+        }
+
+        var assetCount = 0;
+        if (HasBrandingLogoAsset) assetCount++;
+        if (HasBrandingCover) assetCount++;
+        if (HasBrandingSquareIcon) assetCount++;
+        if (HasBrandingWideHero) assetCount++;
+        if (HasBrandingSocialPreview) assetCount++;
+
+        var totalSlots = BrandingAssetRequirement.GetStandardRequirements().Count;
+        var featuredSuffix = HasBrandingFeaturedScreenshot ? " + promo screenshot" : string.Empty;
+        _brandStorageStatusCache = assetCount == 0
+            ? $"0/{totalSlots} branding slotů připraveno{featuredSuffix}"
+            : $"{assetCount}/{totalSlots} branding slotů připraveno{featuredSuffix}";
     }
 
     [RelayCommand]
@@ -77,6 +124,12 @@ public partial class MainViewModel
     {
         if (parameter == null || !Enum.TryParse<BrandingAssetSlot>(parameter.ToString(), out var slot))
         {
+            return;
+        }
+
+        if (!IsCreatorWorkspaceEditable)
+        {
+            ShowToast("Creator Studio", CreatorWorkspaceEditabilityMessage, ToastSeverity.Warning, 3200);
             return;
         }
 
@@ -146,6 +199,12 @@ public partial class MainViewModel
             return;
         }
 
+        if (!IsCreatorWorkspaceEditable)
+        {
+            ShowToast("Creator Studio", CreatorWorkspaceEditabilityMessage, ToastSeverity.Warning, 3200);
+            return;
+        }
+
         if (!HasCreatorWorkspaceContext || string.IsNullOrWhiteSpace(CreatorWorkspaceContext.WorkspacePath))
         {
             return;
@@ -207,8 +266,10 @@ public partial class MainViewModel
 
         try
         {
+            var manifest = _creatorManifestService.LoadManifest(CreatorWorkspaceContext.WorkspacePath) ?? CurrentModpackCreatorManifest;
             var kitPath = await _creatorAssetsService.ExportMediaKitAsync(
                 CreatorWorkspaceContext.WorkspacePath,
+                manifest,
                 targetFolder.Path.LocalPath);
 
             if (kitPath != null)
@@ -218,7 +279,7 @@ public partial class MainViewModel
             }
             else
             {
-                ShowToast("Export selhal", "Žádné branding assety k exportu.", ToastSeverity.Warning, 2500);
+                ShowToast("Export selhal", "Žádné branding assety ani promo screenshoty k exportu.", ToastSeverity.Warning, 2500);
             }
         }
         catch (Exception ex)
@@ -231,6 +292,12 @@ public partial class MainViewModel
     [RelayCommand]
     private async Task GenerateManifestFromExisting()
     {
+        if (!IsCreatorWorkspaceEditable)
+        {
+            ShowToast("Creator Studio", CreatorWorkspaceEditabilityMessage, ToastSeverity.Warning, 3200);
+            return;
+        }
+
         if (!HasCreatorWorkspaceContext || string.IsNullOrWhiteSpace(CreatorWorkspaceContext.WorkspacePath))
         {
             ShowToast("Creator Studio", "Nejdřív vyber pracovní instanci.", ToastSeverity.Warning);
@@ -277,6 +344,11 @@ public partial class MainViewModel
 
     private async Task UpdateManifestBrandingAsync()
     {
+        if (!IsCreatorWorkspaceEditable)
+        {
+            return;
+        }
+
         if (!HasCreatorWorkspaceContext || string.IsNullOrWhiteSpace(CreatorWorkspaceContext.WorkspacePath))
         {
             return;
@@ -291,7 +363,7 @@ public partial class MainViewModel
         }
 
         manifest.BrandProfile ??= BuildCurrentBrandProfile();
-        manifest.Branding = _creatorAssetsService.BuildBrandingProfile(CreatorWorkspaceContext.WorkspacePath);
+        manifest.Branding = _creatorAssetsService.BuildBrandingProfile(CreatorWorkspaceContext.WorkspacePath, manifest.Screenshots);
         manifest.Assets = _creatorAssetsService.GetAssetMetadata(CreatorWorkspaceContext.WorkspacePath).ToList();
 
         var savedManifest = await _creatorManifestService.SaveManifestAsync(CreatorWorkspaceContext.WorkspacePath, manifest);
@@ -307,7 +379,11 @@ public partial class MainViewModel
         OnPropertyChanged(nameof(HasBrandingSquareIcon));
         OnPropertyChanged(nameof(HasBrandingWideHero));
         OnPropertyChanged(nameof(HasBrandingSocialPreview));
+        OnPropertyChanged(nameof(HasBrandingFeaturedScreenshot));
         OnPropertyChanged(nameof(BrandingLogoFallback));
+        OnPropertyChanged(nameof(LauncherPreviewBackdrop));
+        OnPropertyChanged(nameof(HasLauncherPreviewBackdrop));
+        OnPropertyChanged(nameof(BrandingPromoScreenshotStatus));
         OnPropertyChanged(nameof(BrandStorageStatus));
         OnPropertyChanged(nameof(LauncherPreviewAssetStatus));
     }
@@ -339,7 +415,7 @@ public partial class MainViewModel
         var manifest = _creatorManifestService.LoadManifest(workspacePath)
             ?? CreateCreatorFallbackManifest(modpack, null, modpack.CustomModLoaderVersion);
         manifest.BrandProfile ??= BuildCurrentBrandProfile();
-        manifest.Branding = _creatorAssetsService.BuildBrandingProfile(workspacePath);
+        manifest.Branding = _creatorAssetsService.BuildBrandingProfile(workspacePath, manifest.Screenshots);
         manifest.Assets = _creatorAssetsService.GetAssetMetadata(workspacePath).ToList();
 
         var savedManifest = await _creatorManifestService.SaveManifestAsync(workspacePath, manifest);

@@ -10,6 +10,7 @@ public sealed class CreatorBrandingProfile
     public string? SquareIconPath { get; set; }
     public string? WideHeroPath { get; set; }
     public string? SocialPreviewPath { get; set; }
+    public string? FeaturedScreenshotPath { get; set; }
     public DateTimeOffset? LastUpdatedUtc { get; set; }
 }
 
@@ -33,6 +34,54 @@ public sealed class CreatorAssetMetadata
     public long FileSizeBytes { get; set; }
     public bool HasTransparency { get; set; }
     public DateTimeOffset UploadedUtc { get; set; }
+}
+
+public enum CreatorScreenshotStage
+{
+    Unsorted,
+    Official,
+    ReleaseCandidate,
+    Archive
+}
+
+public sealed class CreatorScreenshotMetadata
+{
+    public string RelativePath { get; set; } = string.Empty;
+    public string Stage { get; set; } = nameof(CreatorScreenshotStage.Unsorted);
+    public bool IsFavorite { get; set; }
+    public DateTimeOffset UpdatedAtUtc { get; set; } = DateTimeOffset.UtcNow;
+}
+
+public sealed class CreatorScreenshotGalleryItem
+{
+    public string RelativePath { get; set; } = string.Empty;
+    public string AbsolutePath { get; set; } = string.Empty;
+    public string PreviewUri { get; set; } = string.Empty;
+    public string FileName { get; set; } = string.Empty;
+    public CreatorScreenshotStage Stage { get; set; } = CreatorScreenshotStage.Unsorted;
+    public bool IsFavorite { get; set; }
+    public DateTimeOffset CapturedAtUtc { get; set; }
+
+    public bool IsOfficial => Stage == CreatorScreenshotStage.Official;
+    public bool IsReleaseCandidate => Stage == CreatorScreenshotStage.ReleaseCandidate;
+    public bool IsArchive => Stage == CreatorScreenshotStage.Archive;
+    public bool HasStage => Stage != CreatorScreenshotStage.Unsorted;
+
+    public string StageLabel => Stage switch
+    {
+        CreatorScreenshotStage.Official => "Official",
+        CreatorScreenshotStage.ReleaseCandidate => "Release candidate",
+        CreatorScreenshotStage.Archive => "Archive",
+        _ => "Bez tagu"
+    };
+
+    public string StatusLabel => IsFavorite ? $"{StageLabel} • favorit" : StageLabel;
+
+    public string FavoriteActionLabel => IsFavorite ? "Odepnout" : "Pripnout";
+
+    public string CapturedLabel => CapturedAtUtc == default
+        ? "Bez casu"
+        : CapturedAtUtc.ToLocalTime().ToString("dd.MM.yyyy HH:mm");
 }
 
 public enum BrandingAssetSlot

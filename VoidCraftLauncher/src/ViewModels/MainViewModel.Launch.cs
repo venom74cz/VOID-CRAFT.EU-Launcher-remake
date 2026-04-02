@@ -180,6 +180,8 @@ public partial class MainViewModel
             
             LaunchStatus = "Spouštím hru...";
 
+            _lastManifestInfo = ResolveLaunchManifestInfo(CurrentModpack, modpackDir);
+
             // Get Minecraft version from manifest (dynamically)
             var mcVersion = _lastManifestInfo?.MinecraftVersion ?? "1.21.1";
             var modLoaderId = _lastManifestInfo?.ModLoaderId ?? "";
@@ -434,6 +436,75 @@ public partial class MainViewModel
                 window.ShowDialog(desktop.MainWindow);
             }
         }
+    }
+
+    private ModpackManifestInfo ResolveLaunchManifestInfo(ModpackInfo modpack, string modpackDir)
+    {
+        var manifestInfo = ModpackInstaller.LoadManifestInfo(modpackDir) ?? new ModpackManifestInfo();
+        var creatorManifest = _creatorManifestService.LoadManifest(modpackDir);
+
+        manifestInfo.PackName = FirstNonEmpty(
+            manifestInfo.PackName,
+            creatorManifest?.PackName,
+            modpack.DisplayLabel,
+            modpack.Name);
+
+        manifestInfo.Author = FirstNonEmpty(
+            manifestInfo.Author,
+            creatorManifest?.Authors.Count > 0 ? string.Join(", ", creatorManifest.Authors) : null,
+            modpack.Author);
+
+        manifestInfo.MinecraftVersion = FirstNonEmpty(
+            manifestInfo.MinecraftVersion,
+            creatorManifest?.MinecraftVersion,
+            modpack.CustomMcVersion,
+            "1.21.1");
+
+        manifestInfo.ModLoaderType = FirstNonEmpty(
+            manifestInfo.ModLoaderType,
+            creatorManifest?.ModLoader,
+            modpack.CustomModLoader);
+
+        if (string.IsNullOrWhiteSpace(manifestInfo.ModLoaderId))
+        {
+            manifestInfo.ModLoaderId = ComposeModLoaderId(
+                manifestInfo.ModLoaderType,
+                FirstNonEmpty(
+                    creatorManifest?.ModLoaderVersion,
+                    modpack.CustomModLoaderVersion));
+        }
+        else if (string.IsNullOrWhiteSpace(manifestInfo.ModLoaderType))
+        {
+            manifestInfo.ModLoaderType = ExtractManifestLoaderType(manifestInfo.ModLoaderId);
+        }
+
+        return manifestInfo;
+    }
+
+    private static string ComposeModLoaderId(string? modLoaderType, string? modLoaderVersion)
+    {
+        var loaderType = modLoaderType?.Trim() ?? string.Empty;
+        var loaderVersion = modLoaderVersion?.Trim() ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(loaderType))
+        {
+            return string.Empty;
+        }
+
+        return string.IsNullOrWhiteSpace(loaderVersion)
+            ? loaderType
+            : $"{loaderType}-{loaderVersion}";
+    }
+
+    private static string ExtractManifestLoaderType(string? modLoaderId)
+    {
+        if (string.IsNullOrWhiteSpace(modLoaderId))
+        {
+            return string.Empty;
+        }
+
+        var separatorIndex = modLoaderId.IndexOf('-');
+        return separatorIndex > 0 ? modLoaderId[..separatorIndex] : modLoaderId.Trim();
     }
 
     [RelayCommand]

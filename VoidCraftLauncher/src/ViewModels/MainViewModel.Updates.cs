@@ -486,6 +486,7 @@ public partial class MainViewModel
             string? fetchedLogoUrl = null;
             string? fetchedWebLink = null;
             string fullDescription = "";
+            InstanceOverviewDescriptionDocument? descriptionDocument = null;
 
             if ((string.IsNullOrWhiteSpace(CurrentModpack.Source) || CurrentModpack.Source == "CurseForge") && CurrentModpack.ProjectId > 0)
             {
@@ -496,7 +497,9 @@ public partial class MainViewModel
                 fetchedAuthor = modpackNode?["authors"]?[0]?["name"]?.ToString() ?? modpackNode?["author"]?.ToString();
                 fetchedLogoUrl = modpackNode?["logo"]?["url"]?.ToString() ?? modpackNode?["logo"]?["thumbnailUrl"]?.ToString();
                 fetchedWebLink = modpackNode?["links"]?["websiteUrl"]?.ToString();
-                fullDescription = await _curseForgeApi.GetProjectDescriptionAsync(CurrentModpack.ProjectId);
+                var rawHtmlDescription = await _curseForgeApi.GetProjectDescriptionHtmlAsync(CurrentModpack.ProjectId);
+                descriptionDocument = BuildWorkspaceDescriptionDocument(rawHtmlDescription, fetchedName ?? CurrentModpack.DisplayLabel);
+                fullDescription = descriptionDocument.PlainText;
             }
             else if (CurrentModpack.Source == "Modrinth" && !string.IsNullOrEmpty(CurrentModpack.ModrinthId))
             {
@@ -509,12 +512,14 @@ public partial class MainViewModel
                 fetchedWebLink = projectNode?["slug"] is JsonNode slugNode
                     ? $"https://modrinth.com/modpack/{slugNode}"
                     : CurrentModpack.WebLink;
-                fullDescription = projectNode?["body"]?.ToString() ?? "";
+                var rawMarkdownDescription = projectNode?["body"]?.ToString() ?? "";
+                descriptionDocument = BuildWorkspaceDescriptionDocument(rawMarkdownDescription, fetchedName ?? CurrentModpack.DisplayLabel);
+                fullDescription = descriptionDocument.PlainText;
             }
 
-            var descriptionToApply = !string.IsNullOrWhiteSpace(fullDescription)
-                ? fullDescription
-                : fetchedSummary ?? "";
+            var summaryToApply = !string.IsNullOrWhiteSpace(fetchedSummary)
+                ? fetchedSummary
+                : CurrentModpack.Description ?? "";
 
             var changed = await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
             {
@@ -534,9 +539,9 @@ public partial class MainViewModel
                     metadataChanged = true;
                 }
 
-                if (!string.IsNullOrWhiteSpace(descriptionToApply) && !string.Equals(CurrentModpack.Description, descriptionToApply, StringComparison.Ordinal))
+                if (!string.IsNullOrWhiteSpace(summaryToApply) && !string.Equals(CurrentModpack.Description, summaryToApply, StringComparison.Ordinal))
                 {
-                    CurrentModpack.Description = descriptionToApply;
+                    CurrentModpack.Description = summaryToApply;
                     metadataChanged = true;
                 }
 
@@ -571,11 +576,331 @@ public partial class MainViewModel
             {
                 SaveModpacks();
             }
+
+            ApplyCurrentWorkspaceDescriptionDocument(descriptionDocument, fullDescription, summaryToApply);
         }
         catch (Exception ex)
         {
             LogService.Error($"[FetchFullDescriptionAsync] Failed for {CurrentModpack.Name}", ex);
         }
+    }
+
+    private void ResetCurrentWorkspaceDescriptionDocument()
+    {
+        SetCurrentWorkspaceDescriptionOverrides(string.Empty, string.Empty);
+        CurrentWorkspaceDescriptionIntro = string.Empty;
+        CurrentWorkspaceDescriptionSectionsInternal = new List<InstanceOverviewDescriptionSection>();
+    }
+
+    private void ApplyCurrentWorkspaceDescriptionDocument(InstanceOverviewDescriptionDocument? document, string fullText, string? summaryText)
+    {
+        var normalizedSummary = NormalizeDescriptionPlainText(summaryText);
+        var normalizedFullText = NormalizeDescriptionPlainText(fullText);
+        var fullOverride = string.Equals(normalizedFullText, normalizedSummary, StringComparison.Ordinal)
+            ? string.Empty
+            : fullText;
+
+        SetCurrentWorkspaceDescriptionOverrides(summaryText, fullOverride);
+
+        if (document == null)
+        {
+            CurrentWorkspaceDescriptionIntro = string.Empty;
+            CurrentWorkspaceDescriptionSectionsInternal = new List<InstanceOverviewDescriptionSection>();
+            return;
+        }
+
+        var normalizedIntro = NormalizeDescriptionPlainText(document.Intro);
+
+        CurrentWorkspaceDescriptionIntro = string.Equals(normalizedIntro, normalizedFullText, StringComparison.Ordinal) ||
+                                          string.Equals(normalizedIntro, normalizedSummary, StringComparison.Ordinal)
+            ? string.Empty
+            : document.Intro;
+        CurrentWorkspaceDescriptionSectionsInternal = document.Sections;
+    }
+
+    private InstanceOverviewDescriptionDocument BuildWorkspaceDescriptionDocument(string rawDescription, string? packTitle)
+    {
+        if (string.IsNullOrWhiteSpace(rawDescription))
+        {
+            return new InstanceOverviewDescriptionDocument();
+        }
+
+        return LooksLikeHtmlDescription(rawDescription)
+            ? BuildHtmlWorkspaceDescriptionDocument(rawDescription, packTitle)
+            : BuildMarkdownWorkspaceDescriptionDocument(rawDescription, packTitle);
+    }
+
+    private static bool LooksLikeHtmlDescription(string rawDescription)
+    {
+        return rawDescription.Contains("<p", StringComparison.OrdinalIgnoreCase)
+            || rawDescription.Contains("<div", StringComparison.OrdinalIgnoreCase)
+            || rawDescription.Contains("<h1", StringComparison.OrdinalIgnoreCase)
+            || rawDescription.Contains("<ul", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private InstanceOverviewDescriptionDocument BuildHtmlWorkspaceDescriptionDocument(string rawDescription, string? packTitle)
+    {
+        var document = new InstanceOverviewDescriptionDocument();
+        var htmlDocument = new HtmlAgilityPack.HtmlDocument();
+        htmlDocument.LoadHtml(rawDescription);
+
+        var container = htmlDocument.DocumentNode.SelectSingleNode("//body") ?? htmlDocument.DocumentNode;
+        var introParagraphs = new List<string>();
+        var currentSectionTitle = string.Empty;
+        var currentSectionBody = new List<string>();
+
+        foreach (var node in container.Descendants().Where(IsSupportedDescriptionNode))
+        {
+            var normalizedText = node.Name is "ul" or "ol"
+                ? BuildHtmlListText(node)
+                : NormalizeDescriptionPlainText(System.Net.WebUtility.HtmlDecode(node.InnerText));
+
+            if (string.IsNullOrWhiteSpace(normalizedText))
+            {
+                continue;
+            }
+
+            if (IsDescriptionHeadingNode(node.Name))
+            {
+                if (IsPackTitleHeading(normalizedText, packTitle))
+                {
+                    continue;
+                }
+
+                FlushDescriptionSection(document.Sections, ref currentSectionTitle, currentSectionBody);
+                currentSectionTitle = normalizedText;
+                currentSectionBody = new List<string>();
+                continue;
+            }
+
+            if (string.IsNullOrWhiteSpace(currentSectionTitle))
+            {
+                introParagraphs.Add(normalizedText);
+            }
+            else
+            {
+                currentSectionBody.Add(normalizedText);
+            }
+        }
+
+        FlushDescriptionSection(document.Sections, ref currentSectionTitle, currentSectionBody);
+        document.Intro = JoinDescriptionParagraphs(introParagraphs);
+        document.PlainText = BuildDocumentPlainText(document);
+        return document;
+    }
+
+    private InstanceOverviewDescriptionDocument BuildMarkdownWorkspaceDescriptionDocument(string rawDescription, string? packTitle)
+    {
+        var document = new InstanceOverviewDescriptionDocument();
+        var introLines = new List<string>();
+        var currentTitle = string.Empty;
+        var currentBodyLines = new List<string>();
+
+        foreach (var rawLine in rawDescription.Replace("\r\n", "\n").Split('\n'))
+        {
+            var trimmed = rawLine.Trim();
+            if (string.IsNullOrWhiteSpace(trimmed))
+            {
+                if (string.IsNullOrWhiteSpace(currentTitle))
+                {
+                    AppendMarkdownLine(introLines, string.Empty);
+                }
+                else
+                {
+                    AppendMarkdownLine(currentBodyLines, string.Empty);
+                }
+
+                continue;
+            }
+
+            var normalizedLine = NormalizeMarkdownLine(StripMarkdownQuote(trimmed));
+            if (string.IsNullOrWhiteSpace(normalizedLine))
+            {
+                continue;
+            }
+
+            if (TryGetDescriptionHeading(normalizedLine, out var heading) && !IsPackTitleHeading(heading, packTitle))
+            {
+                FlushDescriptionSection(document.Sections, ref currentTitle, currentBodyLines);
+                currentTitle = heading;
+                currentBodyLines = new List<string>();
+                continue;
+            }
+
+            if (string.IsNullOrWhiteSpace(currentTitle))
+            {
+                AppendMarkdownLine(introLines, normalizedLine);
+            }
+            else
+            {
+                AppendMarkdownLine(currentBodyLines, normalizedLine);
+            }
+        }
+
+        FlushDescriptionSection(document.Sections, ref currentTitle, currentBodyLines);
+        document.Intro = JoinMarkdownLines(introLines);
+        document.PlainText = BuildDocumentPlainText(document);
+        return document;
+    }
+
+    private static bool IsSupportedDescriptionNode(HtmlAgilityPack.HtmlNode node)
+    {
+        return node.Name is "h1" or "h2" or "h3" or "h4" or "p" or "ul" or "ol" or "blockquote";
+    }
+
+    private static bool IsDescriptionHeadingNode(string nodeName)
+    {
+        return nodeName is "h1" or "h2" or "h3" or "h4";
+    }
+
+    private static string BuildHtmlListText(HtmlAgilityPack.HtmlNode listNode)
+    {
+        var items = listNode.SelectNodes("./li") ?? listNode.SelectNodes(".//li");
+        if (items == null || items.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        return JoinDescriptionParagraphs(items
+            .Select(item => NormalizeDescriptionPlainText($"• {System.Net.WebUtility.HtmlDecode(item.InnerText)}"))
+            .Where(item => !string.IsNullOrWhiteSpace(item)));
+    }
+
+    private static bool TryGetDescriptionHeading(string normalizedLine, out string heading)
+    {
+        heading = string.Empty;
+        if (string.IsNullOrWhiteSpace(normalizedLine))
+        {
+            return false;
+        }
+
+        var trimmed = normalizedLine.Trim();
+        if (trimmed.StartsWith("#", StringComparison.Ordinal))
+        {
+            heading = trimmed.TrimStart('#').Trim();
+            return !string.IsNullOrWhiteSpace(heading);
+        }
+
+        if (trimmed.StartsWith("• ", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        if (trimmed.Length <= 80 && !trimmed.EndsWith(".", StringComparison.Ordinal) && !trimmed.EndsWith(":", StringComparison.Ordinal))
+        {
+            var titleCaseish = trimmed.Count(char.IsLetter) >= 4 && trimmed.Count(char.IsUpper) >= 2;
+            if (titleCaseish)
+            {
+                heading = trimmed;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsPackTitleHeading(string heading, string? packTitle)
+    {
+        if (string.IsNullOrWhiteSpace(heading) || string.IsNullOrWhiteSpace(packTitle))
+        {
+            return false;
+        }
+
+        return string.Equals(
+            NormalizeDescriptionIdentity(heading),
+            NormalizeDescriptionIdentity(packTitle),
+            StringComparison.Ordinal);
+    }
+
+    private static void FlushDescriptionSection(List<InstanceOverviewDescriptionSection> sections, ref string currentTitle, List<string> bodyLines)
+    {
+        if (string.IsNullOrWhiteSpace(currentTitle))
+        {
+            return;
+        }
+
+        sections.Add(new InstanceOverviewDescriptionSection
+        {
+            Title = currentTitle,
+            Body = bodyLines.Count == 0 ? string.Empty : JoinDescriptionParagraphs(bodyLines)
+        });
+
+        currentTitle = string.Empty;
+        bodyLines.Clear();
+    }
+
+    private static string BuildDocumentPlainText(InstanceOverviewDescriptionDocument document)
+    {
+        var blocks = new List<string>();
+        if (!string.IsNullOrWhiteSpace(document.Intro))
+        {
+            blocks.Add(document.Intro.Trim());
+        }
+
+        foreach (var section in document.Sections)
+        {
+            if (!string.IsNullOrWhiteSpace(section.Title))
+            {
+                blocks.Add(section.Title.Trim());
+            }
+
+            if (!string.IsNullOrWhiteSpace(section.Body))
+            {
+                blocks.Add(section.Body.Trim());
+            }
+        }
+
+        return string.Join(Environment.NewLine + Environment.NewLine, blocks.Where(block => !string.IsNullOrWhiteSpace(block)));
+    }
+
+    private static string JoinDescriptionParagraphs(IEnumerable<string> paragraphs)
+    {
+        var blocks = new List<string>();
+        var currentBlock = new List<string>();
+
+        foreach (var paragraph in paragraphs)
+        {
+            if (string.IsNullOrWhiteSpace(paragraph))
+            {
+                if (currentBlock.Count > 0)
+                {
+                    blocks.Add(string.Join(Environment.NewLine, currentBlock));
+                    currentBlock.Clear();
+                }
+
+                continue;
+            }
+
+            currentBlock.Add(paragraph.Trim());
+        }
+
+        if (currentBlock.Count > 0)
+        {
+            blocks.Add(string.Join(Environment.NewLine, currentBlock));
+        }
+
+        return string.Join(Environment.NewLine + Environment.NewLine, blocks);
+    }
+
+    private static string NormalizeDescriptionPlainText(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        var normalizedLines = value
+            .Replace("\r\n", "\n")
+            .Split('\n')
+            .Select(line => Regex.Replace(line.Trim(), @"\s+", " ").Trim())
+            .ToList();
+
+        return JoinDescriptionParagraphs(normalizedLines);
+    }
+
+    private static string NormalizeDescriptionIdentity(string value)
+    {
+        return new string(value.Where(char.IsLetterOrDigit).Select(char.ToLowerInvariant).ToArray());
     }
 
     private void HydrateCurrentModpackIdentity(ModpackInfo modpack)

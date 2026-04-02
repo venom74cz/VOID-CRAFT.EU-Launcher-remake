@@ -193,6 +193,8 @@ public partial class MainViewModel : ViewModelBase
 
         if (value == MainViewType.InstanceDetail)
         {
+            RefreshCurrentModpackCreatorManifest();
+            NotifyCurrentModpackDerivedStateChanged();
             LoadInstalledMods();
             _ = FetchFullDescriptionAsync();
         }
@@ -413,13 +415,9 @@ public partial class MainViewModel : ViewModelBase
         CrashExitCode = exitCode.ToString();
         CrashRuntime = runtime.TotalMinutes < 1 ? $"{runtime.Seconds}s" : $"{(int)runtime.TotalMinutes}m {runtime.Seconds}s";
         CrashLogTail = logTail;
-        CrashSummary = exitCode switch
-        {
-            -1 => "Hra byla násilně ukončena (out of memory nebo kill).",
-            1 => "Hra skončila s obecnou chybou. Zkontrolujte log.",
-            _ => $"Hra skončila s kódem {exitCode}."
-        };
+        CrashSummary = BuildCrashSummary(exitCode);
         _crashLogPath = logPath;
+        RecordCrashHistoryEntry(modpackName, exitCode, runtime, logTail, logPath);
         IsCrashDrawerOpen = true;
     }
 
@@ -601,6 +599,7 @@ public partial class MainViewModel : ViewModelBase
             Config.MotionPreference = ThemeEngine.MotionPreferenceSystem;
         }
 
+        Config.CrashHistory ??= new List<CrashHistoryEntry>();
         Config.CreatorStudio ??= new CreatorStudioPreferences();
 
         InitializeThemeSurface();
@@ -678,6 +677,8 @@ public partial class MainViewModel : ViewModelBase
 
     partial void OnCurrentModpackChanged(ModpackInfo value)
     {
+        InstalledModsSearchQuery = string.Empty;
+
         if (!ReferenceEquals(_observedCurrentModpack, value))
         {
             if (_observedCurrentModpack != null)
@@ -694,6 +695,7 @@ public partial class MainViewModel : ViewModelBase
         }
 
         NotifyCurrentModpackDerivedStateChanged();
+        ResetCurrentWorkspaceDescriptionDocument();
         _ = LoadCurrentModpackScreenshotsAsync();
         _ = RefreshCurrentModpackWorkspaceDataAsync();
         RefreshCurrentModpackCreatorManifest();
@@ -707,6 +709,13 @@ public partial class MainViewModel : ViewModelBase
     private void OnCurrentModpackPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         NotifyCurrentModpackDerivedStateChanged();
+
+        if (string.IsNullOrEmpty(e.PropertyName) || e.PropertyName == nameof(ModpackInfo.Description))
+        {
+            OnPropertyChanged(nameof(CurrentWorkspaceFullDescription));
+            OnPropertyChanged(nameof(HasCurrentWorkspaceFullDescription));
+            OnPropertyChanged(nameof(HasPlainCurrentWorkspaceFullDescription));
+        }
 
         if (string.IsNullOrEmpty(e.PropertyName) || e.PropertyName == nameof(ModpackInfo.Name))
         {
@@ -722,11 +731,23 @@ public partial class MainViewModel : ViewModelBase
         OnPropertyChanged(nameof(MainPanelTitle));
         OnPropertyChanged(nameof(CurrentWorkspaceDisplayName));
         OnPropertyChanged(nameof(HasCurrentWorkspaceDescription));
+        OnPropertyChanged(nameof(HasCurrentWorkspaceFullDescription));
+        OnPropertyChanged(nameof(HasCurrentWorkspaceDescriptionIntro));
+        OnPropertyChanged(nameof(HasCurrentWorkspaceDescriptionSections));
+        OnPropertyChanged(nameof(HasPlainCurrentWorkspaceFullDescription));
         OnPropertyChanged(nameof(CurrentWorkspaceDescription));
+        OnPropertyChanged(nameof(CurrentWorkspaceFullDescription));
+        OnPropertyChanged(nameof(CurrentWorkspaceDescriptionIntro));
+        OnPropertyChanged(nameof(CurrentWorkspaceDescriptionSections));
         OnPropertyChanged(nameof(CurrentWorkspaceAuthorLabel));
         OnPropertyChanged(nameof(CurrentWorkspaceMetadataSummary));
+        OnPropertyChanged(nameof(CurrentWorkspaceMinecraftVersion));
+        OnPropertyChanged(nameof(CurrentWorkspaceLoaderLabel));
+        OnPropertyChanged(nameof(CurrentWorkspaceReleaseChannelLabel));
         OnPropertyChanged(nameof(CurrentWorkspacePrimaryServerLabel));
+        OnPropertyChanged(nameof(HasCurrentWorkspaceRecommendedRam));
         OnPropertyChanged(nameof(CurrentWorkspaceRecommendedRamLabel));
+        OnPropertyChanged(nameof(HasCurrentWorkspaceWebLink));
         UpdateDiscordPresence();
     }
 
@@ -782,12 +803,7 @@ public partial class MainViewModel : ViewModelBase
             }
 
             var modpackPath = _launcherService.GetModpackPath(CurrentModpack.Name);
-            var screenshotsPath = Path.Combine(modpackPath, "screenshots");
-            var screenshotyPath = Path.Combine(modpackPath, "screenshoty");
-
-            var targetFolder = Directory.Exists(screenshotsPath)
-                ? screenshotsPath
-                : (Directory.Exists(screenshotyPath) ? screenshotyPath : screenshotsPath);
+            var targetFolder = _creatorAssetsService.GetScreenshotGalleryPath(modpackPath);
 
             if (!Directory.Exists(targetFolder))
             {
@@ -795,14 +811,9 @@ public partial class MainViewModel : ViewModelBase
                 return;
             }
 
-            var allowedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            {
-                ".png", ".jpg", ".jpeg", ".bmp", ".gif", ".webp"
-            };
-
             var screenshots = Directory
                 .GetFiles(targetFolder)
-                .Where(file => allowedExtensions.Contains(Path.GetExtension(file)))
+                .Where(_creatorAssetsService.IsSupportedImagePath)
                 .OrderByDescending(file => File.GetLastWriteTimeUtc(file))
                 .Select(file => new Uri(file).AbsoluteUri)
                 .ToList();

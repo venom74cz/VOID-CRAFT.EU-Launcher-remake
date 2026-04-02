@@ -143,7 +143,6 @@ public sealed class CreatorManifestService
         EnsureWorkspaceStructure(workspacePath);
 
         var existingManifest = LoadManifest(workspacePath);
-        var hasExplicitBrandingState = manifest.Branding != null || manifest.Assets.Count > 0;
 
         manifest.CreatedAtUtc = existingManifest?.CreatedAtUtc ?? manifest.CreatedAtUtc;
         manifest.PackName = manifest.PackName.Trim();
@@ -153,12 +152,10 @@ public sealed class CreatorManifestService
         manifest.PrimaryServer = manifest.PrimaryServer.Trim();
         manifest.ReleaseChannel = string.IsNullOrWhiteSpace(manifest.ReleaseChannel) ? "alpha" : manifest.ReleaseChannel.Trim();
         manifest.BrandProfile ??= existingManifest?.BrandProfile;
-
-        if (!hasExplicitBrandingState)
-        {
-            manifest.Branding = existingManifest?.Branding ?? manifest.Branding;
-            manifest.Assets = existingManifest?.Assets ?? manifest.Assets;
-        }
+        manifest.Screenshots = _creatorAssetsService.CompactScreenshotMetadata(
+            _creatorAssetsService.NormalizeScreenshotMetadata(workspacePath, manifest.Screenshots)).ToList();
+        manifest.Branding = _creatorAssetsService.BuildBrandingProfile(workspacePath, manifest.Screenshots);
+        manifest.Assets = _creatorAssetsService.GetAssetMetadata(workspacePath).ToList();
 
         manifest.UpdatedAtUtc = DateTimeOffset.UtcNow;
 

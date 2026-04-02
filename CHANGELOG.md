@@ -1,5 +1,39 @@
 # Changelog
 
+## 3.1.6 - 2026-04-02
+
+### Modpack detail polish
+- `Instance Workspace` už v headeru a přehledu neukazuje interní/dev copy kolem promo hero obrázků, snapshotů ani Quick Connect flow; detail teď používá kratší hráčský jazyk místo changelog formulací.
+- Seznam nainstalovaných modů v detailu instance už neobsahuje mrtvé checkboxy, neaktivní toggle ani prázdné menu; zůstaly jen skutečné akce, které dávají smysl.
+- Horní vyhledávání v záložce `Obsah` už opravdu filtruje jen nainstalované mody a není svázané se search flow pro přidávání nových modů.
+- `Historie pádů` ve výkonové záložce už není placeholder; launcher teď ukládá poslední pády instance včetně exit code, délky běhu, výpisu logu a odkazu na dostupný log nebo crash-report.
+
+### Instance Workspace overview & zálohy
+- Opraven detail nově vytvořených custom instancí: `Instance Workspace` už při otevření nepřebírá starý Creator Studio fallback pack, takže breadcrumb, MOTD i pravý metadata panel patří opravdu právě otevřené instanci.
+- Opraven remote overview flow pro CurseForge/Modrinth packy: krátký `MOTD packu` už zůstává summary ze zdroje a celý remote popis se renderuje jen v `Celý popisek`, místo aby se oba bloky míchaly dohromady.
+- `Přehled` detailu instance teď rozděluje krátký `MOTD packu` a plný popis podobně jako Curse stránky, ale v čistším launcher layoutu: vpravo běží stabilní metadata panel `Pack / Autoři / Minecraft / Loader / Channel` a pod dělicí linkou se ukazuje celý text packu, pokud je k dispozici.
+- Plný popis packu se teď neukazuje jako jeden dlouhý blok. Launcher si umí z CurseForge HTML i Modrinth markdownu vytáhnout intro + samostatné sekce a v overview je renderuje jako čitelnější content karty.
+- Overview už zbytečně neduplikuje stejný úvod dvakrát. Když se intro shoduje s horním summary/MOTD, launcher ho ve full description části přeskočí.
+- `Zálohy` nově neukazují jen celý snapshot instance; launcher také načítá konkrétní světy ze složky `saves` a u každého nabízí samostatné `Zálohovat svět` přímo do launcher backup workspace.
+- Každý svět teď v launcheru ukazuje i vlastní historii world backup snapshotů a přímé `Obnovit svět`; před restore se navíc automaticky vytvoří safety backup původního stavu, aby šlo návrat vrátit zpět.
+- World backup snapshoty teď jdou z launcheru i mazat, takže historie konkrétního světa nezůstává bez údržby.
+- Opraven regression v launch flow, kdy se některé custom profily nebo instance bez čerstvého `manifest_info.json` spouštěly jako čistá vanilla. Launcher si teď runtime fallback skládá z `creator_manifest.json` a uložených runtime polí modpacku, takže se korektně použije i loader.
+
+### Creator Studio access rules
+- Creator Studio teď rozlišuje release pack a authoring workspace: stažené CurseForge, Modrinth a release `.voidpack` instance jsou jen read-only preview, zatímco editace zůstává povolená pouze pro custom profily a dev workspace instance.
+- Import přes `.voidpack` flow se nově zapisuje jako `VOID` source místo editable custom profilu, takže release buildy neskončí omylem v creator authoring režimu.
+
+### Creator Studio promo screenshoty
+- `Creator Studio` nově umí kurátorovat screenshoty přímo nad workspace: každý screenshot lze označit jako `official`, `release candidate` nebo `archive` a jeden z nich připnout jako hlavní favorit.
+- Metadata promo screenshotů se ukládají do `creator_manifest.json`, takže výběr nezmizí po restartu launcheru ani po běžném uložení creator metadat.
+- `Metadata` tab dostal novou sekci s featured preview, rychlým otevřením screenshot složky a přímými akcemi nad jednotlivými screenshoty.
+- Export `media kitu` teď kromě branding assetů přibaluje i curated promo screenshoty a root `featured-screenshot.*` alias pro hlavní vizuál.
+- Vybraný promo screenshot se teď propisuje i do branding preview a do hero headeru detailu instance, takže je okamžitě vidět, co launcher opravdu bere jako hlavní vizuál packu.
+- Screenshoty teď lze přímo z galerie použít jako `cover` nebo `social preview`; launcher je při tom automaticky ořízne a přepočítá do správného slot formátu místo tvrdého failu na poměru stran.
+
+### Release metadata
+- Srovnana release verze na `3.1.6` v launcher projektu, installeru, fallback `User-Agent` verzi pro social feed a aktualni dokumentaci vcetne release announcementu.
+
 ## 3.1.5 - 2026-04-01
 
 ### Creator Studio hotfix

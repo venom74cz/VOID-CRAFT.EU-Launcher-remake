@@ -41,6 +41,9 @@ public partial class LauncherConfig : ObservableObject
     // Recently played normal instances
     public List<string> RecentInstances { get; set; } = new();
 
+    // Recent launcher-observed game crashes
+    public List<CrashHistoryEntry> CrashHistory { get; set; } = new();
+
     [ObservableProperty]
     private string _currentThemeId = "obsidian";
 

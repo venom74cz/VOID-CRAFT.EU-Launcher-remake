@@ -15,7 +15,7 @@ Tahle slozka drzi vsechny podpurne dokumenty mimo root repo, aby v hlavni urovni
 
 ## Release
 
-- [`release/DISCORD-ANNOUNCEMENT-3.1.6.md`](release/DISCORD-ANNOUNCEMENT-3.1.6.md)
+- [`release/DISCORD-ANNOUNCEMENT-3.1.7.md`](release/DISCORD-ANNOUNCEMENT-3.1.7.md)
 - [`release/DISCORD-ANNOUNCEMENT-3.1.0.md`](release/DISCORD-ANNOUNCEMENT-3.1.0.md)
 - [`release/DISCORD-ANNOUNCEMENT-3.0.0.md`](release/DISCORD-ANNOUNCEMENT-3.0.0.md)
 

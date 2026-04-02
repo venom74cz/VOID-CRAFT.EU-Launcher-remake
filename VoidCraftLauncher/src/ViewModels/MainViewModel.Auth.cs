@@ -63,6 +63,8 @@ public partial class MainViewModel
             var fallbackSession = await _authService.TrySilentLoginAsync();
             if (fallbackSession != null)
             {
+                var fallbackMsalId = await _authService.GetLastMsalAccountIdAsync();
+
                 Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                 {
                     var existingMicrosoftProfile = Accounts.FirstOrDefault(account =>
@@ -74,6 +76,7 @@ public partial class MainViewModel
                     {
                         existingMicrosoftProfile.DisplayName = fallbackSession.Username;
                         existingMicrosoftProfile.Uuid = fallbackSession.UUID;
+                        existingMicrosoftProfile.MsalAccountId = fallbackMsalId ?? existingMicrosoftProfile.MsalAccountId;
                         existingMicrosoftProfile.LastUsed = DateTime.UtcNow;
                         ActiveAccount = existingMicrosoftProfile;
                     }
@@ -84,6 +87,7 @@ public partial class MainViewModel
                             DisplayName = fallbackSession.Username,
                             Uuid = fallbackSession.UUID,
                             Type = AccountType.Microsoft,
+                            MsalAccountId = fallbackMsalId,
                             LastUsed = DateTime.UtcNow
                         };
                         Accounts.Add(recoveredProfile);

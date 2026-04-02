@@ -2,6 +2,19 @@
 
 Všechny důležité změny v projektu jsou dokumentovány v tomto souboru.
 
+## [3.1.7] - 2026-04-02
+
+### 🛠️ Auth launch hotfix a release pipeline hardening
+
+### Opraveno
+- **Guest launch regression**: launcher si před spuštěním znovu skládá launch session z aktivního účtu, takže Microsoft účet už neskončí ve hře jako `Guest` jen kvůli rozpadlé runtime session.
+- **MSAL account recovery**: auto-login a obnova uloženého profilu používají naposledy ověřený `MsalAccountId`, ne náhodný první účet z cache.
+- **Instance optimization defaults**: `Optimalizace` v detailu instance teď dědí skutečný effective stav z globální konfigurace a nejdou proti reálně použitým JVM flagům.
+- **Discord release webhook**: CI zkracuje dlouhé release notes na bezpečnou délku pro Discord embed a webhook při chybě vrátí fail místo tichého úspěchu.
+
+### Změněno
+- **Release metadata**: projekt, installer, fallback `User-Agent`, dokumentace a nový Discord announcement jsou srovnané na verzi `3.1.7`.
+
 ## [3.1.6] - 2026-04-02
 
 ### ✨ Instance Workspace, Creator Studio a release polish

@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CmlLib.Core.Auth;
 using VoidCraftLauncher.Models;
 using VoidCraftLauncher.Services;
 using System;
@@ -27,6 +28,8 @@ public partial class MainViewModel
             TargetModpack = CurrentModpack; // Track which modpack is being launched
             LaunchProgress = 0;
             LaunchStatus = "Připravuji...";
+
+            var launchSession = await ResolveLaunchSessionForStartAsync();
 
             var modpackDir = _launcherService.GetModpackPath(CurrentModpack.Name);
             var modsDir = Path.Combine(modpackDir, "mods");
@@ -302,7 +305,7 @@ public partial class MainViewModel
             
             var gameProcess = await _launcherService.LaunchAsync(
                 mcVersion,
-                UserSession,
+                launchSession,
                 Config,
                 modpackDir,
                 modLoaderId,
@@ -319,6 +322,7 @@ public partial class MainViewModel
             gameProcess.StartInfo.RedirectStandardError = true;
             
             LogService.Log($"--- GAME START ---", "GAME");
+            LogService.Log($"Launch session: {launchSession.Username} ({launchSession.UserType ?? "offline"}) UUID={launchSession.UUID}", "GAME");
             LogService.Log($"Java Args: {string.Join(" ", jvmArgs)}", "GAME");
 
             void LogTo(string prefix, string data)
@@ -695,6 +699,171 @@ public partial class MainViewModel
     }
 
     // ===== GTNH DETECTION =====
+
+    private async Task<MSession> ResolveLaunchSessionForStartAsync()
+    {
+        if (ActiveAccount != null)
+        {
+            if (IsSessionCompatibleWithAccount(UserSession, ActiveAccount))
+            {
+                return UserSession;
+            }
+
+            var restoredSession = await TryRestoreSessionForAccountAsync(ActiveAccount);
+            if (restoredSession != null)
+            {
+                await ApplyResolvedLaunchSessionAsync(restoredSession, ActiveAccount);
+                return restoredSession;
+            }
+
+            throw new InvalidOperationException($"Aktivní účet {ActiveAccount.DisplayName} se nepodařilo obnovit. Přihlas se znovu.");
+        }
+
+        if (UserSession != null && !IsGuestSession(UserSession))
+        {
+            return UserSession;
+        }
+
+        if (IsLoggedIn)
+        {
+            var recoveredSession = await _authService.TrySilentLoginAsync();
+            if (recoveredSession != null)
+            {
+                await ApplyRecoveredMicrosoftLaunchSessionAsync(recoveredSession);
+                return recoveredSession;
+            }
+
+            throw new InvalidOperationException("Přihlášenou relaci se nepodařilo obnovit. Přihlas se znovu.");
+        }
+
+        return UserSession ?? CmlLib.Core.Auth.MSession.CreateOfflineSession("Guest");
+    }
+
+    private async Task<MSession?> TryRestoreSessionForAccountAsync(AccountProfile account)
+    {
+        if (account.Type == AccountType.Offline)
+        {
+            return _authService.LoginOffline(account.DisplayName);
+        }
+
+        MSession? restoredSession = null;
+
+        if (!string.IsNullOrWhiteSpace(account.MsalAccountId))
+        {
+            restoredSession = await _authService.TrySilentLoginForAccountAsync(account.MsalAccountId);
+            if (IsSessionCompatibleWithAccount(restoredSession, account))
+            {
+                return restoredSession;
+            }
+        }
+
+        restoredSession = await _authService.TrySilentLoginAsync();
+        return IsSessionCompatibleWithAccount(restoredSession, account) ? restoredSession : null;
+    }
+
+    private async Task ApplyResolvedLaunchSessionAsync(MSession session, AccountProfile account)
+    {
+        UserSession = session;
+        IsLoggedIn = true;
+        ActiveAccount = account;
+        account.LastUsed = DateTime.UtcNow;
+
+        if (account.Type == AccountType.Microsoft)
+        {
+            account.DisplayName = session.Username;
+            account.Uuid = session.UUID;
+
+            var msalAccountId = await _authService.GetLastMsalAccountIdAsync();
+            if (!string.IsNullOrWhiteSpace(msalAccountId))
+            {
+                account.MsalAccountId = msalAccountId;
+            }
+        }
+
+        OnPropertyChanged(nameof(PlayerSkinUrl));
+        SaveAccountProfiles();
+    }
+
+    private async Task ApplyRecoveredMicrosoftLaunchSessionAsync(MSession session)
+    {
+        var msalAccountId = await _authService.GetLastMsalAccountIdAsync();
+        var existingProfile = Accounts.FirstOrDefault(account =>
+            account.Type == AccountType.Microsoft &&
+            (
+                (!string.IsNullOrWhiteSpace(msalAccountId) && string.Equals(account.MsalAccountId, msalAccountId, StringComparison.Ordinal)) ||
+                AreEquivalentUuids(account.Uuid, session.UUID)
+            ));
+
+        if (existingProfile == null)
+        {
+            existingProfile = new AccountProfile
+            {
+                DisplayName = session.Username,
+                Uuid = session.UUID,
+                Type = AccountType.Microsoft,
+                MsalAccountId = msalAccountId,
+                LastUsed = DateTime.UtcNow
+            };
+            Accounts.Add(existingProfile);
+        }
+        else
+        {
+            existingProfile.DisplayName = session.Username;
+            existingProfile.Uuid = session.UUID;
+            existingProfile.MsalAccountId = msalAccountId ?? existingProfile.MsalAccountId;
+            existingProfile.LastUsed = DateTime.UtcNow;
+        }
+
+        UserSession = session;
+        IsLoggedIn = true;
+        ActiveAccount = existingProfile;
+        OnPropertyChanged(nameof(PlayerSkinUrl));
+        SaveAccountProfiles();
+    }
+
+    private static bool IsSessionCompatibleWithAccount(MSession? session, AccountProfile account)
+    {
+        if (session == null)
+        {
+            return false;
+        }
+
+        if (account.Type == AccountType.Offline)
+        {
+            return string.Equals(session.Username, account.DisplayName, StringComparison.OrdinalIgnoreCase);
+        }
+
+        if (AreEquivalentUuids(account.Uuid, session.UUID))
+        {
+            return true;
+        }
+
+        return !string.IsNullOrWhiteSpace(account.DisplayName) &&
+            string.Equals(account.DisplayName, session.Username, StringComparison.OrdinalIgnoreCase) &&
+            !IsGuestSession(session);
+    }
+
+    private static bool AreEquivalentUuids(string? left, string? right)
+    {
+        if (string.IsNullOrWhiteSpace(left) || string.IsNullOrWhiteSpace(right))
+        {
+            return false;
+        }
+
+        return string.Equals(NormalizeUuid(left), NormalizeUuid(right), StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string NormalizeUuid(string value)
+    {
+        return value.Replace("-", string.Empty, StringComparison.Ordinal).Trim();
+    }
+
+    private static bool IsGuestSession(MSession? session)
+    {
+        return session == null ||
+            string.IsNullOrWhiteSpace(session.Username) ||
+            string.Equals(session.Username, "Guest", StringComparison.OrdinalIgnoreCase);
+    }
 
     private static bool IsGTNHModpack(string name, string modpackDir)
     {

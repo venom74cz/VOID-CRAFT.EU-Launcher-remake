@@ -198,9 +198,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Prepare Version
-        run: echo "VERSION=${{ needs.check-version.outputs.version }}" >> $GITHUB_ENV
-
       - name: Download Artifact (Windows Exe)
         uses: actions/download-artifact@v4
         with:
@@ -228,7 +225,7 @@ jobs:
       - name: Extract Release Notes
         id: extract_notes
         run: |
-          VERSION="${{ env.VERSION }}"
+          VERSION="${{ needs.check-version.outputs.version }}"
           awk -v ver="$VERSION" '
             /^## / { 
               if (p) exit; 
@@ -246,8 +243,8 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ env.VERSION }}
-          name: v${{ env.VERSION }}
+          tag_name: v${{ needs.check-version.outputs.version }}
+          name: v${{ needs.check-version.outputs.version }}
           files: |
             ./release_assets/VoidCraftLauncher.exe
             ./release_assets/VoidCraftLauncher_Setup.exe
@@ -255,7 +252,7 @@ jobs:
             ./release_assets/VoidCraftLauncher
           body_path: release_body.md
           draft: false
-          prerelease: ${{ contains(env.VERSION, 'alpha') || contains(env.VERSION, 'beta') }}
+          prerelease: ${{ contains(needs.check-version.outputs.version, 'alpha') || contains(needs.check-version.outputs.version, 'beta') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -271,14 +268,25 @@ jobs:
       - name: Prepare Notification
         run: |
           VERSION="${{ needs.check-version.outputs.version }}"
+          RELEASE_URL="https://github.com/${{ github.repository }}/releases/tag/v$VERSION"
           
           # Re-extract notes for discord
            awk -v ver="$VERSION" '/^## / { if (p) exit; if ($0 ~ ver) { p=1; next } } p' CHANGELOG.md > notes.md
            if [ ! -s notes.md ]; then echo "New version released." > notes.md; fi
+
+           # Discord embed description limit is 4096 chars. Keep space for footer text and release URL.
+           jq -Rs -r --arg release_url "$RELEASE_URL" '
+             gsub("\r"; "") |
+             if length > 3800 then
+               .[0:3800] + "\n\n... plný changelog: " + $release_url
+             else
+               .
+             end
+           ' notes.md > notes_discord.md
            
            # Discord Format
            CONTENT="||<@&1326633984196870235>||"
-           BODY=$(cat notes.md)
+           BODY=$(cat notes_discord.md)
            TIMESTAMP=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
            
            # Escape check? simple approach:
@@ -286,7 +294,7 @@ jobs:
             --arg content "$CONTENT" \
             --arg body "$BODY" \
             --arg title "VoidCraft Launcher v$VERSION" \
-            --arg url "https://github.com/${{ github.repository }}/releases/tag/v$VERSION" \
+            --arg url "$RELEASE_URL" \
             --arg timestamp "$TIMESTAMP" \
             '{
               username: "VoidCraft BuildBot",
@@ -307,5 +315,5 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.LAUNCHER_UPDATE }}
         run: |
           if [ -n "$DISCORD_WEBHOOK" ]; then
-             curl -H "Content-Type: application/json" -d @payload.json "$DISCORD_WEBHOOK"
+             curl --fail-with-body --silent --show-error -H "Content-Type: application/json" -d @payload.json "$DISCORD_WEBHOOK"
           fi

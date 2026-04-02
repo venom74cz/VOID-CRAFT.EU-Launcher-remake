@@ -23,6 +23,7 @@ public class AuthService
     private readonly JsonSerializerOptions _jsonOptions;
     private readonly SecureStorageService _secureStorage;
     private readonly string _legacyTokenCacheFile;
+    private string? _lastAuthenticatedMsalAccountId;
 
     public AuthService(SecureStorageService secureStorage)
     {
@@ -91,6 +92,15 @@ public class AuthService
         }
     }
 
+    private void RememberAuthenticatedAccount(IAccount? account)
+    {
+        var accountId = account?.HomeAccountId?.Identifier;
+        if (!string.IsNullOrWhiteSpace(accountId))
+        {
+            _lastAuthenticatedMsalAccountId = accountId;
+        }
+    }
+
     /// <summary>
     /// Try to login silently using cached tokens (for startup)
     /// </summary>
@@ -108,6 +118,7 @@ public class AuthService
             
             var authResult = await _msalApp.AcquireTokenSilent(scopes, account)
                 .ExecuteAsync();
+            RememberAuthenticatedAccount(authResult.Account);
             
             // Got MS token, now get Xbox/MC tokens
             var userToken = await RequestXboxUserToken(authResult.AccessToken);
@@ -168,6 +179,8 @@ public class AuthService
             }
             }
         }
+
+        RememberAuthenticatedAccount(authResult.Account);
 
         statusCallback("Ověřuji Xbox Live...");
         
@@ -363,6 +376,8 @@ public class AuthService
         {
             File.Delete(_legacyTokenCacheFile);
         }
+
+        _lastAuthenticatedMsalAccountId = null;
     }
 
     /// <summary>
@@ -376,6 +391,11 @@ public class AuthService
         if (target != null)
         {
             await _msalApp.RemoveAsync(target);
+        }
+
+        if (string.Equals(_lastAuthenticatedMsalAccountId, msalAccountId, StringComparison.Ordinal))
+        {
+            _lastAuthenticatedMsalAccountId = null;
         }
     }
 
@@ -395,6 +415,7 @@ public class AuthService
             if (account == null) return null;
 
             var authResult = await _msalApp.AcquireTokenSilent(scopes, account).ExecuteAsync();
+            RememberAuthenticatedAccount(authResult.Account);
 
             var userToken = await RequestXboxUserToken(authResult.AccessToken);
             var xsts = await RequestXstsToken(userToken.Token);
@@ -418,6 +439,11 @@ public class AuthService
     /// </summary>
     public async Task<string?> GetLastMsalAccountIdAsync()
     {
+        if (!string.IsNullOrWhiteSpace(_lastAuthenticatedMsalAccountId))
+        {
+            return _lastAuthenticatedMsalAccountId;
+        }
+
         var accounts = await _msalApp.GetAccountsAsync();
         return accounts.FirstOrDefault()?.HomeAccountId?.Identifier;
     }

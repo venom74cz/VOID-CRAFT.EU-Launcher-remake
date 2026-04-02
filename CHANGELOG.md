@@ -1,5 +1,21 @@
 # Changelog
 
+## 3.1.7 - 2026-04-02
+
+### Auth & launch hotfix
+- Opraven regression z launch flow, kdy launcher mohl po přihlášení spustit hru jako `Guest`; před startem teď znovu ověřuje session proti aktivnímu účtu a Microsoft launch nepustí do tichého guest fallbacku.
+- Auto-login a account recovery si teď drží správné `MsalAccountId` naposledy ověřeného Microsoft účtu místo náhodného prvního záznamu z cache, takže se uložený profil nerozjede proti jiné relaci.
+
+### Nastavení instance
+- Detail instance teď při otevření normalizuje efektivní stav optimalizačních flagů a GC override z globální konfigurace, takže UI pro `Optimalizace` odpovídá tomu, co se při launchi opravdu přidá do JVM argumentů.
+
+### Release workflow
+- GitHub Actions Discord notifikace teď zkracuje příliš dlouhý changelog na bezpečnou délku pro Discord embed a webhook request už při HTTP chybě neselže potichu.
+- Doplněn aktuální `DISCORD-ANNOUNCEMENT-3.1.7.md` a release index v dokumentaci už ukazuje jen existující announcementy.
+
+### Release metadata
+- Srovnana release verze na `3.1.7` v launcher projektu, installeru, fallback `User-Agent` verzi pro social feed a referencni dokumentaci.
+
 ## 3.1.6 - 2026-04-02
 
 ### Modpack detail polish

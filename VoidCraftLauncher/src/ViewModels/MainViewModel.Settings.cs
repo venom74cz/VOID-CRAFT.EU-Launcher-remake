@@ -61,8 +61,33 @@ public partial class MainViewModel
             };
         }
 
+        NormalizeCurrentModpackConfigDefaults();
+
         ReloadOptionsPresets();
         GoToInstanceDetail(CurrentModpack);
+    }
+
+    private void NormalizeCurrentModpackConfigDefaults()
+    {
+        if (CurrentModpackConfig == null || CurrentModpack == null)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(CurrentModpackConfig.ModpackName))
+        {
+            CurrentModpackConfig.ModpackName = CurrentModpack.Name;
+        }
+
+        if (!CurrentModpackConfig.OverrideEnableOptimizationFlags.HasValue)
+        {
+            CurrentModpackConfig.OverrideEnableOptimizationFlags = Config.EnableOptimizationFlags;
+        }
+
+        if (CurrentModpackConfig.OverrideEnableOptimizationFlags == true && CurrentModpackConfig.OverrideGcType == null)
+        {
+            CurrentModpackConfig.OverrideGcType = Config.SelectedGc;
+        }
     }
 
     private void ReloadOptionsPresets()

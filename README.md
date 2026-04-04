@@ -3,7 +3,7 @@
 Oficialni vlastni Minecraft launcher pro komunitu **VOID-CRAFT**. Postaveny na
 .NET 9 (C#) a Avalonia UI.
 
-Aktualni release: **3.1.7**
+Aktualni release: **3.1.8**
 
 ![VOID-CRAFT Logo](https://void-craft.eu/logo.png)
 
@@ -81,7 +81,9 @@ Zavazne podminky jsou v [LICENSE](LICENSE) a pravidla pro spolupraci v
 
 Dalsi projektove dokumenty jsou ulozene ve slozce [docs](docs/README.md), hlavne:
 
+- aktualni realita produktu a dokumentacni mapa: [docs/reference/CURRENT-STATE.md](docs/reference/CURRENT-STATE.md)
 - changelog aktualniho releasu: [CHANGELOG.md](CHANGELOG.md)
 - implementacni plan Creator Workbenche: [docs/planning/creator-workbench.md](docs/planning/creator-workbench.md)
 - redesign a UX blueprint: [docs/planning/LAUNCHER-OBSIDIAN-REDESIGN-BLUEPRINT.md](docs/planning/LAUNCHER-OBSIDIAN-REDESIGN-BLUEPRINT.md)
+- produktova roadmapa: [future.md](future.md)
 - historicky implementation plan: [docs/planning/IMPLEMENTATION_PLAN.md](docs/planning/IMPLEMENTATION_PLAN.md)

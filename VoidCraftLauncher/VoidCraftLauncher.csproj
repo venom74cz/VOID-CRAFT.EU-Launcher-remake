@@ -7,7 +7,7 @@
     <DefaultItemExcludes>$(DefaultItemExcludes);bin-validation\**;bin-verify\**;obj-validation\**;obj-verify\**</DefaultItemExcludes>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
-    <Version>3.1.7</Version>
+    <Version>3.1.8</Version>
     <Authors>VOIDIVIDE</Authors>
     <Company>Void-Craft.EU</Company>
     <Product>Void-Craft Launcher</Product>
@@ -35,15 +35,19 @@
     <PackageReference Include="CmlLib.Core.Installer.Forge" Version="1.1.1" />
     <PackageReference Include="CmlLib.Core.Installer.NeoForge" Version="4.0.0" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="DiffPlex" Version="1.9.0" />
     <PackageReference Include="DiscordRichPresence" Version="1.6.1.70" />
     <PackageReference Include="fNbt" Version="1.0.0" />
     <PackageReference Include="HtmlAgilityPack" Version="1.12.4" />
     <PackageReference Include="Microsoft.Identity.Client" Version="4.79.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="RestSharp" Version="113.0.0" />
     <PackageReference Include="SkiaSharp" Version="2.88.9" />
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="9.0.3" />
+    <PackageReference Include="Tomlyn" Version="2.3.0" />
     <PackageReference Include="WebView.Avalonia" Version="11.0.0.1" />
     <PackageReference Include="XboxAuthNet.Game" Version="1.4.1" />
     <PackageReference Include="XboxAuthNet.Game.Msal" Version="0.1.3" />
+    <PackageReference Include="YamlDotNet" Version="16.3.0" />
   </ItemGroup>
 </Project>

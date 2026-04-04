@@ -2,6 +2,19 @@
 
 Všechny důležité změny v projektu jsou dokumentovány v tomto souboru.
 
+## [3.1.8] - 2026-04-04
+
+### 🛠️ Modpack download hardening
+
+### Opraveno
+- **CurseForge fallbacky**: instalátor už po výpadku primárního download URL zkouší alternativní kandidáty, znovunačte metadata pro jednotlivé soubory a required mod nenechá spadnout jen kvůli jedné mrtvé adrese.
+- **Modrinth mirrors**: `.mrpack` instalace i update flow teď zkouší všechny dostupné `downloads[]` mirror URL místo prvního endpointu.
+- **Validace existujících souborů**: launcher už nepřeskočí poškozený nebo nekompletní mod jen proto, že soubor fyzicky existuje; před reuse kontroluje velikost a hash, pokud jsou k dispozici.
+- **Balík modpacku**: download top-level `.zip` a `.mrpack` archivů v browser/install/update flow přešel na retry + fallback kandidáty místo single-shot requestu.
+
+### Změněno
+- **Release metadata**: projekt, installer, fallback `User-Agent` a referenční dokumentace jsou srovnané na verzi `3.1.8`.
+
 ## [3.1.7] - 2026-04-02
 
 ### 🛠️ Auth launch hotfix a release pipeline hardening

@@ -585,6 +585,7 @@ public partial class MainViewModel
         if (tab == CreatorShellTab.Mods)
         {
             LoadInstalledMods();
+            _ = LoadPopularModsForProfile();
         }
 
         TrackCreatorActivity($"Otevrena creator zalozka {GetCreatorTabLabel(tab)}.");
@@ -628,19 +629,6 @@ public partial class MainViewModel
         _launcherService.SaveConfig(Config);
     }
 
-    private void TrackCreatorActivity(string summary)
-    {
-        CreatorPreferences.LastActivityUtc = DateTimeOffset.UtcNow;
-        CreatorPreferences.LastActivitySummary = summary;
-
-        if (SelectedSkinStudioInstance != null)
-        {
-            RememberRecentWorkspace(SelectedSkinStudioInstance.Id, SelectedSkinStudioInstance.Label);
-        }
-
-        PersistCreatorPreferences();
-    }
-
     private void RememberRecentWorkspace(string workspaceId, string label)
     {
         var recent = CreatorPreferences.RecentWorkspaces;
@@ -681,7 +669,22 @@ public partial class MainViewModel
         }
 
         RefreshCreatorWorkspaceContext();
+        ResetProfileModSearch();
+
+        if (CreatorShellState.SelectedTab == CreatorShellTab.Mods)
+        {
+            LoadInstalledMods();
+            _ = LoadPopularModsForProfile();
+        }
+
         _ = EnsureCreatorWorkspaceMetadataAsync(workspaceId);
+
+        // Refresh new UX tabs
+        _ = RefreshCreatorGitStatus();
+        _ = RefreshCreatorNotes();
+        _ = RefreshCreatorReleasePipeline();
+        RefreshCreatorQuickLinks();
+        NotifyOverviewStateChanged();
     }
 
     private void SyncCreatorWorkbenchFocus(CreatorWorkbenchFile? file)
@@ -1386,7 +1389,7 @@ public partial class MainViewModel
     private static int CreatorTabToIndex(CreatorShellTab tab) => tab switch
     {
         CreatorShellTab.Overview => 0,
-        CreatorShellTab.Metadata => 1,
+        CreatorShellTab.Identity => 1,
         CreatorShellTab.Mods => 2,
         CreatorShellTab.Files => 3,
         CreatorShellTab.Notes => 4,
@@ -1397,7 +1400,7 @@ public partial class MainViewModel
 
     private static CreatorShellTab IndexToCreatorTab(int index) => index switch
     {
-        1 => CreatorShellTab.Metadata,
+        1 => CreatorShellTab.Identity,
         2 => CreatorShellTab.Mods,
         3 => CreatorShellTab.Files,
         4 => CreatorShellTab.Notes,
@@ -1409,7 +1412,7 @@ public partial class MainViewModel
     private static string GetCreatorTabLabel(CreatorShellTab tab) => tab switch
     {
         CreatorShellTab.Overview => "Overview",
-        CreatorShellTab.Metadata => "Metadata",
+        CreatorShellTab.Identity => "Identity",
         CreatorShellTab.Mods => "Mods",
         CreatorShellTab.Files => "Files",
         CreatorShellTab.Notes => "Notes",

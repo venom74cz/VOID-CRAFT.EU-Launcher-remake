@@ -1,5 +1,82 @@
 # Changelog
 
+## Unreleased - 2026-04-04
+
+### Creator Studio - UX Redesign (kompletni implementace blueprintu)
+
+#### Header & Overview
+- Kompaktni 2-radkovy header s pack identity, status badges (git branch, dirty signal, export status) a quick action buttony (Mods slozka, Export, Snapshot, Refresh).
+- Redesigned Overview tab s workspace picker, stats gridem (Mods/Files/Notes/Snapshots/Exports), activity timeline a quick links.
+
+#### Identity tab (nahrazuje Metadata)
+- Romdeleni do dvou sub-tabu: **Profile** (formular s live preview) a **Branding** (brand profil, asset checklist, promo galerie).
+- Metadata→Identity prejmenovani probiha napric celym codebase (enum, tab mapping, VM).
+
+#### Notes tab
+- 4 sub-mody: **Docs** (sidebar + markdown editor), **Wiki** (prolinkované stránky), **Canvas** (vizuální graf uzlů – Questline/Gate/Boss/Dimension/Recipe/Blocker/Idea), **Mind Map** (přehled canvas grafů).
+- Plne funkční CRUD: vytvořit/otevřít/uložit/smazat dokumenty primo v launcheru.
+- Notes service skenuje `notes/` a `notes/canvas/` slozky workspace.
+
+#### Git tab
+- Repository status, branch summary, remote label, ahead/behind counts.
+- Changes list se stage/unstage checkboxy, revert per-file, stage all.
+- Commit area s commit message + Commit / Commit & Push akce.
+- Historie commitu (short hash, message, author, time ago).
+- Branch list + git init pro workspace bez repo.
+- Pull/Push akce s toast feedback.
+
+#### Release tab
+- Release pipeline vizualizace (Version → Snapshot → Validate → Notes → Publish).
+- Validacni checklist (metadata/logo/mods/cover/loader/size kontroly).
+- Export profile cards (.voidpack / CurseForge / .mrpack) se status indikatory.
+- Changelog editor pro release notes.
+- Release historie ze skenovani `.voidcraft/exports/`.
+- Zachovany původni snapshot/export akce.
+
+#### Global Search (Ctrl+K)
+- Overlay panel pres cely Creator Studio, hledani napric soubory, mody, poznamkami, git commity a manifestem.
+- Vyber vysledku automaticky naviguje na spravny tab a vybere item.
+
+#### Nové služby a modely
+- `CreatorGitService` — git CLI wrapper (status, stage, unstage, commit, pull, push, revert, branches, init).
+- `CreatorNotesService` — notes CRUD (discover, load, save, create, delete, canvas graphs).
+- `CreatorReleaseService` — release pipeline, validace, export profily, release historie.
+- `CreatorOverviewModels`, `CreatorGitModels`, `CreatorReleaseModels`, `CreatorNotesModels` — datove tridy.
+- 5 novych ViewModel partial files (CreatorOverview, CreatorGit, CreatorNotes, CreatorRelease, CreatorSearch).
+
+#### State wiring
+- Workspace change automaticky refreshuje Git, Notes, Release pipeline, Quick Links a Overview stats.
+- Vybrany Creator workspace se po restartu launcheru obnovuje spolehliveji podle ulozeneho `SelectedWorkspaceId`; obnoveni uz neprebije nahodny fallback na jinou instanci.
+- Pri zakladani noveho Creator profilu se autor predvyplni z aktualne prihlasene identity a pri stavbe manifestu existuje stejny fallback, takze novy workspace uz nevznika s prazdnym autorem jen kvuli tomu, ze uzivatel pole neupravil.
+- `Mods` tab ted jasne oddeluje `Katalog modu` od `Nainstalovano ve workspace`, zobrazuje cilovy runtime a kdyz kompatibilni hledani nic nenajde, umi spadnout do sirsiho katalogu misto mrtve prazdne plochy.
+- `Files` tab byl prestaveny na sirokou pracovni plochu s jednim hlavnim editorem, levym seznamem souboru a jednim pomocnym panelem, aby nepusobil jako nekolik konkurujicich editoru vedle sebe.
+
+### Creator Studio - Mods & .voidpack
+- `Mods` tab uz neni napul odkaz do dalsiho okna. Drzi vyhledani pres CurseForge/Modrinth, local `.jar` import, multi-select, bulk add/remove a zapinani/vypinani modu primo nad vybranym workspacem.
+- Creator mod workflow ted pracuje i s `.jar.disabled`, takze launcher udrzi stav vypnutych modu bez bocniho manageru a umi ho zapsat do mod metadata.
+- `.voidpack` export uz nebalí cele `mods/*.jar`; mody zapisuje do textoveho `voidpack_modlist.json` manifestu s identitou zdroje a import se je pokusi znovu stahnout.
+- Import `.voidpack` ted po obnoveni souboru vypise, kolik modu slo automaticky obnovit z modlistu a kolik kusu potrebuje rucni doplneni.
+
+### Creator Studio - Files Workbench
+- `Files` tab uz neni plain-text-only placeholder. Creator Workbench dostal realny editor host s rezimy `Structured`, `Raw`, `Split` a `Diff`.
+- Structured parser vrstva ted umi `json`, `json5`, `toml`, `yaml/yml`, `ini/cfg` a `properties`, takze bezne workspace configy jdou cist a upravovat pres scalar field inspector misto slepeho raw textu.
+- `js`, `zs`, `scripts` a `kubejs` soubory dostaly syntax-aware outline nad funkcemi, hooky a eventy, i kdyz vlastni editace zustava raw-first.
+- Files host ted umi outline, search, focus/quick jump a diff proti `nactene bazi`, `poslednimu snapshotu`, `poslednimu exportu` a u `config/defaultconfigs` i proti default counterpartu.
+- Parser chyby a structured-save tradeoffy se ted zobrazuji lidsky citelne primo v launcheru misto ticheho failu.
+- Structured save je zamerne normalizacni vrstva: u `json5`, `toml`, `yaml`, `ini` a `properties` muze zmenit formatting, poradi nebo komentare, a UI na to ted upozornuje jeste pred ulozenim.
+- Files tab dostal produkcnejsi copy: misto internich nazvu typu `Structured preview` nebo `Diff viewer` ted pouziva citelnejsi rezimy a popisy.
+
+## 3.1.8 - 2026-04-04
+
+### Modpack download hardening
+- CurseForge install/update flow uz po padu primarniho file URL zkousi dalsi kandidaty, umi si dodelat metadata pro jednotlive soubory a required mody nepusti do falesne uspesne instalace.
+- Modrinth `.mrpack` i interni mod download flow ted zkousi vsechny dostupne mirror URL misto jednoho endpointu.
+- Launcher pred preskocenim uz existujiciho modu overuje velikost/hash, aby se nerozjizdela dalsi instalace nad rozbitym nebo utnutym souborem.
+- Download top-level `.zip`/`.mrpack` baliku v browser i launch update flow presel na retry + fallback kandidaty.
+
+### Release metadata
+- Srovnana release verze na `3.1.8` v launcher projektu, installeru, fallback `User-Agent` verzi pro social feed a referencni dokumentaci.
+
 ## 3.1.7 - 2026-04-02
 
 ### Auth & launch hotfix

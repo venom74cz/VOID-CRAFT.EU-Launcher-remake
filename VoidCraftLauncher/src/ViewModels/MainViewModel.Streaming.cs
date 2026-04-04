@@ -67,7 +67,18 @@ public partial class MainViewModel
 
     public string CreatorWorkbenchSelectionMeta => SelectedCreatorWorkbenchFile == null
         ? "Vyber soubor z levého seznamu."
-        : $"{SelectedCreatorWorkbenchFile.Category} • {SelectedCreatorWorkbenchFile.SizeLabel}";
+        : $"{SelectedCreatorWorkbenchFile.Category} • {CreatorWorkbenchDocumentKindLabel} • {SelectedCreatorWorkbenchFile.SizeLabel}";
+
+    public string CreatorWorkbenchBreadcrumb => SelectedCreatorWorkbenchFile == null
+        ? "workspace / vyber soubor"
+        : string.Join(" / ", SelectedCreatorWorkbenchFile.RelativePath
+            .Split(new[] { '\\', '/' }, StringSplitOptions.RemoveEmptyEntries));
+
+    public string CreatorWorkbenchDirtyStateLabel => !HasSelectedCreatorWorkbenchFile
+        ? "Bez souboru"
+        : CanSaveCreatorWorkbenchFile
+            ? "Neulozeno"
+            : "Ulozeno";
 
     public bool CanSaveCreatorWorkbenchFile =>
         IsCreatorWorkspaceEditable &&
@@ -120,6 +131,60 @@ public partial class MainViewModel
         }
     }
 
+    public bool CanManageCreatorModsInPlace => ResolveModManagementTargetModpack()?.IsCustomProfile == true && IsCreatorWorkspaceEditable;
+
+    public string CreatorModsWorkspaceStatus => !HasCreatorWorkspaceContext
+        ? "Nejdřív vyber pracovní workspace, pak se načte kompletní správa modů."
+        : CanManageCreatorModsInPlace
+            ? "V tomhle tabu řešíš vyhledání, lokální .jar, multi-select, zapínání i mazání modů bez dalšího manageru."
+            : "Vybraný workspace je jen pro čtení. Přehled modů uvidíš tady, ale měnit je můžeš jen v custom/dev workspace.";
+
+    public string CreatorModsFolderPath
+    {
+        get
+        {
+            var targetPath = ResolveModManagementTargetPath();
+            return string.IsNullOrWhiteSpace(targetPath)
+                ? string.Empty
+                : Path.Combine(targetPath, "mods");
+        }
+    }
+
+    public string CreatorInstalledModsSummary => string.IsNullOrWhiteSpace(InstalledModsSearchQuery)
+        ? HasSelectedInstalledMods
+            ? $"{FilteredInstalledMods.Count} modů v aktuálním workspace • vybráno {SelectedInstalledModsCount}"
+            : $"{FilteredInstalledMods.Count} modů v aktuálním workspace"
+        : HasSelectedInstalledMods
+            ? $"{FilteredInstalledMods.Count}/{InstalledMods.Count} modů po filtru • vybráno {SelectedInstalledModsCount}"
+            : $"{FilteredInstalledMods.Count}/{InstalledMods.Count} modů po filtru";
+
+    public string CreatorModsRuntimeLabel => string.IsNullOrWhiteSpace(ProfileModSearchRuntimeLabel)
+        ? BuildModSearchRuntimeLabel(ResolveModManagementTargetModpack())
+        : ProfileModSearchRuntimeLabel;
+
+    public string CreatorModsCatalogModeLabel => IsProfileModSearchLoading
+        ? "Hledání"
+        : ProfileModSearchUsedFallback
+            ? "Širší katalog"
+            : "Kompatibilní katalog";
+
+    public string CreatorModsSearchActionLabel => IsProfileModSearchLoading ? "Hledám..." : "Vyhledat";
+
+    public string CreatorModsSearchResultsSummary => string.IsNullOrWhiteSpace(ProfileModSearchQuery)
+        ? "Vyhledávání bere CurseForge i Modrinth. Začíná přesnou kompatibilitou pro vybraný runtime a když je prázdná, zkusí širší katalog."
+        : IsProfileModSearchLoading
+            ? $"Hledám \"{ProfileModSearchQuery.Trim()}\" napříč katalogy..."
+            : HasProfileModSearchResults
+                ? ProfileModSearchUsedFallback
+                    ? $"{ProfileModSearchResults.Count} výsledků pro \"{ProfileModSearchQuery.Trim()}\" po rozšíření mimo přesný runtime filtr."
+                    : $"{ProfileModSearchResults.Count} kompatibilních výsledků pro \"{ProfileModSearchQuery.Trim()}\""
+                : $"Pro dotaz \"{ProfileModSearchQuery.Trim()}\" se nenašlo nic ani po rozšíření hledání.";
+
+    public bool ShowCreatorModsSearchEmptyState =>
+        !IsProfileModSearchLoading &&
+        !string.IsNullOrWhiteSpace(ProfileModSearchQuery) &&
+        !HasProfileModSearchResults;
+
     public bool IsDiscordPresenceReady => _discordRpcService.IsInitialized;
 
     public string DiscordPresenceDetails => string.IsNullOrWhiteSpace(_discordRpcService.CurrentDetails)
@@ -169,6 +234,15 @@ public partial class MainViewModel
         OnPropertyChanged(nameof(CreatorStudioModLoader));
         OnPropertyChanged(nameof(CreatorStudioModCountLabel));
         OnPropertyChanged(nameof(CreatorStudioLinkedServersLabel));
+        OnPropertyChanged(nameof(CanManageCreatorModsInPlace));
+        OnPropertyChanged(nameof(CreatorModsWorkspaceStatus));
+        OnPropertyChanged(nameof(CreatorModsFolderPath));
+        OnPropertyChanged(nameof(CreatorInstalledModsSummary));
+        OnPropertyChanged(nameof(CreatorModsRuntimeLabel));
+        OnPropertyChanged(nameof(CreatorModsCatalogModeLabel));
+        OnPropertyChanged(nameof(CreatorModsSearchActionLabel));
+        OnPropertyChanged(nameof(CreatorModsSearchResultsSummary));
+        OnPropertyChanged(nameof(ShowCreatorModsSearchEmptyState));
         OnPropertyChanged(nameof(HasCreatorWorkbenchFiles));
         OnPropertyChanged(nameof(HasVisibleCreatorWorkbenchFiles));
         OnPropertyChanged(nameof(HasSelectedCreatorWorkbenchFile));
@@ -177,7 +251,10 @@ public partial class MainViewModel
         OnPropertyChanged(nameof(CreatorWorkbenchEmptySubtitle));
         OnPropertyChanged(nameof(CreatorWorkbenchSelectionLabel));
         OnPropertyChanged(nameof(CreatorWorkbenchSelectionMeta));
+        OnPropertyChanged(nameof(CreatorWorkbenchBreadcrumb));
+        OnPropertyChanged(nameof(CreatorWorkbenchDirtyStateLabel));
         OnPropertyChanged(nameof(CanSaveCreatorWorkbenchFile));
+        NotifyCreatorWorkbenchEditorVisualStateChanged();
         NotifyCreatorShellVisualStateChanged();
     }
 
@@ -256,6 +333,53 @@ public partial class MainViewModel
     }
 
     [RelayCommand]
+    private void OpenCreatorModsFolder()
+    {
+        var modsPath = CreatorModsFolderPath;
+        if (string.IsNullOrWhiteSpace(modsPath))
+        {
+            ShowToast("Creator Studio", "Nejdřív vyber pracovní instance pro Mods workflow.", ToastSeverity.Warning);
+            return;
+        }
+
+        if (!Directory.Exists(modsPath))
+        {
+            if (!CanManageCreatorModsInPlace)
+            {
+                ShowToast("Creator Studio", "Vybraný workspace zatím nemá mods složku.", ToastSeverity.Warning, 2600);
+                return;
+            }
+
+            Directory.CreateDirectory(modsPath);
+        }
+
+        OpenFolder(modsPath);
+        TrackCreatorActivity("Otevrena mods slozka workspace.");
+    }
+
+    [RelayCommand]
+    private void OpenCreatorModManager()
+    {
+        var modpack = ResolveModManagementTargetModpack();
+        if (modpack == null)
+        {
+            ShowToast("Creator Studio", "Nejdřív vyber pracovní instance pro správu modů.", ToastSeverity.Warning);
+            return;
+        }
+
+        var modpackPath = _launcherService.GetModpackPath(modpack.Name);
+        var vm = new ModManagerViewModel(modpack.Name, modpackPath);
+        var window = new VoidCraftLauncher.Views.ModManagerWindow { DataContext = vm };
+        vm.RequestClose += window.Close;
+
+        if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            window.ShowDialog(desktop.MainWindow);
+            TrackCreatorActivity($"Otevren pokrocily mod manager pro {modpack.DisplayLabel}.");
+        }
+    }
+
+    [RelayCommand]
     private async Task CopyCreatorSessionSummary()
     {
         var topLevel = Avalonia.Controls.TopLevel.GetTopLevel(
@@ -287,6 +411,8 @@ public partial class MainViewModel
         OnPropertyChanged(nameof(HasSelectedCreatorWorkbenchFile));
         OnPropertyChanged(nameof(CreatorWorkbenchSelectionLabel));
         OnPropertyChanged(nameof(CreatorWorkbenchSelectionMeta));
+        OnPropertyChanged(nameof(CreatorWorkbenchBreadcrumb));
+        OnPropertyChanged(nameof(CreatorWorkbenchDirtyStateLabel));
         OnPropertyChanged(nameof(CanSaveCreatorWorkbenchFile));
         _ = LoadSelectedCreatorWorkbenchFileAsync(value);
         SyncCreatorWorkbenchFocus(value);
@@ -295,6 +421,8 @@ public partial class MainViewModel
     partial void OnCreatorWorkbenchContentChanged(string value)
     {
         OnPropertyChanged(nameof(CanSaveCreatorWorkbenchFile));
+        OnPropertyChanged(nameof(CreatorWorkbenchDirtyStateLabel));
+        HandleCreatorWorkbenchContentChanged();
         UpdateCreatorDirtyIndicators();
     }
 
@@ -372,9 +500,10 @@ public partial class MainViewModel
     private async Task RefreshCreatorWorkbenchAsync(bool preserveSelection = true)
     {
         var previousPath = preserveSelection ? SelectedCreatorWorkbenchFile?.FullPath : null;
-        var instancePath = SelectedSkinStudioInstance == null
+        var workspaceId = SelectedSkinStudioInstance?.Id ?? CreatorPreferences.SelectedWorkspaceId;
+        var instancePath = string.IsNullOrWhiteSpace(workspaceId)
             ? null
-            : _launcherService.GetModpackPath(SelectedSkinStudioInstance.Id);
+            : _launcherService.GetModpackPath(workspaceId);
 
         var files = string.IsNullOrWhiteSpace(instancePath)
             ? Array.Empty<CreatorWorkbenchFile>()
@@ -400,6 +529,7 @@ public partial class MainViewModel
                 CreatorWorkbenchStatus = HasCreatorStudioInstances
                     ? "Ve vybrané instanci nebyly nalezeny žádné malé textové soubory vhodné pro editaci."
                     : "Creator Studio čeká na nainstalovanou instanci.";
+                ClearCreatorWorkbenchEditorState();
             }
 
             OnPropertyChanged(nameof(HasCreatorWorkbenchFiles));
@@ -410,6 +540,8 @@ public partial class MainViewModel
             OnPropertyChanged(nameof(CreatorWorkbenchEmptySubtitle));
             OnPropertyChanged(nameof(CreatorWorkbenchSelectionLabel));
             OnPropertyChanged(nameof(CreatorWorkbenchSelectionMeta));
+            OnPropertyChanged(nameof(CreatorWorkbenchBreadcrumb));
+            OnPropertyChanged(nameof(CreatorWorkbenchDirtyStateLabel));
             OnPropertyChanged(nameof(CanSaveCreatorWorkbenchFile));
             RefreshCreatorWorkspaceContext();
         });
@@ -445,6 +577,7 @@ public partial class MainViewModel
             CreatorWorkbenchStatus = HasCreatorStudioInstances
                 ? "Vyber soubor z levého seznamu."
                 : "Creator Studio čeká na nainstalovanou instanci.";
+            ClearCreatorWorkbenchEditorState();
             return;
         }
 
@@ -454,8 +587,11 @@ public partial class MainViewModel
             var content = await _creatorWorkbenchService.ReadFileAsync(file.FullPath);
             await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
             {
+                _suppressCreatorWorkbenchRawAnalysis = true;
                 _creatorWorkbenchLoadedContent = content;
                 CreatorWorkbenchContent = content;
+                _suppressCreatorWorkbenchRawAnalysis = false;
+                RebuildCreatorWorkbenchEditorState(file, content, preferRecommendedMode: true);
                 CreatorWorkbenchStatus = $"Načteno: {file.RelativePath}";
                 OnPropertyChanged(nameof(CanSaveCreatorWorkbenchFile));
                 RefreshCreatorWorkspaceContext();

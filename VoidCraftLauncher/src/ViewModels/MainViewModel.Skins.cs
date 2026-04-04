@@ -98,9 +98,16 @@ public partial class MainViewModel
         ? "NameMC zatím pro tento profil nemá veřejnou historii. Zkus obnovit načtení za moment."
         : "Historie skinů vyžaduje přihlášení přes Microsoft účet. Offline účty nemají veřejný NameMC profil.";
 
-    public string SkinStudioSelectedInstancePath => SelectedSkinStudioInstance == null
-        ? "Vyber instanci, ve které chceš pracovat se skin toolingem a screenshoty."
-        : _launcherService.GetModpackPath(SelectedSkinStudioInstance.Id);
+    public string SkinStudioSelectedInstancePath
+    {
+        get
+        {
+            var workspaceId = SelectedSkinStudioInstance?.Id ?? Config.CreatorStudio?.SelectedWorkspaceId;
+            return string.IsNullOrWhiteSpace(workspaceId)
+                ? "Vyber instanci, ve které chceš pracovat se skin toolingem a screenshoty."
+                : _launcherService.GetModpackPath(workspaceId);
+        }
+    }
 
     private string? CurrentSkinUuid => ActiveAccount?.Uuid ?? UserSession?.UUID;
 
@@ -286,7 +293,10 @@ public partial class MainViewModel
 
     private void RebuildSkinStudioInstanceOptions()
     {
-        var selectedId = SelectedSkinStudioInstance?.Id ?? Config.CreatorStudio?.SelectedWorkspaceId;
+        var persistedSelectedId = Config.CreatorStudio?.SelectedWorkspaceId;
+        var selectedId = !string.IsNullOrWhiteSpace(persistedSelectedId)
+            ? persistedSelectedId
+            : SelectedSkinStudioInstance?.Id;
         var currentModpackName = CurrentModpack?.Name;
 
         SkinStudioInstanceOptions.Clear();

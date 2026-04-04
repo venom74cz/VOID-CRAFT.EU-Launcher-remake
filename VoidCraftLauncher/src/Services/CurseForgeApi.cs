@@ -101,9 +101,9 @@ namespace VoidCraftLauncher.Services
         /// Search for individual mods (classId=6) for custom profile mod browser.
         /// Optional gameVersion filter for MC version targeting.
         /// </summary>
-        public async Task<string> SearchModsAsync(string query, string? gameVersion = null, string? modLoaderType = null)
+        public async Task<string> SearchModsAsync(string query, string? gameVersion = null, string? modLoaderType = null, int offset = 0)
         {
-            var url = $"v1/mods/search?gameId=432&classId=6&sortField=2&sortOrder=desc&pageSize=50&searchFilter={Uri.EscapeDataString(query)}";
+            var url = $"v1/mods/search?gameId=432&classId=6&sortField=2&sortOrder=desc&pageSize=50&index={offset}&searchFilter={Uri.EscapeDataString(query)}";
             if (!string.IsNullOrEmpty(gameVersion))
                 url += $"&gameVersion={Uri.EscapeDataString(gameVersion)}";
             if (!string.IsNullOrEmpty(modLoaderType))

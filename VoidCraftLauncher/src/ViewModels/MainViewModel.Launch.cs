@@ -5,10 +5,13 @@ using VoidCraftLauncher.Models;
 using VoidCraftLauncher.Services;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
+using System.Text.Json.Nodes;
 
 namespace VoidCraftLauncher.ViewModels;
 
@@ -34,11 +37,6 @@ public partial class MainViewModel
             var modpackDir = _launcherService.GetModpackPath(CurrentModpack.Name);
             var modsDir = Path.Combine(modpackDir, "mods");
 
-            // Determine the version to install based on dropdown selection
-            var selectedVersion = CurrentModpack.CurrentVersion;
-            var selectedFileId = selectedVersion?.FileId ?? "0";
-            Debug.WriteLine($"[PlayModpack] Selected version: {selectedVersion?.Name}, FileId: {selectedFileId}");
-
             // INSTALL / UPDATE
             if (CurrentModpack.IsCustomProfile)
             {
@@ -47,137 +45,24 @@ public partial class MainViewModel
             else
             {
                 LaunchStatus = "Kontroluji aktualizace...";
-                // Use CurseForge for standard modpacks
-                if (CurrentModpack.ProjectId > 0)
+
+                try
                 {
-                    var filesJson = await _curseForgeApi.GetModpackFilesAsync(CurrentModpack.ProjectId);
-                    var filesNode = System.Text.Json.Nodes.JsonNode.Parse(filesJson);
-                    var files = filesNode?["data"]?.AsArray();
-
-                    if (files != null && files.Count > 0)
-                    {
-                        // Pick exact file ID if selected, else latest
-                        var targetFile = files.FirstOrDefault(f => f?["id"]?.ToString() == selectedFileId)
-                                         ?? files.OrderByDescending(f => f?["fileDate"]?.ToString()).FirstOrDefault();
-
-                        if (targetFile != null)
-                        {
-                            var fileId = targetFile["id"]?.GetValue<int>() ?? 0;
-                            var displayName = targetFile["displayName"]?.ToString() ?? "Unknown";
-                            var downloadUrl = targetFile["downloadUrl"]?.ToString();
-
-                            // Check if already installed by comparing manifest FileId
-                            var installedManifest = ModpackInstaller.LoadManifestInfo(modpackDir);
-                            if (installedManifest?.FileId == fileId && Directory.Exists(modsDir))
-                            {
-                                LaunchStatus = $"Máte nejnovější verzi ({displayName}).";
-                            }
-                            else
-                            {
-                                LaunchStatus = $"Stahuji {displayName}...";
-
-                                // Download the zip/mrpack
-                                if (string.IsNullOrEmpty(downloadUrl))
-                                {
-                                    // CurseForge sometimes hides download URL; try constructing
-                                    downloadUrl = await _curseForgeApi.GetFileDownloadUrlAsync(CurrentModpack.ProjectId, fileId);
-                                }
-
-                                if (!string.IsNullOrEmpty(downloadUrl))
-                                {
-                                    var tempPath = Path.Combine(Path.GetTempPath(), $"voidcraft_{fileId}.zip");
-                                    var data = await _httpClient.GetByteArrayAsync(downloadUrl);
-                                    await File.WriteAllBytesAsync(tempPath, data);
-
-                                    // Install
-                                    LaunchStatus = "Instaluji...";
-                                    _lastManifestInfo = await _modpackInstaller.InstallOrUpdateAsync(tempPath, modpackDir, fileId, displayName);
-
-                                    // Update current version
-                                    if (_lastManifestInfo != null)
-                                    {
-                                        CurrentModpack.CurrentVersion = new ModpackVersion
-                                        {
-                                            Name = displayName,
-                                            FileId = fileId.ToString()
-                                        };
-                                        SaveModpacks();
-                                    }
-
-                                    // Cleanup temp
-                                    if (File.Exists(tempPath)) File.Delete(tempPath);
-                                }
-                                else
-                                {
-                                    LaunchStatus = "Nepodařilo se získat URL ke stažení.";
-                                    await Task.Delay(3000);
-                                    IsLaunching = false;
-                                    TargetModpack = null;
-                                    return;
-                                }
-                            }
-
-                            // Set manifest info for launch
-                            _lastManifestInfo = ModpackInstaller.LoadManifestInfo(modpackDir) ?? new ModpackManifestInfo();
-                        }
-                    }
+                    await EnsureLatestModpackInstalledBeforeLaunchAsync(CurrentModpack, modpackDir, modsDir);
                 }
-                else if (!string.IsNullOrEmpty(CurrentModpack.ModrinthId))
+                catch (Exception ex)
                 {
-                    // Modrinth modpack handling
-                    LaunchStatus = "Kontroluji Modrinth aktualizace...";
-                    var versionsJson = await _modrinthApi.GetProjectVersionsAsync(CurrentModpack.ModrinthId);
-                    var versions = System.Text.Json.Nodes.JsonNode.Parse(versionsJson)?.AsArray();
-                    
-                    var targetVersion = versions?.FirstOrDefault(v => v?["id"]?.ToString() == selectedFileId)
-                                        ?? versions?.FirstOrDefault(v => v?["version_type"]?.ToString() == "release")
-                                        ?? versions?.FirstOrDefault();
+                    var hasInstalledContent = HasInstalledModpackContent(modpackDir, modsDir);
+                    LogService.Error($"[PlayModpack] Auto-update check failed for {CurrentModpack.Name}", ex);
 
-                    if (targetVersion != null)
+                    if (!hasInstalledContent)
                     {
-                        var versionId = targetVersion["id"]?.ToString() ?? "0";
-                        var versionName = targetVersion["version_number"]?.ToString() ?? "Unknown";
-                        
-                        var installedManifest = ModpackInstaller.LoadManifestInfo(modpackDir);
-                        if (installedManifest?.Version == versionName && Directory.Exists(modsDir))
-                        {
-                            LaunchStatus = $"Máte nejnovější verzi ({versionName}).";
-                        }
-                        else
-                        {
-                            var primaryFile = targetVersion["files"]?.AsArray()
-                                ?.FirstOrDefault(f => f?["primary"]?.GetValue<bool>() == true)
-                                ?? targetVersion["files"]?.AsArray()?.FirstOrDefault();
-
-                            var downloadUrl = primaryFile?["url"]?.ToString();
-                            var fileName = primaryFile?["filename"]?.ToString() ?? "modpack.mrpack";
-
-                            if (!string.IsNullOrEmpty(downloadUrl))
-                            {
-                                LaunchStatus = $"Stahuji {versionName}...";
-                                var tempPath = Path.Combine(Path.GetTempPath(), fileName);
-                                var data = await _httpClient.GetByteArrayAsync(downloadUrl);
-                                await File.WriteAllBytesAsync(tempPath, data);
-
-                                LaunchStatus = "Instaluji...";
-                                _lastManifestInfo = await _modpackInstaller.InstallOrUpdateAsync(tempPath, modpackDir, targetVersion: versionName);
-
-                                if (_lastManifestInfo != null)
-                                {
-                                    CurrentModpack.CurrentVersion = new ModpackVersion
-                                    {
-                                        Name = versionName,
-                                        FileId = versionId
-                                    };
-                                    SaveModpacks();
-                                }
-
-                                if (File.Exists(tempPath)) File.Delete(tempPath);
-                            }
-                        }
-
-                        _lastManifestInfo = ModpackInstaller.LoadManifestInfo(modpackDir) ?? new ModpackManifestInfo();
+                        throw;
                     }
+
+                    LaunchStatus = "Nepodařilo se ověřit update, spouštím lokální instalaci...";
+                    ShowToast("Modpack update", $"Online kontrola updatu selhala, spouštím nainstalovanou verzi {CurrentModpack.DisplayLabel}.", ToastSeverity.Warning, 3200);
+                    _lastManifestInfo = ModpackInstaller.LoadManifestInfo(modpackDir) ?? new ModpackManifestInfo();
                 }
             }
             
@@ -412,6 +297,345 @@ public partial class MainViewModel
             TargetModpack = null;
             RunningModpack = null;
             UpdateDiscordPresence();
+        }
+    }
+
+    private async Task EnsureLatestModpackInstalledBeforeLaunchAsync(ModpackInfo modpack, string modpackDir, string modsDir)
+    {
+        if (modpack.ProjectId > 0)
+        {
+            await EnsureLatestCurseForgeModpackInstalledAsync(modpack, modpackDir, modsDir);
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(modpack.ModrinthId))
+        {
+            await EnsureLatestModrinthModpackInstalledAsync(modpack, modpackDir, modsDir);
+            return;
+        }
+
+        _lastManifestInfo = ModpackInstaller.LoadManifestInfo(modpackDir) ?? new ModpackManifestInfo();
+    }
+
+    private async Task EnsureLatestCurseForgeModpackInstalledAsync(ModpackInfo modpack, string modpackDir, string modsDir)
+    {
+        var filesJson = await _curseForgeApi.GetModpackFilesAsync(modpack.ProjectId);
+        var files = JsonNode.Parse(filesJson)?["data"]?.AsArray();
+        if (files == null || files.Count == 0)
+        {
+            throw new InvalidOperationException("Zdroj nevrátil žádné buildy modpacku.");
+        }
+
+        var remoteVersions = files
+            .OrderByDescending(file => file?["fileDate"]?.ToString())
+            .Select(file => new ModpackVersion
+            {
+                Name = file?["displayName"]?.ToString() ?? "Unknown",
+                FileId = file?["id"]?.ToString() ?? "0",
+                ReleaseDate = file?["fileDate"]?.ToString() ?? string.Empty
+            })
+            .ToList();
+
+        modpack.Versions = new ObservableCollection<ModpackVersion>(remoteVersions);
+
+        var latestVersion = remoteVersions.FirstOrDefault();
+        if (latestVersion == null || !int.TryParse(latestVersion.FileId, out var latestFileId))
+        {
+            throw new InvalidOperationException("Nepodařilo se určit latest build CurseForge modpacku.");
+        }
+
+        var installedManifest = ModpackInstaller.LoadManifestInfo(modpackDir);
+        var isLatestInstalled = installedManifest?.FileId == latestFileId && HasInstalledModpackContent(modpackDir, modsDir);
+        if (isLatestInstalled)
+        {
+            LaunchStatus = $"Máte nejnovější verzi ({latestVersion.Name}).";
+            SyncInstalledVersionState(modpack, latestVersion);
+            _lastManifestInfo = installedManifest ?? new ModpackManifestInfo();
+            return;
+        }
+
+        var latestFileNode = files.FirstOrDefault(file => file?["id"]?.GetValue<int?>() == latestFileId);
+        if (latestFileNode == null)
+        {
+            throw new InvalidOperationException("Latest build se nepodařilo dohledat v seznamu souborů.");
+        }
+
+        var downloadUrl = latestFileNode["downloadUrl"]?.ToString();
+        var fileName = latestFileNode["fileName"]?.ToString() ?? $"voidcraft_{modpack.ProjectId}_{latestFileId}.zip";
+        var downloadCandidates = await BuildCurseForgeArchiveDownloadCandidatesAsync(modpack.ProjectId, latestFileId, downloadUrl, fileName);
+        if (downloadCandidates.Count == 0)
+        {
+            throw new InvalidOperationException("Nepodařilo se získat URL ke stažení latest builda.");
+        }
+
+        var tempPath = Path.Combine(Path.GetTempPath(), $"voidcraft_{modpack.ProjectId}_{latestFileId}.zip");
+        try
+        {
+            LaunchStatus = $"Stahuji aktualizaci {latestVersion.Name}...";
+            await DownloadPackageArchiveAsync(downloadCandidates, tempPath, latestVersion.Name);
+
+            LaunchStatus = "Instaluji aktualizované soubory...";
+            _lastManifestInfo = await _modpackInstaller.InstallOrUpdateAsync(tempPath, modpackDir, latestFileId, latestVersion.Name);
+            SyncInstalledVersionState(modpack, latestVersion);
+            SaveModpacks();
+        }
+        finally
+        {
+            if (File.Exists(tempPath))
+            {
+                File.Delete(tempPath);
+            }
+        }
+    }
+
+    private async Task EnsureLatestModrinthModpackInstalledAsync(ModpackInfo modpack, string modpackDir, string modsDir)
+    {
+        var versionsJson = await _modrinthApi.GetProjectVersionsAsync(modpack.ModrinthId);
+        var versions = JsonNode.Parse(versionsJson)?.AsArray();
+        if (versions == null || versions.Count == 0)
+        {
+            throw new InvalidOperationException("Zdroj nevrátil žádné buildy Modrinth modpacku.");
+        }
+
+        var remoteVersions = versions
+            .Select(version => new ModpackVersion
+            {
+                Name = version?["version_number"]?.ToString() ?? version?["name"]?.ToString() ?? "Unknown",
+                FileId = version?["id"]?.ToString() ?? "0",
+                ReleaseDate = version?["date_published"]?.ToString() ?? string.Empty
+            })
+            .ToList();
+
+        modpack.Versions = new ObservableCollection<ModpackVersion>(remoteVersions);
+
+        var latestVersionNode = versions.FirstOrDefault(version => string.Equals(version?["version_type"]?.ToString(), "release", StringComparison.OrdinalIgnoreCase))
+            ?? versions.FirstOrDefault();
+
+        if (latestVersionNode == null)
+        {
+            throw new InvalidOperationException("Nepodařilo se určit latest build Modrinth modpacku.");
+        }
+
+        var latestVersionId = latestVersionNode["id"]?.ToString() ?? "0";
+        var latestVersionName = latestVersionNode["version_number"]?.ToString() ?? latestVersionNode["name"]?.ToString() ?? "Unknown";
+        var latestVersion = remoteVersions.FirstOrDefault(version => string.Equals(version.FileId, latestVersionId, StringComparison.OrdinalIgnoreCase))
+            ?? new ModpackVersion { Name = latestVersionName, FileId = latestVersionId };
+
+        var installedManifest = ModpackInstaller.LoadManifestInfo(modpackDir);
+        var isLatestInstalled = HasInstalledModpackContent(modpackDir, modsDir) &&
+            ((installedManifest?.Version?.Equals(latestVersionName, StringComparison.OrdinalIgnoreCase) ?? false) ||
+             string.Equals(modpack.CurrentVersion?.FileId, latestVersionId, StringComparison.OrdinalIgnoreCase));
+
+        if (isLatestInstalled)
+        {
+            LaunchStatus = $"Máte nejnovější verzi ({latestVersionName}).";
+            SyncInstalledVersionState(modpack, latestVersion);
+            _lastManifestInfo = installedManifest ?? new ModpackManifestInfo();
+            return;
+        }
+
+        var primaryFile = latestVersionNode["files"]?.AsArray()
+            ?.FirstOrDefault(file => file?["primary"]?.GetValue<bool>() == true)
+            ?? latestVersionNode["files"]?.AsArray()?.FirstOrDefault();
+
+        var files = latestVersionNode["files"]?.AsArray();
+        var downloadCandidates = BuildModrinthArchiveDownloadCandidates(files, primaryFile);
+        var fileName = primaryFile?["filename"]?.ToString() ?? $"{modpack.Name}-{latestVersionName}.mrpack";
+        if (downloadCandidates.Count == 0)
+        {
+            throw new InvalidOperationException("Nepodařilo se získat URL ke stažení latest Modrinth builda.");
+        }
+
+        var tempPath = Path.Combine(Path.GetTempPath(), fileName);
+        try
+        {
+            LaunchStatus = $"Stahuji aktualizaci {latestVersionName}...";
+            await DownloadPackageArchiveAsync(downloadCandidates, tempPath, latestVersionName);
+
+            LaunchStatus = "Instaluji aktualizované soubory...";
+            _lastManifestInfo = await _modpackInstaller.InstallOrUpdateAsync(tempPath, modpackDir, targetVersion: latestVersionName);
+            SyncInstalledVersionState(modpack, latestVersion);
+            SaveModpacks();
+        }
+        finally
+        {
+            if (File.Exists(tempPath))
+            {
+                File.Delete(tempPath);
+            }
+        }
+    }
+
+    private static bool HasInstalledModpackContent(string modpackDir, string modsDir)
+    {
+        if (File.Exists(Path.Combine(modpackDir, "manifest_info.json")))
+        {
+            return true;
+        }
+
+        try
+        {
+            return Directory.Exists(modsDir) && Directory.EnumerateFileSystemEntries(modsDir).Any();
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static void SyncInstalledVersionState(ModpackInfo modpack, ModpackVersion installedVersion)
+    {
+        modpack.CurrentVersion = new ModpackVersion
+        {
+            Name = installedVersion.Name,
+            FileId = installedVersion.FileId,
+            ReleaseDate = installedVersion.ReleaseDate
+        };
+    }
+
+    private async Task<List<string>> BuildCurseForgeArchiveDownloadCandidatesAsync(int projectId, int fileId, string? primaryUrl, string? fileName)
+    {
+        var candidates = new List<string>();
+        AddArchiveDownloadCandidate(candidates, primaryUrl);
+
+        try
+        {
+            var refreshedUrl = await _curseForgeApi.GetFileDownloadUrlAsync(projectId, fileId);
+            AddArchiveDownloadCandidate(candidates, refreshedUrl);
+        }
+        catch (Exception ex)
+        {
+            LogService.Error($"[BuildCurseForgeArchiveDownloadCandidates] Download URL refresh failed for {projectId}:{fileId}", ex);
+        }
+
+        try
+        {
+            var fileJson = await _curseForgeApi.GetModFileAsync(projectId, fileId);
+            var fileNode = JsonNode.Parse(fileJson)?["data"];
+            fileName ??= fileNode?["fileName"]?.ToString();
+            AddArchiveDownloadCandidate(candidates, fileNode?["downloadUrl"]?.ToString());
+        }
+        catch (Exception ex)
+        {
+            LogService.Error($"[BuildCurseForgeArchiveDownloadCandidates] File metadata fallback failed for {projectId}:{fileId}", ex);
+        }
+
+        foreach (var candidate in BuildCurseForgeCdnCandidates(fileId, fileName))
+        {
+            AddArchiveDownloadCandidate(candidates, candidate);
+        }
+
+        return candidates;
+    }
+
+    private async Task DownloadPackageArchiveAsync(IEnumerable<string> candidateUrls, string destinationPath, string packageLabel)
+    {
+        var candidates = candidateUrls
+            .Where(url => !string.IsNullOrWhiteSpace(url))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (candidates.Count == 0)
+        {
+            throw new InvalidOperationException($"Balíček {packageLabel} nemá žádnou dostupnou download URL.");
+        }
+
+        var tempPath = destinationPath + ".download";
+        Exception? lastException = null;
+
+        foreach (var candidateUrl in candidates)
+        {
+            for (int attempt = 1; attempt <= 3; attempt++)
+            {
+                try
+                {
+                    TryDeleteArchiveFile(tempPath);
+
+                    using var response = await _httpClient.GetAsync(candidateUrl, HttpCompletionOption.ResponseHeadersRead);
+                    response.EnsureSuccessStatusCode();
+
+                    await using var sourceStream = await response.Content.ReadAsStreamAsync();
+                    await using var targetStream = File.Create(tempPath);
+                    await sourceStream.CopyToAsync(targetStream);
+                    await targetStream.FlushAsync();
+
+                    TryDeleteArchiveFile(destinationPath);
+                    File.Move(tempPath, destinationPath, true);
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    lastException = ex;
+                    TryDeleteArchiveFile(tempPath);
+
+                    if (attempt == 3)
+                    {
+                        LogService.Error($"[DownloadPackageArchive] Failed for {packageLabel} from {candidateUrl}", ex);
+                    }
+                }
+            }
+        }
+
+        throw new InvalidOperationException($"Nepodařilo se stáhnout balíček {packageLabel} z žádného dostupného zdroje.", lastException);
+    }
+
+    private static List<string> BuildModrinthArchiveDownloadCandidates(JsonArray? files, JsonNode? preferredFile)
+    {
+        var candidates = new List<string>();
+        AddArchiveDownloadCandidate(candidates, preferredFile?["url"]?.ToString());
+
+        if (files != null)
+        {
+            foreach (var file in files)
+            {
+                AddArchiveDownloadCandidate(candidates, file?["url"]?.ToString());
+            }
+        }
+
+        return candidates;
+    }
+
+    private static IEnumerable<string> BuildCurseForgeCdnCandidates(int fileId, string? fileName)
+    {
+        if (string.IsNullOrWhiteSpace(fileName))
+        {
+            yield break;
+        }
+
+        var fileIdString = fileId.ToString();
+        if (fileIdString.Length < 5)
+        {
+            yield break;
+        }
+
+        var part1 = fileIdString.Substring(0, 4);
+        var part2 = fileIdString.Substring(4);
+        yield return $"https://edge.forgecdn.net/files/{part1}/{part2}/{fileName}";
+        yield return $"https://mediafilez.forgecdn.net/files/{part1}/{part2}/{fileName}";
+        yield return $"https://mediafiles.forgecdn.net/files/{part1}/{part2}/{fileName}";
+    }
+
+    private static void AddArchiveDownloadCandidate(ICollection<string> candidates, string? url)
+    {
+        if (!string.IsNullOrWhiteSpace(url))
+        {
+            candidates.Add(url);
+        }
+    }
+
+    private static void TryDeleteArchiveFile(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+        {
+            return;
+        }
+
+        try
+        {
+            File.Delete(path);
+        }
+        catch
+        {
         }
     }
 

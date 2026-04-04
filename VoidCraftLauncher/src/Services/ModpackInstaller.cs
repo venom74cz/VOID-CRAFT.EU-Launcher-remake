@@ -47,6 +47,7 @@ namespace VoidCraftLauncher.Services
             StatusChanged?.Invoke("Otevírám balíček...");
             
             ModpackManifestInfo manifestInfo = new ModpackManifestInfo();
+            var completionStatus = "Instalace dokončena!";
             if (targetFileId.HasValue) manifestInfo.FileId = targetFileId.Value;
             if (!string.IsNullOrWhiteSpace(targetVersion)) manifestInfo.Version = targetVersion;
             
@@ -71,12 +72,13 @@ namespace VoidCraftLauncher.Services
                 }
 
                 if (manifest == null) throw new Exception("Nepodařilo se načíst manifest.");
+                var manifestFiles = manifest.Files ?? new List<ManifestFile>();
                 
                 // Extract manifest info for launcher
                 manifestInfo.PackName = manifest.Name ?? string.Empty;
                 manifestInfo.Author = manifest.Author ?? string.Empty;
                 manifestInfo.MinecraftVersion = manifest.Minecraft?.Version ?? "1.21.1";
-                manifestInfo.ModCount = manifest.Files?.Count ?? 0;
+                manifestInfo.ModCount = manifestFiles.Count;
                 if (string.IsNullOrWhiteSpace(manifestInfo.Version) && !string.IsNullOrWhiteSpace(manifest.Version))
                 {
                     manifestInfo.Version = manifest.Version;
@@ -100,25 +102,76 @@ namespace VoidCraftLauncher.Services
                 debugLog.WriteLine($"Install Start: {DateTime.Now}");
                 debugLog.WriteLine($"Target FileId: {targetFileId}");
                 debugLog.WriteLine($"Manifest Overrides: '{manifest.Overrides}'");
-                debugLog.WriteLine($"Manifest Files Count: {manifest.Files?.Count}");
+                debugLog.WriteLine($"Manifest Files Count: {manifestFiles.Count}");
 
-                StatusChanged?.Invoke($"Načítám informace o modech ({manifest.Files.Count})...");
+                StatusChanged?.Invoke($"Načítám informace o modech ({manifestFiles.Count})...");
 
+                // 2. Resolve URLs for mods - chunked first, then per-file fallback.
+                var fileIds = manifestFiles.Select(f => f.FileID).Distinct().ToList();
+                var curseFilesById = new Dictionary<int, CurseFile>();
 
-                // 2. Resolve URLs for mods - CHUNKED to avoid API limits
-                var fileIds = manifest.Files.Select(f => f.FileID).Distinct().ToList();
-                var curseFiles = new List<CurseFile>();
-                
                 for (int i = 0; i < fileIds.Count; i += 40)
                 {
                     var chunk = fileIds.Skip(i).Take(40);
                     var filesJson = await _api.GetFilesAsync(chunk);
                     var curseFilesData = JsonSerializer.Deserialize<CurseFileDatas>(filesJson);
-                    if (curseFilesData?.Data != null) curseFiles.AddRange(curseFilesData.Data);
+                    if (curseFilesData?.Data == null)
+                    {
+                        continue;
+                    }
+
+                    foreach (var curseFile in curseFilesData.Data)
+                    {
+                        curseFilesById[curseFile.Id] = curseFile;
+                    }
                 }
 
-                // 2b. RESOLVE CATEGORIES - CHUNKED
-                var modIds = curseFiles.Select(f => f.ModId).Distinct().ToList();
+                foreach (var manifestFile in manifestFiles.Where(file => !curseFilesById.ContainsKey(file.FileID)))
+                {
+                    try
+                    {
+                        var fileJson = await _api.GetModFileAsync(manifestFile.ProjectID, manifestFile.FileID);
+                        var singleFileData = JsonSerializer.Deserialize<CurseSingleFileData>(fileJson);
+                        if (singleFileData?.Data != null)
+                        {
+                            curseFilesById[singleFileData.Data.Id] = singleFileData.Data;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        debugLog.WriteLine($"ResolveFileFallback FAILED: Project={manifestFile.ProjectID}, File={manifestFile.FileID} | {ex.Message}");
+                    }
+                }
+
+                var resolvedManifestFiles = manifestFiles
+                    .Where(file => curseFilesById.TryGetValue(file.FileID, out _))
+                    .Select(file => new ResolvedCurseManifestFile(file, curseFilesById[file.FileID]))
+                    .GroupBy(file => file.File.Id)
+                    .Select(group => group.First())
+                    .ToList();
+
+                var unresolvedManifestFiles = manifestFiles
+                    .Where(file => !curseFilesById.ContainsKey(file.FileID))
+                    .ToList();
+
+                var unresolvedRequiredFiles = unresolvedManifestFiles
+                    .Where(file => file.Required)
+                    .ToList();
+
+                if (unresolvedRequiredFiles.Count > 0)
+                {
+                    debugLog.WriteLine("Required file metadata missing: " + string.Join(", ", unresolvedRequiredFiles.Select(file => $"{file.ProjectID}:{file.FileID}")));
+                    throw new Exception($"Nepodařilo se dohledat metadata pro {unresolvedRequiredFiles.Count} povinných souborů modpacku.");
+                }
+
+                if (unresolvedManifestFiles.Count > 0)
+                {
+                    debugLog.WriteLine("Optional file metadata missing: " + string.Join(", ", unresolvedManifestFiles.Select(file => $"{file.ProjectID}:{file.FileID}")));
+                }
+
+                // 2b. Resolve categories - chunked.
+                var resolvedCurseFiles = resolvedManifestFiles.Select(file => file.File).ToList();
+                var modIds = resolvedCurseFiles.Select(f => f.ModId).Distinct().ToList();
                 var modClassMap = new Dictionary<int, int>(); // ModId -> ClassId
                 var allMods = new List<CurseMod>();
                 
@@ -161,8 +214,8 @@ namespace VoidCraftLauncher.Services
                         // Update/Add new using the collected allMods
                         foreach (var m in allMods)
                         {
-                            var filesForMod = curseFiles.Where(f => f.ModId == m.Id);
-                            foreach(var f in filesForMod)
+                            var filesForMod = resolvedManifestFiles.Where(file => file.File.ModId == m.Id).Select(file => file.File);
+                            foreach (var f in filesForMod)
                             {
                                 metadataList.RemoveAll(x => x.FileName == f.FileName);
                                 metadataList.Add(new ModMetadata
@@ -170,10 +223,15 @@ namespace VoidCraftLauncher.Services
                                     FileName = f.FileName,
                                     Name = m.Name,
                                     Slug = m.Slug,
+                                    ProjectId = m.Id.ToString(),
+                                    FileId = f.Id.ToString(),
+                                    Source = "CurseForge",
                                     Summary = m.Summary,
                                     Categories = m.Categories?.Select(c => c.Name).ToList() ?? new List<string>(),
                                     IconUrl = m.Logo?.ThumbnailUrl,
-                                    WebLink = m.Links?.WebsiteUrl
+                                    WebLink = m.Links?.WebsiteUrl,
+                                    DownloadUrl = f.DownloadUrl ?? string.Empty,
+                                    IsEnabled = true
                                 });
                             }
                         }
@@ -200,6 +258,8 @@ namespace VoidCraftLauncher.Services
                 Directory.CreateDirectory(rpDir);
                 Directory.CreateDirectory(shaderDir);
 
+                var canUpdateTrackedFiles = unresolvedManifestFiles.Count == 0;
+
                 // Load previously installed files tracking
                 var installedFilesPath = Path.Combine(installPath, "installed_files.json");
                 HashSet<string> previouslyInstalledFiles = new HashSet<string>();
@@ -219,46 +279,54 @@ namespace VoidCraftLauncher.Services
                 var disabledFiles = Directory.GetFiles(modsDir, "*.jar.disabled");
                 var existingFiles = jarFiles.Concat(disabledFiles).ToArray();
                 
-                var newModNames = curseFiles.Select(f => f.FileName).ToHashSet();
-                
-                foreach (var file in existingFiles)
+                var newModNames = resolvedManifestFiles
+                    .Select(file => file.File.FileName)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+                if (canUpdateTrackedFiles)
                 {
-                    var fileName = Path.GetFileName(file);
-                    // Remove .disabled suffix for comparison if present
-                    var pureFileName = fileName.EndsWith(".disabled") 
-                        ? fileName.Substring(0, fileName.Length - ".disabled".Length) 
-                        : fileName;
-                    
-                    // If the pure filename is not in the new manifest...
-                    if (!newModNames.Contains(pureFileName))
+                    foreach (var file in existingFiles)
                     {
-                        // ...AND we tracked it as installed previously -> it's an old version -> DELETE
-                        if (previouslyInstalledFiles.Contains(pureFileName))
+                        var fileName = Path.GetFileName(file);
+                        var pureFileName = fileName.EndsWith(".disabled", StringComparison.OrdinalIgnoreCase)
+                            ? fileName.Substring(0, fileName.Length - ".disabled".Length)
+                            : fileName;
+
+                        if (!newModNames.Contains(pureFileName) && previouslyInstalledFiles.Contains(pureFileName))
                         {
-                            try { File.Delete(file); } catch {}
+                            TryDeleteFile(file);
                             StatusChanged?.Invoke($"Odstraňuji starý soubor: {fileName}");
                         }
                     }
+
+                    await File.WriteAllTextAsync(installedFilesPath, JsonSerializer.Serialize(newModNames));
                 }
-                
-                // Track files for next time
-                await File.WriteAllTextAsync(installedFilesPath, JsonSerializer.Serialize(newModNames));
+                else
+                {
+                    debugLog.WriteLine("Skipping tracked file prune/update because some manifest file metadata could not be resolved.");
+                }
 
                 // B. Download new/updated mods
-                int current = 0;
-                int total = curseFiles.Count;
+                int started = 0;
+                int completed = 0;
+                int total = resolvedManifestFiles.Count;
                 int downloaded = 0;
                 int skipped = 0;
                 
                 object logLock = new object();
                 object progressLock = new object();
+                object failureLock = new object();
                 var semaphore = new SemaphoreSlim(10);
+                var failedRequiredDownloads = new List<string>();
+                var failedOptionalDownloads = new List<string>();
                 
-                var downloadTasks = curseFiles.Select(async mod => 
+                var downloadTasks = resolvedManifestFiles.Select(async resolvedFile => 
                 {
                     await semaphore.WaitAsync();
                     try
                     {
+                        var mod = resolvedFile.File;
+
                         // Determine Target Directory
                         string targetDir = modsDir; // Default
                         if (modClassMap.TryGetValue(mod.ModId, out int classId))
@@ -269,63 +337,93 @@ namespace VoidCraftLauncher.Services
 
                         var destPath = Path.Combine(targetDir, mod.FileName);
                         var disabledPath = destPath + ".disabled";
+                        var preferredPath = File.Exists(disabledPath) ? disabledPath : destPath;
+                        var existingPath = File.Exists(disabledPath)
+                            ? disabledPath
+                            : File.Exists(destPath)
+                                ? destPath
+                                : null;
 
-                        // Check if file exists (enabled OR disabled)
-                        if (File.Exists(destPath) || File.Exists(disabledPath))
+                        if (!string.IsNullOrWhiteSpace(existingPath))
                         {
-                            Interlocked.Increment(ref skipped);
-                            return;
+                            if (ValidateDownloadedCurseFile(existingPath, mod, message =>
+                                {
+                                    lock (logLock)
+                                    {
+                                        debugLog.WriteLine(message);
+                                    }
+                                }))
+                            {
+                                Interlocked.Increment(ref skipped);
+                                return;
+                            }
+
+                            TryDeleteFile(existingPath);
+                            lock (logLock)
+                            {
+                                debugLog.WriteLine($"Deleting invalid existing file: {existingPath}");
+                            }
                         }
 
+                        var startedIndex = Interlocked.Increment(ref started);
                         lock (progressLock)
                         {
-                            current++;
-                            StatusChanged?.Invoke($"Stahuji ({current}/{total}): {mod.DisplayName}");
-                            ProgressChanged?.Invoke((double)current / total);
+                            StatusChanged?.Invoke($"Stahuji ({startedIndex}/{total}): {mod.DisplayName}");
                         }
 
-                        // Get download URL - use CDN fallback if API returns null
-                        var url = mod.DownloadUrl;
+                        await DownloadCurseFileWithFallbackAsync(resolvedFile, preferredPath, message =>
+                        {
+                            lock (logLock)
+                            {
+                                debugLog.WriteLine(message);
+                            }
+                        });
+                        Interlocked.Increment(ref downloaded);
+                    }
+                    catch (Exception ex)
+                    {
+                        var failureLabel = $"{resolvedFile.File.DisplayName} ({resolvedFile.File.FileName})";
+                        lock (failureLock)
+                        {
+                            if (resolvedFile.Manifest.Required)
+                            {
+                                failedRequiredDownloads.Add(failureLabel);
+                            }
+                            else
+                            {
+                                failedOptionalDownloads.Add(failureLabel);
+                            }
+                        }
+
                         lock (logLock)
                         {
-                            debugLog.WriteLine($"Processing Mod: {mod.FileName} (ID: {mod.Id}, Class: {classId}) - URL: {url}");
-                        }
-
-                        if (string.IsNullOrEmpty(url))
-                        {
-                            // CurseForge CDN pattern: https://edge.forgecdn.net/files/{id[0:4]}/{id[4:]}/{filename}
-                            var idStr = mod.Id.ToString();
-                            if (idStr.Length >= 4)
-                            {
-                                var part1 = idStr.Substring(0, 4);
-                                var part2 = idStr.Substring(4);
-                                url = $"https://edge.forgecdn.net/files/{part1}/{part2}/{mod.FileName}";
-                            }
-                        }
-                        
-                        if (!string.IsNullOrEmpty(url))
-                        {
-                            try 
-                            {
-                                await DownloadFileAsync(url, destPath);
-                                Interlocked.Increment(ref downloaded);
-                            }
-                            catch (Exception ex)
-                            {
-                                lock (progressLock)
-                                {
-                                    StatusChanged?.Invoke($"Chyba stahování {mod.FileName}: {ex.Message}");
-                                }
-                            }
+                            debugLog.WriteLine($"FINAL DOWNLOAD FAILURE: {failureLabel} | {ex.Message}");
                         }
                     }
                     finally
                     {
+                        var completedCount = Interlocked.Increment(ref completed);
+                        lock (progressLock)
+                        {
+                            ProgressChanged?.Invoke(total == 0 ? 1d : (double)completedCount / total);
+                        }
+
                         semaphore.Release();
                     }
                 });
 
                 await Task.WhenAll(downloadTasks);
+
+                if (failedRequiredDownloads.Count > 0)
+                {
+                    throw new Exception($"Nepodařilo se stáhnout {failedRequiredDownloads.Count} povinných souborů modpacku. Např.: {string.Join(", ", failedRequiredDownloads.Take(3))}");
+                }
+
+                if (failedOptionalDownloads.Count > 0)
+                {
+                    debugLog.WriteLine($"Optional download failures: {string.Join(", ", failedOptionalDownloads)}");
+                    completionStatus = $"Instalace dokončena s omezeními ({failedOptionalDownloads.Count} volitelných souborů nešlo stáhnout).";
+                }
 
                 // 4. Extract Overrides (Configs, Scripts, etc.)
                 // Smart Config Update: compare hashes to detect modpack-changed configs
@@ -459,7 +557,7 @@ namespace VoidCraftLauncher.Services
             var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
             await File.WriteAllTextAsync(manifestInfoPath, JsonSerializer.Serialize(manifestInfo, jsonOptions));
             
-            StatusChanged?.Invoke("Instalace dokončena!");
+            StatusChanged?.Invoke(completionStatus);
             return manifestInfo;
         }
         
@@ -483,8 +581,302 @@ namespace VoidCraftLauncher.Services
 
         private async Task DownloadFileAsync(string url, string path)
         {
-            var data = await _httpClient.GetByteArrayAsync(url);
-            await File.WriteAllBytesAsync(path, data);
+            var directoryPath = Path.GetDirectoryName(path);
+            if (!string.IsNullOrWhiteSpace(directoryPath))
+            {
+                Directory.CreateDirectory(directoryPath);
+            }
+
+            var tempPath = path + ".download";
+            Exception? lastException = null;
+
+            for (int attempt = 1; attempt <= 3; attempt++)
+            {
+                try
+                {
+                    TryDeleteFile(tempPath);
+
+                    using var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+                    response.EnsureSuccessStatusCode();
+
+                    await using var sourceStream = await response.Content.ReadAsStreamAsync();
+                    await using var targetStream = File.Create(tempPath);
+                    await sourceStream.CopyToAsync(targetStream);
+                    await targetStream.FlushAsync();
+
+                    TryDeleteFile(path);
+                    File.Move(tempPath, path, true);
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    lastException = ex;
+                    TryDeleteFile(tempPath);
+
+                    if (attempt < 3)
+                    {
+                        await Task.Delay(350 * attempt);
+                    }
+                }
+            }
+
+            throw lastException ?? new IOException($"Download selhal: {url}");
+        }
+
+        private async Task DownloadCurseFileWithFallbackAsync(ResolvedCurseManifestFile resolvedFile, string destinationPath, Action<string>? debugLogAction)
+        {
+            var initialCandidates = BuildCurseDownloadCandidates(
+                resolvedFile.File.Id,
+                resolvedFile.File.FileName,
+                resolvedFile.File.DownloadUrl);
+
+            if (await TryDownloadCandidatesAsync(
+                    initialCandidates,
+                    destinationPath,
+                    path => ValidateDownloadedCurseFile(path, resolvedFile.File, debugLogAction),
+                    debugLogAction))
+            {
+                return;
+            }
+
+            var apiCandidates = await GetCurseApiFallbackCandidatesAsync(resolvedFile, debugLogAction);
+            if (await TryDownloadCandidatesAsync(
+                    apiCandidates,
+                    destinationPath,
+                    path => ValidateDownloadedCurseFile(path, resolvedFile.File, debugLogAction),
+                    debugLogAction))
+            {
+                return;
+            }
+
+            throw new Exception($"Nepodařilo se stáhnout {resolvedFile.File.FileName} z žádného dostupného zdroje.");
+        }
+
+        private async Task DownloadModrinthFileWithFallbackAsync(ModrinthFile file, string destinationPath, Action<string>? debugLogAction)
+        {
+            if (await TryDownloadCandidatesAsync(
+                    file.Downloads ?? new List<string>(),
+                    destinationPath,
+                    path => ValidateDownloadedModrinthFile(path, file, debugLogAction),
+                    debugLogAction))
+            {
+                return;
+            }
+
+            throw new Exception($"Nepodařilo se stáhnout {file.Path} z žádného dostupného Modrinth mirroru.");
+        }
+
+        private async Task<bool> TryDownloadCandidatesAsync(IEnumerable<string> candidateUrls, string destinationPath, Func<string, bool> validateDownloadedFile, Action<string>? debugLogAction)
+        {
+            foreach (var candidateUrl in candidateUrls
+                         .Where(url => !string.IsNullOrWhiteSpace(url))
+                         .Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    debugLogAction?.Invoke($"DOWNLOAD TRY: {candidateUrl}");
+                    await DownloadFileAsync(candidateUrl, destinationPath);
+
+                    if (validateDownloadedFile(destinationPath))
+                    {
+                        debugLogAction?.Invoke($"DOWNLOAD OK: {candidateUrl}");
+                        return true;
+                    }
+
+                    debugLogAction?.Invoke($"DOWNLOAD INVALID: {candidateUrl}");
+                }
+                catch (Exception ex)
+                {
+                    debugLogAction?.Invoke($"DOWNLOAD FAIL: {candidateUrl} | {ex.Message}");
+                }
+
+                TryDeleteFile(destinationPath);
+            }
+
+            return false;
+        }
+
+        private async Task<List<string>> GetCurseApiFallbackCandidatesAsync(ResolvedCurseManifestFile resolvedFile, Action<string>? debugLogAction)
+        {
+            var fallbackCandidates = new List<string>();
+
+            try
+            {
+                var refreshedUrl = await _api.GetFileDownloadUrlAsync(resolvedFile.Manifest.ProjectID, resolvedFile.Manifest.FileID);
+                AddDownloadCandidate(fallbackCandidates, refreshedUrl);
+            }
+            catch (Exception ex)
+            {
+                debugLogAction?.Invoke($"DOWNLOAD REFRESH FAIL: {resolvedFile.Manifest.ProjectID}:{resolvedFile.Manifest.FileID} | {ex.Message}");
+            }
+
+            try
+            {
+                var fileJson = await _api.GetModFileAsync(resolvedFile.Manifest.ProjectID, resolvedFile.Manifest.FileID);
+                var fileData = JsonSerializer.Deserialize<CurseSingleFileData>(fileJson);
+                AddDownloadCandidate(fallbackCandidates, fileData?.Data?.DownloadUrl);
+                foreach (var candidate in BuildCurseDownloadCandidates(resolvedFile.File.Id, fileData?.Data?.FileName ?? resolvedFile.File.FileName))
+                {
+                    AddDownloadCandidate(fallbackCandidates, candidate);
+                }
+            }
+            catch (Exception ex)
+            {
+                debugLogAction?.Invoke($"DOWNLOAD API FALLBACK FAIL: {resolvedFile.Manifest.ProjectID}:{resolvedFile.Manifest.FileID} | {ex.Message}");
+            }
+
+            foreach (var candidate in BuildCurseDownloadCandidates(resolvedFile.File.Id, resolvedFile.File.FileName))
+            {
+                AddDownloadCandidate(fallbackCandidates, candidate);
+            }
+
+            return fallbackCandidates;
+        }
+
+        private static IEnumerable<string> BuildCurseDownloadCandidates(int fileId, string? fileName, params string?[] directUrls)
+        {
+            foreach (var directUrl in directUrls)
+            {
+                if (!string.IsNullOrWhiteSpace(directUrl))
+                {
+                    yield return directUrl;
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(fileName))
+            {
+                yield break;
+            }
+
+            var fileIdString = fileId.ToString();
+            if (fileIdString.Length < 5)
+            {
+                yield break;
+            }
+
+            var part1 = fileIdString.Substring(0, 4);
+            var part2 = fileIdString.Substring(4);
+            yield return $"https://edge.forgecdn.net/files/{part1}/{part2}/{fileName}";
+            yield return $"https://mediafilez.forgecdn.net/files/{part1}/{part2}/{fileName}";
+            yield return $"https://mediafiles.forgecdn.net/files/{part1}/{part2}/{fileName}";
+        }
+
+        private static void AddDownloadCandidate(ICollection<string> candidates, string? url)
+        {
+            if (!string.IsNullOrWhiteSpace(url))
+            {
+                candidates.Add(url);
+            }
+        }
+
+        private static bool ValidateDownloadedCurseFile(string path, CurseFile file, Action<string>? debugLogAction)
+        {
+            if (!File.Exists(path))
+            {
+                return false;
+            }
+
+            var fileInfo = new FileInfo(path);
+            if (file.FileLength > 0 && fileInfo.Length != file.FileLength)
+            {
+                debugLogAction?.Invoke($"FILE SIZE MISMATCH: {path} expected={file.FileLength} actual={fileInfo.Length}");
+                return false;
+            }
+
+            var sha1Hash = file.Hashes?.FirstOrDefault(hash => hash.Algo == 1)?.Value;
+            if (!string.IsNullOrWhiteSpace(sha1Hash) && !ValidateFileHash(path, "SHA1", sha1Hash, debugLogAction))
+            {
+                return false;
+            }
+
+            var md5Hash = file.Hashes?.FirstOrDefault(hash => hash.Algo == 2)?.Value;
+            if (!string.IsNullOrWhiteSpace(md5Hash) && !ValidateFileHash(path, "MD5", md5Hash, debugLogAction))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool ValidateDownloadedModrinthFile(string path, ModrinthFile file, Action<string>? debugLogAction)
+        {
+            if (!File.Exists(path))
+            {
+                return false;
+            }
+
+            var fileInfo = new FileInfo(path);
+            if (file.FileSize > 0 && fileInfo.Length != file.FileSize)
+            {
+                debugLogAction?.Invoke($"MRPACK SIZE MISMATCH: {path} expected={file.FileSize} actual={fileInfo.Length}");
+                return false;
+            }
+
+            if (file.Hashes != null)
+            {
+                if (file.Hashes.TryGetValue("sha1", out var sha1Hash) && !ValidateFileHash(path, "SHA1", sha1Hash, debugLogAction))
+                {
+                    return false;
+                }
+
+                if (file.Hashes.TryGetValue("sha512", out var sha512Hash) && !ValidateFileHash(path, "SHA512", sha512Hash, debugLogAction))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool ValidateFileHash(string path, string algorithm, string expectedHash, Action<string>? debugLogAction)
+        {
+            if (string.IsNullOrWhiteSpace(expectedHash))
+            {
+                return true;
+            }
+
+            string actualHash;
+            using (var stream = File.OpenRead(path))
+            {
+                actualHash = algorithm.ToUpperInvariant() switch
+                {
+                    "SHA1" => Convert.ToHexString(SHA1.HashData(stream)),
+                    "MD5" => Convert.ToHexString(MD5.HashData(stream)),
+                    "SHA512" => Convert.ToHexString(SHA512.HashData(stream)),
+                    _ => string.Empty
+                };
+            }
+
+            if (string.IsNullOrWhiteSpace(actualHash))
+            {
+                return true;
+            }
+
+            var matches = string.Equals(actualHash, expectedHash, StringComparison.OrdinalIgnoreCase);
+            if (!matches)
+            {
+                debugLogAction?.Invoke($"FILE HASH MISMATCH: {path} algorithm={algorithm} expected={expectedHash} actual={actualHash}");
+            }
+
+            return matches;
+        }
+
+        private static bool TryDeleteFile(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+            {
+                return false;
+            }
+
+            try
+            {
+                File.Delete(path);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         /// <summary>
@@ -636,11 +1028,14 @@ namespace VoidCraftLauncher.Services
             }
 
             // Download Files
-            int current = 0;
+            int started = 0;
+            int completed = 0;
             int total = index.Files?.Count ?? 0;
 
             object progressLock = new object();
+            object failureLock = new object();
             var semaphore = new SemaphoreSlim(10);
+            var failedDownloads = new List<string>();
 
             var downloadTasks = (index.Files ?? new List<ModrinthFile>()).Select(async file =>
             {
@@ -649,30 +1044,52 @@ namespace VoidCraftLauncher.Services
                 {
                     var targetPath = Path.Combine(installPath, file.Path);
                     
-                    // Skip if exists
-                    if (File.Exists(targetPath)) return;
+                    if (File.Exists(targetPath))
+                    {
+                        if (ValidateDownloadedModrinthFile(targetPath, file, message => LogService.Log(message, "MRPACK")))
+                        {
+                            return;
+                        }
 
+                        TryDeleteFile(targetPath);
+                    }
+
+                    var startedIndex = Interlocked.Increment(ref started);
                     lock (progressLock)
                     {
-                        current++;
-                        statusCallback?.Invoke($"Stahuji ({current}/{total}): {Path.GetFileName(file.Path)}");
-                        progressCallback?.Invoke((double)current / total);
+                        statusCallback?.Invoke($"Stahuji ({startedIndex}/{total}): {Path.GetFileName(file.Path)}");
                     }
 
                     Directory.CreateDirectory(Path.GetDirectoryName(targetPath));
-
-                    if (file.Downloads?.Count > 0)
+                    await DownloadModrinthFileWithFallbackAsync(file, targetPath, message => LogService.Log(message, "MRPACK"));
+                }
+                catch (Exception ex)
+                {
+                    lock (failureLock)
                     {
-                        await DownloadFileAsync(file.Downloads[0], targetPath);
+                        failedDownloads.Add(Path.GetFileName(file.Path));
                     }
+
+                    LogService.Error($"[Modrinth Download] Failed: {file.Path}", ex);
                 }
                 finally
                 {
+                    var completedCount = Interlocked.Increment(ref completed);
+                    lock (progressLock)
+                    {
+                        progressCallback?.Invoke(total == 0 ? 1d : (double)completedCount / total);
+                    }
+
                     semaphore.Release();
                 }
             });
 
             await Task.WhenAll(downloadTasks);
+
+            if (failedDownloads.Count > 0)
+            {
+                throw new Exception($"Nepodařilo se stáhnout {failedDownloads.Count} souborů Modrinth balíčku. Např.: {string.Join(", ", failedDownloads.Take(3))}");
+            }
 
             // Extract Overrides with smart config update
             var mrConfigHashes = LoadConfigHashes(installPath);
@@ -778,5 +1195,24 @@ namespace VoidCraftLauncher.Services
 
         [System.Text.Json.Serialization.JsonPropertyName("downloads")]
         public List<string> Downloads { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("hashes")]
+        public Dictionary<string, string> Hashes { get; set; } = new();
+
+        [System.Text.Json.Serialization.JsonPropertyName("fileSize")]
+        public long FileSize { get; set; }
+    }
+
+    internal sealed class ResolvedCurseManifestFile
+    {
+        public ResolvedCurseManifestFile(ManifestFile manifest, CurseFile file)
+        {
+            Manifest = manifest;
+            File = file;
+        }
+
+        public ManifestFile Manifest { get; }
+
+        public CurseFile File { get; }
     }
 }

@@ -83,9 +83,13 @@ public partial class MainViewModel : ViewModelBase
     private readonly AchievementHubService _achievementHubService;
     private readonly SkinStudioService _skinStudioService;
     private readonly CreatorWorkbenchService _creatorWorkbenchService;
+    private readonly CreatorWorkbenchEditorService _creatorWorkbenchEditorService;
     private readonly CreatorWorkspaceService _creatorWorkspaceService;
     private readonly CreatorManifestService _creatorManifestService;
     private readonly CreatorAssetsService _creatorAssetsService;
+    private readonly CreatorGitService _creatorGitService;
+    private readonly CreatorNotesService _creatorNotesService;
+    private readonly CreatorReleaseService _creatorReleaseService;
     private ModpackManifestInfo _lastManifestInfo;
     private readonly SemaphoreSlim _modpackUpdateCheckLock = new(1, 1);
     private static readonly TimeSpan ModpackUpdateCheckInterval = TimeSpan.FromSeconds(5);
@@ -553,9 +557,14 @@ public partial class MainViewModel : ViewModelBase
         _achievementHubService = sl.Resolve<AchievementHubService>();
         _skinStudioService = sl.Resolve<SkinStudioService>();
         _creatorWorkbenchService = sl.Resolve<CreatorWorkbenchService>();
+        _creatorWorkbenchEditorService = sl.Resolve<CreatorWorkbenchEditorService>();
         _creatorWorkspaceService = sl.Resolve<CreatorWorkspaceService>();
         _creatorManifestService = sl.Resolve<CreatorManifestService>();
         _creatorAssetsService = sl.Resolve<CreatorAssetsService>();
+        _creatorGitService = sl.Resolve<CreatorGitService>();
+        _creatorNotesService = sl.Resolve<CreatorNotesService>();
+        _creatorReleaseService = sl.Resolve<CreatorReleaseService>();
+        InitializeCreatorWorkbenchEditorState();
         _discordRpcService.Initialize();
         _discordRpcService.PresenceChanged += () => Avalonia.Threading.Dispatcher.UIThread.Post(NotifyStreamingToolsStateChanged);
         

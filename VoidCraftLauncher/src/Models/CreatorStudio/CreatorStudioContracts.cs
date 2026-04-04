@@ -7,12 +7,50 @@ namespace VoidCraftLauncher.Models.CreatorStudio;
 public enum CreatorShellTab
 {
     Overview,
-    Metadata,
+    Identity,
     Mods,
     Files,
     Notes,
     Git,
     Release
+}
+
+public enum CreatorIdentitySubTab
+{
+    Profile,
+    Branding
+}
+
+public enum CreatorModAttentionKind
+{
+    UpdateAvailable,
+    Conflict,
+    MissingDependency
+}
+
+public sealed class CreatorModAttentionItem
+{
+    public string ModName { get; set; } = string.Empty;
+
+    public CreatorModAttentionKind Kind { get; set; }
+
+    public string Detail { get; set; } = string.Empty;
+
+    public string KindIcon => Kind switch
+    {
+        CreatorModAttentionKind.UpdateAvailable => "!",
+        CreatorModAttentionKind.Conflict => "x",
+        CreatorModAttentionKind.MissingDependency => "?",
+        _ => "o"
+    };
+
+    public string KindLabel => Kind switch
+    {
+        CreatorModAttentionKind.UpdateAvailable => "Update",
+        CreatorModAttentionKind.Conflict => "Konflikt",
+        CreatorModAttentionKind.MissingDependency => "Závislost",
+        _ => "Neznámý"
+    };
 }
 
 public enum CreatorRightDockMode

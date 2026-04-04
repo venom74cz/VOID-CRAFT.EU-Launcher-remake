@@ -80,7 +80,8 @@ public sealed class ServiceLocator
     {
         // Shared HttpClient (pooled, long-lived)
         var httpClient = new HttpClient();
-        httpClient.DefaultRequestHeaders.Add("User-Agent", "VoidCraftLauncher/2.0");
+        var launcherVersion = typeof(ServiceLocator).Assembly.GetName().Version?.ToString(3) ?? "3.1.8";
+        httpClient.DefaultRequestHeaders.Add("User-Agent", $"VoidCraftLauncher/{launcherVersion}");
         Register(httpClient);
 
         // Observability
@@ -103,11 +104,15 @@ public sealed class ServiceLocator
         RegisterFactory(() => new SkinStudioService(Resolve<HttpClient>()));
         RegisterFactory(() => new SocialFeedService(Resolve<HttpClient>(), Resolve<LauncherService>(), Resolve<ObservabilityService>()));
         RegisterFactory(() => new CreatorWorkbenchService());
+        RegisterFactory(() => new CreatorWorkbenchEditorService(Resolve<LauncherService>()));
         RegisterFactory(() => new CreatorWorkspaceService(Resolve<LauncherService>()));
         RegisterFactory(() => new CreatorAssetsService());
         RegisterFactory(() => new CreatorManifestService(Resolve<CreatorWorkspaceService>(), Resolve<CreatorAssetsService>()));
+        RegisterFactory(() => new CreatorGitService());
+        RegisterFactory(() => new CreatorNotesService());
+        RegisterFactory(() => new CreatorReleaseService(Resolve<CreatorManifestService>(), Resolve<LauncherService>()));
         RegisterFactory(() => new AchievementHubService(Resolve<HttpClient>(), Resolve<LauncherService>(), Resolve<ObservabilityService>()));
         RegisterFactory(() => new ServerDiscoveryService(Resolve<LauncherService>(), Resolve<ObservabilityService>()));
-        RegisterFactory(() => new InstanceExportService());
+        RegisterFactory(() => new InstanceExportService(Resolve<CurseForgeApi>(), Resolve<ModrinthApi>()));
     }
 }

@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using VoidCraftLauncher.Models;
 using VoidCraftLauncher.Services;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -227,116 +228,118 @@ public partial class MainViewModel
                 string fileName = "modpack.zip";
                 string versionId = "0";
                 string versionDisplayName = "Latest";
+                List<string> downloadCandidates;
 
-                using (var httpClient = new System.Net.Http.HttpClient())
+                if (item.Source == "CurseForge")
                 {
-                    if (item.Source == "CurseForge")
-                    {
-                        var json = await _curseForgeApi.GetModpackFilesAsync(int.Parse(item.Id));
-                        var root = JsonNode.Parse(json);
-                        var data = root?["data"]?.AsArray();
-                        
-                        var file = data?.Where(x => x?["releaseType"]?.GetValue<int>() == 1).FirstOrDefault() 
-                                   ?? data?.FirstOrDefault(); 
-
-                        if (file == null) throw new Exception("Nenalezena žádná verze.");
-
-                        downloadUrl = file["downloadUrl"]?.ToString();
-                        fileName = file["fileName"]?.ToString() ?? "modpack.zip";
-                        versionId = file["id"]?.ToString() ?? "0";
-                        versionDisplayName = file["displayName"]?.ToString() ?? "Latest";
-                    }
-                    else // Modrinth
-                    {
-                        var json = await _modrinthApi.GetProjectVersionsAsync(item.Id);
-                        var versions = JsonNode.Parse(json)?.AsArray();
-                        var version = versions?.FirstOrDefault(v => v?["version_type"]?.ToString() == "release")
-                                      ?? versions?.FirstOrDefault();
-
-                        if (version == null) throw new Exception("Nenalezena žádná verze.");
-
-                        var files = version["files"]?.AsArray();
-                        var primaryFile = files?.FirstOrDefault(f => f?["primary"]?.GetValue<bool>() == true)
-                                          ?? files?.FirstOrDefault();
-                        
-                        if (primaryFile == null) throw new Exception("Chybí soubor verze.");
-
-                        downloadUrl = primaryFile["url"]?.ToString();
-                        fileName = primaryFile["filename"]?.ToString() ?? "modpack.mrpack";
-                        versionId = version["id"]?.ToString();
-                        versionDisplayName = version["version_number"]?.ToString() ?? versionId ?? "1.0";
-                    }
-
-                    if (string.IsNullOrEmpty(downloadUrl)) throw new Exception("Chybí URL.");
-
-                    Avalonia.Threading.Dispatcher.UIThread.Post(() => LaunchStatus = "Stahuji balíček...");
-                    var tempPath = Path.Combine(Path.GetTempPath(), fileName);
-                    var fileBytes = await httpClient.GetByteArrayAsync(downloadUrl);
-                    await File.WriteAllBytesAsync(tempPath, fileBytes);
+                    var json = await _curseForgeApi.GetModpackFilesAsync(int.Parse(item.Id));
+                    var root = JsonNode.Parse(json);
+                    var data = root?["data"]?.AsArray();
                     
-                    var safeName = string.Join("_", item.Name.Split(Path.GetInvalidFileNameChars())).Trim();
-                    var installPath = _launcherService.GetModpackPath(safeName);
+                    var file = data?.Where(x => x?["releaseType"]?.GetValue<int>() == 1).FirstOrDefault() 
+                               ?? data?.FirstOrDefault(); 
+
+                    if (file == null) throw new Exception("Nenalezena žádná verze.");
+
+                    downloadUrl = file["downloadUrl"]?.ToString();
+                    fileName = file["fileName"]?.ToString() ?? "modpack.zip";
+                    versionId = file["id"]?.ToString() ?? "0";
+                    versionDisplayName = file["displayName"]?.ToString() ?? "Latest";
+
+                    if (!int.TryParse(versionId, out var curseFileId)) throw new Exception("Chybí validní FileId modpacku.");
+                    downloadCandidates = await BuildCurseForgeArchiveDownloadCandidatesAsync(int.Parse(item.Id), curseFileId, downloadUrl, fileName);
+                }
+                else // Modrinth
+                {
+                    var json = await _modrinthApi.GetProjectVersionsAsync(item.Id);
+                    var versions = JsonNode.Parse(json)?.AsArray();
+                    var version = versions?.FirstOrDefault(v => v?["version_type"]?.ToString() == "release")
+                                  ?? versions?.FirstOrDefault();
+
+                    if (version == null) throw new Exception("Nenalezena žádná verze.");
+
+                    var files = version["files"]?.AsArray();
+                    var primaryFile = files?.FirstOrDefault(f => f?["primary"]?.GetValue<bool>() == true)
+                                      ?? files?.FirstOrDefault();
                     
-                    Avalonia.Threading.Dispatcher.UIThread.Post(() => LaunchStatus = "Instaluji...");
+                    if (primaryFile == null) throw new Exception("Chybí soubor verze.");
 
-                    void OnStatus(string s) => Avalonia.Threading.Dispatcher.UIThread.Post(() => LaunchStatus = s);
-                    void OnProgress(double p) => Avalonia.Threading.Dispatcher.UIThread.Post(() => LaunchProgress = p * 100);
+                    downloadUrl = primaryFile["url"]?.ToString();
+                    fileName = primaryFile["filename"]?.ToString() ?? "modpack.mrpack";
+                    versionId = version["id"]?.ToString();
+                    versionDisplayName = version["version_number"]?.ToString() ?? versionId ?? "1.0";
+                    downloadCandidates = BuildModrinthArchiveDownloadCandidates(files, primaryFile);
+                }
+
+                if (downloadCandidates.Count == 0) throw new Exception("Chybí URL.");
+
+                Avalonia.Threading.Dispatcher.UIThread.Post(() => LaunchStatus = "Stahuji balíček...");
+                var tempPath = Path.Combine(Path.GetTempPath(), fileName);
+                await DownloadPackageArchiveAsync(downloadCandidates, tempPath, versionDisplayName);
+                
+                var safeName = string.Join("_", item.Name.Split(Path.GetInvalidFileNameChars())).Trim();
+                var installPath = _launcherService.GetModpackPath(safeName);
+                
+                Avalonia.Threading.Dispatcher.UIThread.Post(() => LaunchStatus = "Instaluji...");
+
+                void OnStatus(string s) => Avalonia.Threading.Dispatcher.UIThread.Post(() => LaunchStatus = s);
+                void OnProgress(double p) => Avalonia.Threading.Dispatcher.UIThread.Post(() => LaunchProgress = p * 100);
+                
+                _modpackInstaller.StatusChanged += OnStatus;
+                _modpackInstaller.ProgressChanged += OnProgress;
+
+                ModpackManifestInfo manifestInfo = new ModpackManifestInfo();
+                try 
+                {
+                    int? targetFileId = item.Source == "CurseForge" && int.TryParse(versionId, out var parsedFileId)
+                        ? parsedFileId
+                        : null;
+
+                    manifestInfo = await _modpackInstaller.InstallOrUpdateAsync(
+                        tempPath,
+                        installPath,
+                        targetFileId,
+                        versionDisplayName);
+                }
+                catch (Exception ex)
+                {
+                     Avalonia.Threading.Dispatcher.UIThread.Post(() => Greeting = $"Chyba instalace: {ex.Message}");
+                     LogService.Error("Install Modpack Error", ex);
+                     try { Directory.Delete(installPath, true); } catch {}
+                     return;
+                }
+                finally
+                {
+                    _modpackInstaller.StatusChanged -= OnStatus;
+                    _modpackInstaller.ProgressChanged -= OnProgress;
+                    if (File.Exists(tempPath)) File.Delete(tempPath);
+                }
+
+                Avalonia.Threading.Dispatcher.UIThread.Post(() => 
+                {
+                    var versionInfo = new ModpackVersion 
+                    { 
+                        Name = versionDisplayName,
+                        FileId = versionId ?? "0"
+                    };
                     
-                    _modpackInstaller.StatusChanged += OnStatus;
-                    _modpackInstaller.ProgressChanged += OnProgress;
-
-                    ModpackManifestInfo manifestInfo = new ModpackManifestInfo();
-                    try 
+                    CurrentModpack = new ModpackInfo
                     {
-                        int? targetFileId = item.Source == "CurseForge" && int.TryParse(versionId, out var parsedFileId)
-                            ? parsedFileId
-                            : null;
+                        Name = safeName,
+                        DisplayName = item.Name,
+                        ProjectId = item.Source == "CurseForge" ? int.Parse(item.Id) : 0,
+                        Source = item.Source,
+                        ModrinthId = item.Source == "Modrinth" ? item.Id : "",
+                        LogoUrl = item.IconUrl,
+                        Author = item.Author,
+                        WebLink = item.WebLink,
+                        Description = item.Description,
+                        CurrentVersion = versionInfo
+                    };
 
-                        manifestInfo = await _modpackInstaller.InstallOrUpdateAsync(
-                            tempPath,
-                            installPath,
-                            targetFileId,
-                            versionDisplayName);
-                    }
-                    catch (Exception ex)
-                    {
-                         Avalonia.Threading.Dispatcher.UIThread.Post(() => Greeting = $"Chyba instalace: {ex.Message}");
-                         LogService.Error("Install Modpack Error", ex);
-                         try { Directory.Delete(installPath, true); } catch {}
-                         return;
-                    }
-                    finally
-                    {
-                        _modpackInstaller.StatusChanged -= OnStatus;
-                        _modpackInstaller.ProgressChanged -= OnProgress;
-                        if (File.Exists(tempPath)) File.Delete(tempPath);
-                    }
-
-                    Avalonia.Threading.Dispatcher.UIThread.Post(() => 
-                    {
-                        var versionInfo = new ModpackVersion 
-                        { 
-                            Name = versionDisplayName,
-                            FileId = versionId ?? "0"
-                        };
-                        
-                        CurrentModpack = new ModpackInfo
-                        {
-                            Name = safeName,
-                            DisplayName = item.Name,
-                            ProjectId = item.Source == "CurseForge" ? int.Parse(item.Id) : 0,
-                            Source = item.Source,
-                            ModrinthId = item.Source == "Modrinth" ? item.Id : "",
-                            LogoUrl = item.IconUrl,
-                            Author = item.Author,
-                            WebLink = item.WebLink,
-                            Description = item.Description,
-                            CurrentVersion = versionInfo
-                        };
-
-                        var existing = InstalledModpacks.FirstOrDefault(m => 
-                            (CurrentModpack.ProjectId > 0 && m.ProjectId == CurrentModpack.ProjectId) ||
-                            m.Name.Equals(CurrentModpack.Name, StringComparison.OrdinalIgnoreCase));
+                    var existing = InstalledModpacks.FirstOrDefault(m => 
+                        (CurrentModpack.ProjectId > 0 && m.ProjectId == CurrentModpack.ProjectId) ||
+                        m.Name.Equals(CurrentModpack.Name, StringComparison.OrdinalIgnoreCase));
 
                         if (existing != null)
                         {
@@ -355,7 +358,6 @@ public partial class MainViewModel
                         Greeting = $"Instalace dokončena: {item.Name}";
                     });
                 }
-            }
             catch (Exception ex)
             {
                 Avalonia.Threading.Dispatcher.UIThread.Post(() => 

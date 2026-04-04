@@ -69,6 +69,12 @@ namespace VoidCraftLauncher.Models.CurseForge
         public List<CurseFile> Data { get; set; }
     }
 
+    public class CurseSingleFileData
+    {
+        [JsonPropertyName("data")]
+        public CurseFile Data { get; set; }
+    }
+
     public class CurseFile
     {
         [JsonPropertyName("id")]

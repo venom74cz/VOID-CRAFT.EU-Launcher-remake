@@ -1062,7 +1062,7 @@ public partial class MainViewModel
                 outputPath,
                 progress: p => Avalonia.Threading.Dispatcher.UIThread.Post(() => ExportProgress = p * 100));
 
-            ShowToast("Export dokončen", $"Uloženo na plochu: {defaultName}", ToastSeverity.Success, 5000);
+            ShowToast("Export dokončen", $"Uloženo na plochu: {defaultName}. Mody jsou v archivu zapsané jako manifest, ne jako .jar soubory.", ToastSeverity.Success, 5200);
         }
         catch (Exception ex)
         {
@@ -1372,10 +1372,12 @@ public partial class MainViewModel
             var tempName = Path.GetFileNameWithoutExtension(filePath);
             var instancePath = _launcherService.GetModpackPath(tempName);
 
-            var manifest = await _instanceExportService.ImportAsync(
+            var importResult = await _instanceExportService.ImportAsync(
                 filePath,
                 instancePath,
                 progress: p => Avalonia.Threading.Dispatcher.UIThread.Post(() => ImportProgress = p * 100));
+
+            var manifest = importResult.Manifest;
 
             if (manifest != null)
             {
@@ -1405,7 +1407,23 @@ public partial class MainViewModel
                 });
 
                 ImportArchivePath = "";
-                ShowToast("Import dokončen", "Instance " + manifest.InstanceName + " importována.", ToastSeverity.Success, 5000);
+
+                var importMessage = $"Instance {importedName} importována.";
+                if (importResult.DownloadedModCount > 0)
+                {
+                    importMessage += $" Staženo {importResult.DownloadedModCount} modů z modlistu.";
+                }
+
+                if (importResult.ManualModNames.Count > 0)
+                {
+                    importMessage += $" {importResult.ManualModNames.Count} modů vyžaduje ruční doplnění.";
+                }
+
+                ShowToast(
+                    importResult.ManualModNames.Count > 0 ? "Import dokončen s upozorněním" : "Import dokončen",
+                    importMessage,
+                    importResult.ManualModNames.Count > 0 ? ToastSeverity.Warning : ToastSeverity.Success,
+                    5600);
             }
         }
         catch (Exception ex)

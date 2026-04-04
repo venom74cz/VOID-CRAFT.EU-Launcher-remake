@@ -1,3 +1,12 @@
+> [!WARNING]
+> Historicky dokument.
+>
+> Tenhle soubor popisuje starsi v2/.NET 8 smer a puvodni architekturu launcheru. Aktualni realita produktu je dnes v:
+>
+> - [`../reference/CURRENT-STATE.md`](../reference/CURRENT-STATE.md)
+> - [`creator-workbench.md`](creator-workbench.md)
+> - [`../../CHANGELOG.md`](../../CHANGELOG.md)
+
 # VOID-CRAFT Minecraft Launcher v2
 
 Nový, stabilní Minecraft launcher postavený na **C# + Avalonia UI + CmlLib.Core** pro komunitu VOID-CRAFT.

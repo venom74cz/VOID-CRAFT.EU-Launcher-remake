@@ -2,7 +2,7 @@
 
 Snapshot: 2026-04-04
 
-Aktuální release: 3.1.8
+Aktuální release: 3.1.8.1
 
 ## Co je dnes reálně v produktu
 

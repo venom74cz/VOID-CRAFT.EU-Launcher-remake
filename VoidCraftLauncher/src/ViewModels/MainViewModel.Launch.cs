@@ -554,13 +554,14 @@ public partial class MainViewModel
                     using var response = await _httpClient.GetAsync(candidateUrl, HttpCompletionOption.ResponseHeadersRead);
                     response.EnsureSuccessStatusCode();
 
-                    await using var sourceStream = await response.Content.ReadAsStreamAsync();
-                    await using var targetStream = File.Create(tempPath);
-                    await sourceStream.CopyToAsync(targetStream);
-                    await targetStream.FlushAsync();
+                    await using (var sourceStream = await response.Content.ReadAsStreamAsync())
+                    await using (var targetStream = File.Create(tempPath))
+                    {
+                        await sourceStream.CopyToAsync(targetStream);
+                        await targetStream.FlushAsync();
+                    }
 
-                    TryDeleteArchiveFile(destinationPath);
-                    File.Move(tempPath, destinationPath, true);
+                    await MoveArchiveFileWithRetryAsync(tempPath, destinationPath);
                     return;
                 }
                 catch (Exception ex)
@@ -577,6 +578,36 @@ public partial class MainViewModel
         }
 
         throw new InvalidOperationException($"Nepodařilo se stáhnout balíček {packageLabel} z žádného dostupného zdroje.", lastException);
+    }
+
+    private static async Task MoveArchiveFileWithRetryAsync(string tempPath, string destinationPath)
+    {
+        Exception? lastException = null;
+
+        for (int attempt = 1; attempt <= 5; attempt++)
+        {
+            try
+            {
+                TryDeleteArchiveFile(destinationPath);
+                File.Move(tempPath, destinationPath, true);
+                return;
+            }
+            catch (IOException ex)
+            {
+                lastException = ex;
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                lastException = ex;
+            }
+
+            if (attempt < 5)
+            {
+                await Task.Delay(120 * attempt);
+            }
+        }
+
+        throw lastException ?? new IOException($"Nepodařilo se přesunout stažený archiv do {destinationPath}.");
     }
 
     private static List<string> BuildModrinthArchiveDownloadCandidates(JsonArray? files, JsonNode? preferredFile)

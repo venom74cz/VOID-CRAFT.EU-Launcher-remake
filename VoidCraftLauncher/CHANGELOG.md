@@ -2,6 +2,17 @@
 
 Všechny důležité změny v projektu jsou dokumentovány v tomto souboru.
 
+## [3.1.8.1] - 2026-04-04
+
+### 🛠️ Startup a archive download hotfix
+
+### Opraveno
+- **dotnet run bootstrap**: launcher už při startu nepadá na nevalidním Avalonia shortcutu ve `StreamingToolsView`; key gesture pro focus Copilot desku je přepsaný na validní `Ctrl+OemQuestion`.
+- **Archive temp move lock**: download modpack balíčků i jednotlivých mod souborů už nepřesouvá `.download` file, dokud je stream otevřený, a finální move má retry proti krátkým Windows lockům od AV nebo indexeru.
+
+### Změněno
+- **Release metadata**: projekt, installer a referenční dokumentace jsou srovnané na verzi `3.1.8.1`.
+
 ## [3.1.8] - 2026-04-04
 
 ### 🛠️ Modpack download hardening

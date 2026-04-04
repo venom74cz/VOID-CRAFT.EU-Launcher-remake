@@ -29,7 +29,7 @@ public class InstanceExportService
     {
         _curseForgeApi = curseForgeApi;
         _modrinthApi = modrinthApi;
-        var launcherVersion = typeof(InstanceExportService).Assembly.GetName().Version?.ToString(3) ?? "3.1.8";
+        var launcherVersion = typeof(InstanceExportService).Assembly.GetName().Version?.ToString(4) ?? "3.1.8.1";
         _httpClient.DefaultRequestHeaders.Add("User-Agent", $"VoidCraftLauncher/{launcherVersion}");
     }
 
@@ -40,7 +40,7 @@ public class InstanceExportService
 
         var manifest = new InstanceExportManifest
         {
-            LauncherVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.0",
+            LauncherVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(4) ?? "0.0.0.0",
             InstanceName = instanceName,
             ExportedAt = DateTime.UtcNow,
             Categories = cats

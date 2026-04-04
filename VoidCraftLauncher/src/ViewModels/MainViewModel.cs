@@ -529,7 +529,7 @@ public partial class MainViewModel : ViewModelBase
     {
         // Set Version
         var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
-        AppVersion = $"v{version?.ToString(3) ?? "?.?.?"}";
+        AppVersion = $"v{version?.ToString(4) ?? "?.?.?.?"}";
 
         // Cleanup old update backups
         try 

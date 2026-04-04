@@ -25,6 +25,13 @@
 - Branch list + git init pro workspace bez repo.
 - Pull/Push akce s toast feedback.
 
+## 3.1.8.1 - 2026-04-04
+
+### Startup a archive download hotfix
+- Opraven bootstrap crashe pri `dotnet run`: `Streaming Tools` uz nepouziva nevalidni Avalonia gesture `Ctrl+/`, ktera rozbijela XAML parser pri startu launcheru.
+- Opraven lock pri presunu docasneho `.download` souboru po stazeni archivu a modu: move se provadi az po zavreni streamu a s kratkym retry proti transientnim Windows lockum.
+- Srovnana release verze na `3.1.8.1` v launcher projektu, installeru a referencni dokumentaci.
+
 #### Release tab
 - Release pipeline vizualizace (Version → Snapshot → Validate → Notes → Publish).
 - Validacni checklist (metadata/logo/mods/cover/loader/size kontroly).

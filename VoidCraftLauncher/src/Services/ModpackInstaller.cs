@@ -599,13 +599,14 @@ namespace VoidCraftLauncher.Services
                     using var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
                     response.EnsureSuccessStatusCode();
 
-                    await using var sourceStream = await response.Content.ReadAsStreamAsync();
-                    await using var targetStream = File.Create(tempPath);
-                    await sourceStream.CopyToAsync(targetStream);
-                    await targetStream.FlushAsync();
+                    await using (var sourceStream = await response.Content.ReadAsStreamAsync())
+                    await using (var targetStream = File.Create(tempPath))
+                    {
+                        await sourceStream.CopyToAsync(targetStream);
+                        await targetStream.FlushAsync();
+                    }
 
-                    TryDeleteFile(path);
-                    File.Move(tempPath, path, true);
+                    await MoveDownloadedFileWithRetryAsync(tempPath, path);
                     return;
                 }
                 catch (Exception ex)
@@ -621,6 +622,36 @@ namespace VoidCraftLauncher.Services
             }
 
             throw lastException ?? new IOException($"Download selhal: {url}");
+        }
+
+        private static async Task MoveDownloadedFileWithRetryAsync(string tempPath, string destinationPath)
+        {
+            Exception? lastException = null;
+
+            for (int attempt = 1; attempt <= 5; attempt++)
+            {
+                try
+                {
+                    TryDeleteFile(destinationPath);
+                    File.Move(tempPath, destinationPath, true);
+                    return;
+                }
+                catch (IOException ex)
+                {
+                    lastException = ex;
+                }
+                catch (UnauthorizedAccessException ex)
+                {
+                    lastException = ex;
+                }
+
+                if (attempt < 5)
+                {
+                    await Task.Delay(120 * attempt);
+                }
+            }
+
+            throw lastException ?? new IOException($"Nepodařilo se přesunout stažený soubor do {destinationPath}.");
         }
 
         private async Task DownloadCurseFileWithFallbackAsync(ResolvedCurseManifestFile resolvedFile, string destinationPath, Action<string>? debugLogAction)

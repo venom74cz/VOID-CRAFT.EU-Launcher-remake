@@ -2,7 +2,7 @@
 
 ## 1) Project Snapshot
 - **Name**: VoidCraft Launcher
-- **Current version**: **3.1.8**
+- **Current version**: **3.1.8.1**
 - **Stack**: .NET 9 + Avalonia UI 11.3 + CommunityToolkit.Mvvm 8.4
 - **MC Core**: CmlLib.Core 4.0.6
 - **Auth**: Microsoft.Identity.Client (MSAL) + custom Xbox/XSTS/MC token chain
@@ -150,6 +150,7 @@ Documents/.voidcraft/
 ## 8) Release History
 | Version | Changes |
 |---------|---------|
+| 3.1.8.1 | Hotfix pro startup a download archive flow: oprava Avalonia key gesture crashe v Streaming Tools a oprava locku pri presunu docasneho .download souboru |
 | 3.1.8 | Modpack download hardening: fallback download kandidati pro CurseForge i Modrinth, validace existujicich souboru a retry flow pro baliky i jednotlive mody |
 | 3.1.7 | Auth launch hotfix: Guest regression fix, MSAL account recovery stabilization, optimization override normalization a hardening Discord release webhooku |
 | 3.1.6 | Instance Workspace polish: real crash history, world backup flow, installed mod filtering, Creator Studio screenshot curation a release metadata sync |

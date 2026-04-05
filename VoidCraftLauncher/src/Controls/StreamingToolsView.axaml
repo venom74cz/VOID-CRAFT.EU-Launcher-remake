@@ -1217,45 +1217,43 @@
 
             <!-- ======== TAB 4 — NOTES ======== -->
             <TabItem Header="Notes">
-                <ScrollViewer HorizontalScrollBarVisibility="Disabled">
-                    <StackPanel Spacing="16" Margin="8,4,8,40" MaxWidth="1560">
-                        <!-- Mode switcher + actions -->
-                        <Border Classes="card">
-                            <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" ColumnSpacing="8">
-                                <StackPanel Spacing="4">
-                                    <TextBlock Text="Notes" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                    <TextBlock Text="{Binding CreatorNotesDocumentsSummary}" FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
-                                </StackPanel>
-                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Top">
-                                    <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="999" Padding="12,6">
-                                        <TextBlock Text="{Binding CreatorNotesModeLabel}" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryBBrush}"/>
-                                    </Border>
-                                </StackPanel>
-                                <Button Grid.Column="2" Command="{Binding CreateCreatorNoteDocumentCommand}" Classes="primary" Padding="14,8" VerticalAlignment="Top" IsEnabled="{Binding IsCreatorWorkspaceEditable}">
-                                    <TextBlock Text="{Binding CreatorNotesPrimaryActionLabel}"/>
-                                </Button>
-                                <Button Grid.Column="3" Command="{Binding SaveActiveCreatorNotesSurfaceCommand}" Classes="secondary" Padding="14,8" VerticalAlignment="Top" IsEnabled="{Binding CanSaveActiveCreatorNotesSurface}">
-                                    <TextBlock Text="Ulozit"/>
-                                </Button>
-                                <Button Grid.Column="4" Command="{Binding RefreshCreatorNotesCommand}" Classes="secondary" Padding="14,8" VerticalAlignment="Top">
-                                    <TextBlock Text="Obnovit"/>
-                                </Button>
-                            </Grid>
-                        </Border>
-
-                        <!-- Mode tabs -->
-                        <Border Classes="card" Padding="8">
-                            <StackPanel Orientation="Horizontal" Spacing="4">
-                                <Button Content="Docs" Command="{Binding SetCreatorNotesModeCommand}" CommandParameter="docs" Padding="14,8" FontSize="12"/>
-                                <Button Content="Wiki" Command="{Binding SetCreatorNotesModeCommand}" CommandParameter="wiki" Padding="14,8" FontSize="12"/>
-                                <Button Content="Canvas" Command="{Binding SetCreatorNotesModeCommand}" CommandParameter="canvas" Padding="14,8" FontSize="12"/>
-                                <Button Content="Mind Map" Command="{Binding SetCreatorNotesModeCommand}" CommandParameter="mindmap" Padding="14,8" FontSize="12"/>
+                <Grid RowDefinitions="Auto,Auto,*" RowSpacing="16" Margin="8,4,8,20">
+                    <!-- Mode switcher + actions -->
+                    <Border Grid.Row="0" Classes="card">
+                        <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" ColumnSpacing="8">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Notes" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                <TextBlock Text="{Binding CreatorNotesDocumentsSummary}" FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
                             </StackPanel>
-                        </Border>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Top">
+                                <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="999" Padding="12,6">
+                                    <TextBlock Text="{Binding CreatorNotesModeLabel}" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryBBrush}"/>
+                                </Border>
+                            </StackPanel>
+                            <Button Grid.Column="2" Command="{Binding CreateCreatorNoteDocumentCommand}" Classes="primary" Padding="14,8" VerticalAlignment="Top" IsEnabled="{Binding IsCreatorWorkspaceEditable}">
+                                <TextBlock Text="{Binding CreatorNotesPrimaryActionLabel}"/>
+                            </Button>
+                            <Button Grid.Column="3" Command="{Binding SaveActiveCreatorNotesSurfaceCommand}" Classes="secondary" Padding="14,8" VerticalAlignment="Top" IsEnabled="{Binding CanSaveActiveCreatorNotesSurface}">
+                                <TextBlock Text="Ulozit"/>
+                            </Button>
+                            <Button Grid.Column="4" Command="{Binding RefreshCreatorNotesCommand}" Classes="secondary" Padding="14,8" VerticalAlignment="Top">
+                                <TextBlock Text="Obnovit"/>
+                            </Button>
+                        </Grid>
+                    </Border>
 
-                        <!-- Docs mode: sidebar + editor -->
-                        <Grid ColumnDefinitions="300,16,*" IsVisible="{Binding IsCreatorNotesModeDocs}">
-                            <!-- Document sidebar -->
+                    <!-- Mode tabs -->
+                    <Border Grid.Row="1" Classes="card" Padding="8">
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <Button Content="Docs" Command="{Binding SetCreatorNotesModeCommand}" CommandParameter="docs" Padding="14,8" FontSize="12"/>
+                            <Button Content="Wiki" Command="{Binding SetCreatorNotesModeCommand}" CommandParameter="wiki" Padding="14,8" FontSize="12"/>
+                            <Button Content="Canvas" Command="{Binding SetCreatorNotesModeCommand}" CommandParameter="canvas" Padding="14,8" FontSize="12"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Docs mode: sidebar + editor -->
+                    <ScrollViewer Grid.Row="2" HorizontalScrollBarVisibility="Disabled" IsVisible="{Binding IsCreatorNotesModeDocs}">
+                        <Grid ColumnDefinitions="300,16,*" MinHeight="720">
                             <Border Grid.Column="0" Classes="card">
                                 <StackPanel Spacing="12">
                                     <TextBlock Text="Dokumenty" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
@@ -1281,7 +1279,6 @@
                                 </StackPanel>
                             </Border>
 
-                            <!-- Editor -->
                             <Border Grid.Column="2" Classes="card">
                                 <StackPanel Spacing="12">
                                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
@@ -1299,8 +1296,11 @@
                                 </StackPanel>
                             </Border>
                         </Grid>
-                        <!-- Wiki mode -->
-                        <Grid ColumnDefinitions="300,16,*,16,300" IsVisible="{Binding IsCreatorNotesModeWiki}">
+                    </ScrollViewer>
+
+                    <!-- Wiki mode -->
+                    <ScrollViewer Grid.Row="2" HorizontalScrollBarVisibility="Disabled" IsVisible="{Binding IsCreatorNotesModeWiki}">
+                        <Grid ColumnDefinitions="300,16,*,16,300" MinHeight="720">
                             <Border Grid.Column="0" Classes="card">
                                 <StackPanel Spacing="12">
                                     <TextBlock Text="Wiki stranky" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
@@ -1355,13 +1355,23 @@
                                 </StackPanel>
                             </Border>
                         </Grid>
+                    </ScrollViewer>
 
-                        <Grid ColumnDefinitions="300,16,*,16,320" IsVisible="{Binding IsCreatorNotesModeCanvas}">
-                            <Border Grid.Column="0" Classes="card">
-                                <StackPanel Spacing="12">
-                                    <TextBlock Text="Canvas grafy" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                    <controls:EmptyState IsVisible="{Binding !HasCreatorCanvasGraphs}" Icon="{StaticResource IconInfo}" Title="Zadne canvas grafy" Subtitle="Vytvor novy graph primo z Notes tabu."/>
-                                    <ListBox ItemsSource="{Binding CreatorCanvasGraphs}" SelectedItem="{Binding SelectedCreatorCanvasGraph}" IsVisible="{Binding HasCreatorCanvasGraphs}" MaxHeight="720">
+                    <Grid Grid.Row="2" MinHeight="780" IsVisible="{Binding IsCreatorNotesModeCanvas}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{Binding CreatorCanvasSidebarWidth}"/>
+                            <ColumnDefinition Width="{Binding CreatorCanvasSidebarGapWidth}"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="{Binding CreatorCanvasSidebarGapWidth}"/>
+                            <ColumnDefinition Width="{Binding CreatorCanvasInspectorWidth}"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Border Grid.Column="0" Classes="card" IsVisible="{Binding !IsCreatorCanvasExpanded}">
+                            <Grid RowDefinitions="Auto,*" RowSpacing="12">
+                                <TextBlock Text="Canvasy" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                <Grid Grid.Row="1">
+                                    <controls:EmptyState IsVisible="{Binding !HasCreatorCanvasGraphs}" Icon="{StaticResource IconInfo}" Title="Zadne canvasy" Subtitle="Vytvor novy canvas primo z Notes tabu."/>
+                                    <ListBox ItemsSource="{Binding CreatorCanvasGraphs}" SelectedItem="{Binding SelectedCreatorCanvasGraph}" IsVisible="{Binding HasCreatorCanvasGraphs}">
                                         <ListBox.ItemTemplate>
                                             <DataTemplate x:DataType="creatorModels:CreatorCanvasGraph">
                                                 <Grid ColumnDefinitions="*,Auto" Margin="2">
@@ -1379,219 +1389,118 @@
                                             </DataTemplate>
                                         </ListBox.ItemTemplate>
                                     </ListBox>
-                                </StackPanel>
-                            </Border>
+                                </Grid>
+                            </Grid>
+                        </Border>
 
-                            <Border Grid.Column="2" Classes="card">
-                                <StackPanel Spacing="12">
-                                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
-                                        <StackPanel Spacing="4">
-                                            <TextBlock Text="Canvas editor" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                            <TextBlock Text="{Binding CreatorSelectedCanvasGraphStatus}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
-                                        </StackPanel>
-                                        <Button Grid.Column="1" Command="{Binding CreateCreatorCanvasNodeCommand}" Classes="secondary" Padding="12,8" VerticalAlignment="Top" IsEnabled="{Binding HasSelectedCreatorCanvasGraph}">
-                                            <TextBlock Text="Pridat uzel"/>
-                                        </Button>
-                                        <Button Grid.Column="2" Command="{Binding SaveCreatorCanvasGraphCommand}" Classes="primary" Padding="12,8" VerticalAlignment="Top" IsEnabled="{Binding CanSaveCreatorCanvasGraph}">
-                                            <TextBlock Text="Ulozit graph"/>
-                                        </Button>
-                                    </Grid>
-
-                                    <controls:EmptyState IsVisible="{Binding !HasSelectedCreatorCanvasGraph}" Icon="{StaticResource IconInfo}" Title="Vyber graph vlevo" Subtitle="Po vyberu muzes upravovat nazev, uzly a propojeni."/>
-
-                                    <StackPanel Spacing="10" IsVisible="{Binding HasSelectedCreatorCanvasGraph}">
-                                        <TextBox Text="{Binding SelectedCreatorCanvasGraph.Name, UpdateSourceTrigger=PropertyChanged}" Watermark="Nazev graphu" IsReadOnly="{Binding IsCreatorWorkspaceReadOnly}"/>
-
-                                        <controls:EmptyState IsVisible="{Binding !HasSelectedCreatorCanvasGraphNodes}" Icon="{StaticResource IconInfo}" Title="Graph je prazdny" Subtitle="Pridej prvni uzel a zacni skladat progression flow."/>
-
-                                        <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="560" IsVisible="{Binding HasSelectedCreatorCanvasGraphNodes}">
-                                            <ItemsControl ItemsSource="{Binding SelectedCreatorCanvasGraph.Nodes}">
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate x:DataType="creatorModels:CreatorCanvasNode">
-                                                        <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="10" Padding="12" Margin="0,0,0,8" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
-                                                            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
-                                                                <StackPanel Spacing="6">
-                                                                    <StackPanel Orientation="Horizontal" Spacing="8">
-                                                                        <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="999" Padding="10,4">
-                                                                            <TextBlock Text="{Binding TypeIcon}" FontSize="10" Foreground="{DynamicResource PrimaryBBrush}" FontWeight="SemiBold"/>
-                                                                        </Border>
-                                                                        <TextBlock Text="{Binding Label}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center"/>
-                                                                    </StackPanel>
-                                                                    <TextBlock Text="{Binding Description}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
-                                                                    <StackPanel Orientation="Horizontal" Spacing="10">
-                                                                        <TextBlock Text="{Binding ConnectionSummary}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
-                                                                        <TextBlock Text="{Binding LinkedFilePath}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" TextTrimming="CharacterEllipsis" MaxWidth="220"/>
-                                                                    </StackPanel>
-                                                                </StackPanel>
-                                                                <Button Grid.Column="1" Command="{Binding #StreamingToolsRoot.DataContext.SelectCreatorCanvasNodeCommand}" CommandParameter="{Binding}" Classes="secondary" Padding="10,6" FontSize="10" VerticalAlignment="Top">
-                                                                    <TextBlock Text="Detail"/>
-                                                                </Button>
-                                                                <Button Grid.Column="2" Command="{Binding #StreamingToolsRoot.DataContext.DeleteCreatorCanvasNodeCommand}" CommandParameter="{Binding}" Classes="ghost" Padding="10,6" FontSize="10" VerticalAlignment="Top" IsEnabled="{Binding #StreamingToolsRoot.DataContext.IsCreatorWorkspaceEditable}">
-                                                                    <TextBlock Text="Smazat" Foreground="{DynamicResource WarningBrush}"/>
-                                                                </Button>
-                                                            </Grid>
-                                                        </Border>
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
-                                        </ScrollViewer>
+                        <Border Grid.Column="2" Classes="card">
+                            <Grid RowDefinitions="Auto,Auto,*" RowSpacing="12">
+                                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="Canvas surface" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                        <TextBlock Text="{Binding CreatorSelectedCanvasGraphStatus}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
                                     </StackPanel>
-                                </StackPanel>
-                            </Border>
+                                    <Button Grid.Column="1" Command="{Binding ToggleCreatorCanvasExpandedCommand}" Classes="secondary" Padding="12,8" VerticalAlignment="Top" IsEnabled="{Binding HasSelectedCreatorCanvasGraph}">
+                                        <TextBlock Text="{Binding CreatorCanvasExpandLabel}"/>
+                                    </Button>
+                                    <Button Grid.Column="2" Command="{Binding SaveCreatorCanvasGraphCommand}" Classes="primary" Padding="12,8" VerticalAlignment="Top" IsEnabled="{Binding CanSaveCreatorCanvasGraph}">
+                                        <TextBlock Text="Ulozit canvas"/>
+                                    </Button>
+                                </Grid>
 
-                            <Border Grid.Column="4" Classes="card">
-                                <ScrollViewer HorizontalScrollBarVisibility="Disabled">
-                                    <StackPanel Spacing="12">
-                                        <TextBlock Text="Inspektor uzlu" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                        <TextBlock Text="{Binding CreatorSelectedCanvasNodeStatus}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
-                                        <controls:EmptyState IsVisible="{Binding !HasSelectedCreatorCanvasNode}" Icon="{StaticResource IconInfo}" Title="Vyber uzel" Subtitle="V detailu muzes menit typ, popis, navazany soubor i propojeni."/>
+                                <controls:EmptyState Grid.Row="1" IsVisible="{Binding !HasSelectedCreatorCanvasGraph}" Icon="{StaticResource IconInfo}" Title="Vyber canvas vlevo" Subtitle="Po vyberu muzes panovat, pravym klikem pridavat karty a Ctrl + klikem propojovat uzly."/>
 
-                                        <StackPanel Spacing="12" IsVisible="{Binding HasSelectedCreatorCanvasNode}">
-                                            <TextBox Text="{Binding SelectedCreatorCanvasNode.Label, UpdateSourceTrigger=PropertyChanged}" Watermark="Nazev uzlu" IsReadOnly="{Binding IsCreatorWorkspaceReadOnly}"/>
-                                            <ComboBox ItemsSource="{Binding CreatorCanvasNodeTypes}" SelectedItem="{Binding SelectedCreatorCanvasNode.NodeType}" IsEnabled="{Binding IsCreatorWorkspaceEditable}"/>
-                                            <TextBox Text="{Binding SelectedCreatorCanvasNode.Description, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="120" Watermark="Co tenhle uzel resi?" IsReadOnly="{Binding IsCreatorWorkspaceReadOnly}"/>
-                                            <TextBox Text="{Binding SelectedCreatorCanvasNode.LinkedFilePath, UpdateSourceTrigger=PropertyChanged}" Watermark="Relativni cesta k souboru" IsReadOnly="{Binding IsCreatorWorkspaceReadOnly}"/>
-                                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                                <Button Command="{Binding UseCurrentCreatorFileForCanvasNodeCommand}" Classes="secondary" Padding="12,8" IsEnabled="{Binding IsCreatorWorkspaceEditable}">
-                                                    <TextBlock Text="Pouzit soubor z Files"/>
-                                                </Button>
-                                                <Button Command="{Binding OpenCreatorCanvasNodeLinkedFileCommand}" Classes="ghost" Padding="12,8" IsEnabled="{Binding SelectedCreatorCanvasNode.HasLinkedFile}">
-                                                    <TextBlock Text="Otevrit ve Files"/>
-                                                </Button>
+                                <Grid Grid.Row="2" RowDefinitions="Auto,*" RowSpacing="10" IsVisible="{Binding HasSelectedCreatorCanvasGraph}">
+                                    <TextBox Text="{Binding SelectedCreatorCanvasGraph.Name, UpdateSourceTrigger=PropertyChanged}" Watermark="Nazev canvasu" IsReadOnly="{Binding IsCreatorWorkspaceReadOnly}"/>
+                                    <controls:CreatorCanvasSurface Grid.Row="1" MinHeight="640" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" IsVisible="{Binding HasSelectedCreatorCanvasGraph}"/>
+                                </Grid>
+                            </Grid>
+                        </Border>
+
+                        <Border Grid.Column="4" Classes="card" IsVisible="{Binding !IsCreatorCanvasExpanded}">
+                            <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                                <StackPanel Spacing="12">
+                                    <TextBlock Text="Inspektor uzlu" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                    <TextBlock Text="{Binding CreatorSelectedCanvasNodeStatus}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                    <controls:EmptyState IsVisible="{Binding !HasSelectedCreatorCanvasNode}" Icon="{StaticResource IconInfo}" Title="Vyber kartu" Subtitle="Levy klik fokusuje, tazenim presunes kartu a Ctrl + klik na cil vytvori smerovou vazbu."/>
+
+                                    <StackPanel Spacing="12" IsVisible="{Binding HasSelectedCreatorCanvasNode}">
+                                        <TextBox Text="{Binding SelectedCreatorCanvasNode.Label, UpdateSourceTrigger=PropertyChanged}" Watermark="Nazev karty" IsReadOnly="{Binding IsCreatorWorkspaceReadOnly}"/>
+                                        <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                                            <StackPanel Spacing="6">
+                                                <TextBlock Text="Obsah karty" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                                <ComboBox ItemsSource="{Binding CreatorCanvasContentKinds}" SelectedItem="{Binding SelectedCreatorCanvasNode.ContentKind}" IsEnabled="{Binding IsCreatorWorkspaceEditable}"/>
                                             </StackPanel>
-
-                                            <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="10" Padding="12" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
-                                                <StackPanel Spacing="8">
-                                                    <TextBlock Text="Navazane uzly" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                                    <controls:EmptyState IsVisible="{Binding !HasCreatorCanvasConnectedNodes}" Icon="{StaticResource IconInfo}" Title="Zadne vazby" Subtitle="Vyber uzly ze seznamu nize a vytvor progression flow."/>
-                                                    <ItemsControl ItemsSource="{Binding CreatorCanvasConnectedNodes}" IsVisible="{Binding HasCreatorCanvasConnectedNodes}">
-                                                        <ItemsControl.ItemTemplate>
-                                                            <DataTemplate x:DataType="creatorModels:CreatorCanvasNode">
-                                                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,0,0,6">
-                                                                    <StackPanel Spacing="2">
-                                                                        <TextBlock Text="{Binding Label}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                                                        <TextBlock Text="{Binding TypeIcon}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
-                                                                    </StackPanel>
-                                                                    <Button Grid.Column="1" Command="{Binding #StreamingToolsRoot.DataContext.UnlinkCreatorCanvasNodeCommand}" CommandParameter="{Binding}" Classes="ghost" Padding="10,4" FontSize="10" IsEnabled="{Binding #StreamingToolsRoot.DataContext.IsCreatorWorkspaceEditable}">
-                                                                        <TextBlock Text="Odpojit" Foreground="{DynamicResource WarningBrush}"/>
-                                                                    </Button>
-                                                                </Grid>
-                                                            </DataTemplate>
-                                                        </ItemsControl.ItemTemplate>
-                                                    </ItemsControl>
-                                                </StackPanel>
-                                            </Border>
-
-                                            <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="10" Padding="12" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
-                                                <StackPanel Spacing="8">
-                                                    <TextBlock Text="Dostupne pro propojeni" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                                    <controls:EmptyState IsVisible="{Binding !HasCreatorCanvasAvailableNodes}" Icon="{StaticResource IconInfo}" Title="Zadne dalsi uzly" Subtitle="Pridavej nove uzly do graphu nebo zmen fokus na jiny node."/>
-                                                    <ItemsControl ItemsSource="{Binding CreatorCanvasAvailableNodes}" IsVisible="{Binding HasCreatorCanvasAvailableNodes}">
-                                                        <ItemsControl.ItemTemplate>
-                                                            <DataTemplate x:DataType="creatorModels:CreatorCanvasNode">
-                                                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,0,0,6">
-                                                                    <StackPanel Spacing="2">
-                                                                        <TextBlock Text="{Binding Label}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                                                        <TextBlock Text="{Binding TypeIcon}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
-                                                                    </StackPanel>
-                                                                    <Button Grid.Column="1" Command="{Binding #StreamingToolsRoot.DataContext.LinkCreatorCanvasNodeCommand}" CommandParameter="{Binding}" Classes="secondary" Padding="10,4" FontSize="10" IsEnabled="{Binding #StreamingToolsRoot.DataContext.IsCreatorWorkspaceEditable}">
-                                                                        <TextBlock Text="Propojit"/>
-                                                                    </Button>
-                                                                </Grid>
-                                                            </DataTemplate>
-                                                        </ItemsControl.ItemTemplate>
-                                                    </ItemsControl>
-                                                </StackPanel>
-                                            </Border>
-                                        </StackPanel>
-                                    </StackPanel>
-                                </ScrollViewer>
-                            </Border>
-                        </Grid>
-
-                        <Grid ColumnDefinitions="300,16,*" IsVisible="{Binding IsCreatorNotesModeMindMap}">
-                            <Border Grid.Column="0" Classes="card">
-                                <StackPanel Spacing="12">
-                                    <TextBlock Text="Mind map grafy" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                    <controls:EmptyState IsVisible="{Binding !HasCreatorCanvasGraphs}" Icon="{StaticResource IconInfo}" Title="Zadne mind map data" Subtitle="Mind Map pouziva stejne graphy jako Canvas editor."/>
-                                    <ListBox ItemsSource="{Binding CreatorCanvasGraphs}" SelectedItem="{Binding SelectedCreatorCanvasGraph}" IsVisible="{Binding HasCreatorCanvasGraphs}" MaxHeight="720">
-                                        <ListBox.ItemTemplate>
-                                            <DataTemplate x:DataType="creatorModels:CreatorCanvasGraph">
-                                                <StackPanel Spacing="3" Margin="2">
-                                                    <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-                                                    <TextBlock Text="{Binding Summary}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
-                                                </StackPanel>
-                                            </DataTemplate>
-                                        </ListBox.ItemTemplate>
-                                    </ListBox>
-                                </StackPanel>
-                            </Border>
-
-                            <Border Grid.Column="2" Classes="card">
-                                <ScrollViewer HorizontalScrollBarVisibility="Disabled">
-                                    <StackPanel Spacing="14">
-                                        <StackPanel Spacing="4">
-                                            <TextBlock Text="Mind Map" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                            <TextBlock Text="{Binding CreatorSelectedCanvasGraphStatus}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                            <StackPanel Grid.Column="1" Spacing="6">
+                                                <TextBlock Text="Semanticky typ" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                                <ComboBox ItemsSource="{Binding CreatorCanvasNodeTypes}" SelectedItem="{Binding SelectedCreatorCanvasNode.NodeType}" IsEnabled="{Binding IsCreatorWorkspaceEditable}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                        <TextBox Text="{Binding SelectedCreatorCanvasNode.Description, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="140" Watermark="Text karty nebo poznamka k nodu" IsReadOnly="{Binding IsCreatorWorkspaceReadOnly}"/>
+                                        <TextBox Text="{Binding SelectedCreatorCanvasNode.ContentValue, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="90" Watermark="Cesta k obrazku, URL nebo dalsi obsah karty" IsReadOnly="{Binding IsCreatorWorkspaceReadOnly}"/>
+                                        <TextBox Text="{Binding SelectedCreatorCanvasNode.LinkedFilePath, UpdateSourceTrigger=PropertyChanged}" Watermark="Relativni cesta k souboru" IsReadOnly="{Binding IsCreatorWorkspaceReadOnly}"/>
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <Button Command="{Binding UseCurrentCreatorFileForCanvasNodeCommand}" Classes="secondary" Padding="12,8" IsEnabled="{Binding IsCreatorWorkspaceEditable}">
+                                                <TextBlock Text="Pouzit soubor z Files"/>
+                                            </Button>
+                                            <Button Command="{Binding OpenCreatorCanvasNodeLinkedFileCommand}" Classes="ghost" Padding="12,8" IsEnabled="{Binding SelectedCreatorCanvasNode.HasLinkedFile}">
+                                                <TextBlock Text="Otevrit ve Files"/>
+                                            </Button>
                                         </StackPanel>
 
-                                        <controls:EmptyState IsVisible="{Binding !HasSelectedCreatorCanvasGraph}" Icon="{StaticResource IconInfo}" Title="Vyber graph vlevo" Subtitle="Mind Map ukazuje progression uzly nad vybranym grafem."/>
-                                        <controls:EmptyState IsVisible="{Binding !HasSelectedCreatorCanvasGraphNodes}" Icon="{StaticResource IconInfo}" Title="Vybrany graph nema uzly" Subtitle="Vrat se do Canvas rezimu a pridej progression nody."/>
-
-                                        <WrapPanel Orientation="Horizontal" ItemWidth="280" IsVisible="{Binding HasSelectedCreatorCanvasGraphNodes}">
-                                            <ItemsControl ItemsSource="{Binding SelectedCreatorCanvasGraph.Nodes}">
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate x:DataType="creatorModels:CreatorCanvasNode">
-                                                        <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="12" Padding="14" Margin="0,0,12,12" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" Width="260">
-                                                            <StackPanel Spacing="8">
-                                                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                                                    <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="999" Padding="10,4">
-                                                                        <TextBlock Text="{Binding TypeIcon}" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryBBrush}"/>
-                                                                    </Border>
-                                                                    <TextBlock Text="{Binding Label}" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center" TextWrapping="Wrap"/>
-                                                                </StackPanel>
-                                                                <TextBlock Text="{Binding Description}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
-                                                                <TextBlock Text="{Binding ConnectionSummary}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
-                                                                <TextBlock Text="{Binding LinkedFilePath}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
-                                                                <Button Command="{Binding #StreamingToolsRoot.DataContext.SelectCreatorCanvasNodeCommand}" CommandParameter="{Binding}" Classes="secondary" Padding="10,6" HorizontalAlignment="Left">
-                                                                    <TextBlock Text="Fokus detail"/>
-                                                                </Button>
-                                                            </StackPanel>
-                                                        </Border>
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
-                                        </WrapPanel>
-
-                                        <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="12" Padding="14" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" IsVisible="{Binding HasSelectedCreatorCanvasNode}">
+                                        <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="10" Padding="12" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
                                             <StackPanel Spacing="8">
-                                                <TextBlock Text="Fokus uzlu" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                                <TextBlock Text="{Binding SelectedCreatorCanvasNode.Label}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryBBrush}"/>
-                                                <TextBlock Text="{Binding SelectedCreatorCanvasNode.Description}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
-                                                <TextBlock Text="{Binding CreatorSelectedCanvasNodeStatus}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
-
-                                                <TextBlock Text="Napojene uzly" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,6,0,0"/>
-                                                <controls:EmptyState IsVisible="{Binding !HasCreatorCanvasConnectedNodes}" Icon="{StaticResource IconInfo}" Title="Zadne navaznosti" Subtitle="V Canvas editoru propoj dalsi progression body."/>
+                                                <TextBlock Text="Navazane uzly" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                                <controls:EmptyState IsVisible="{Binding !HasCreatorCanvasConnectedNodes}" Icon="{StaticResource IconInfo}" Title="Zadne vazby" Subtitle="Ctrl + klikem na cilovy node v canvasu nebo pres seznam nize vytvoris smerove propojeni."/>
                                                 <ItemsControl ItemsSource="{Binding CreatorCanvasConnectedNodes}" IsVisible="{Binding HasCreatorCanvasConnectedNodes}">
                                                     <ItemsControl.ItemTemplate>
                                                         <DataTemplate x:DataType="creatorModels:CreatorCanvasNode">
-                                                            <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="8" Padding="10,6" Margin="0,0,0,6">
-                                                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                                                    <TextBlock Text="{Binding TypeIcon}" FontSize="10" Foreground="{DynamicResource PrimaryBBrush}" FontWeight="SemiBold"/>
-                                                                    <TextBlock Text="{Binding Label}" FontSize="11" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,0,0,6">
+                                                                <StackPanel Spacing="2">
+                                                                    <TextBlock Text="{Binding Label}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                                                    <TextBlock Text="{Binding TypeIcon}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
                                                                 </StackPanel>
-                                                            </Border>
+                                                                <Button Grid.Column="1" Command="{Binding #StreamingToolsRoot.DataContext.UnlinkCreatorCanvasNodeCommand}" CommandParameter="{Binding}" Classes="ghost" Padding="10,4" FontSize="10" IsEnabled="{Binding #StreamingToolsRoot.DataContext.IsCreatorWorkspaceEditable}">
+                                                                    <TextBlock Text="Odpojit" Foreground="{DynamicResource WarningBrush}"/>
+                                                                </Button>
+                                                            </Grid>
                                                         </DataTemplate>
                                                     </ItemsControl.ItemTemplate>
                                                 </ItemsControl>
                                             </StackPanel>
                                         </Border>
+
+                                        <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="10" Padding="12" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                                            <StackPanel Spacing="8">
+                                                <TextBlock Text="Dostupne pro propojeni" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                                <controls:EmptyState IsVisible="{Binding !HasCreatorCanvasAvailableNodes}" Icon="{StaticResource IconInfo}" Title="Zadne dalsi uzly" Subtitle="Pridavej nove uzly do graphu nebo zmen fokus na jiny node."/>
+                                                <ItemsControl ItemsSource="{Binding CreatorCanvasAvailableNodes}" IsVisible="{Binding HasCreatorCanvasAvailableNodes}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate x:DataType="creatorModels:CreatorCanvasNode">
+                                                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,0,0,6">
+                                                                <StackPanel Spacing="2">
+                                                                    <TextBlock Text="{Binding Label}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                                                    <TextBlock Text="{Binding TypeIcon}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                                                </StackPanel>
+                                                                <Button Grid.Column="1" Command="{Binding #StreamingToolsRoot.DataContext.LinkCreatorCanvasNodeCommand}" CommandParameter="{Binding}" Classes="secondary" Padding="10,4" FontSize="10" IsEnabled="{Binding #StreamingToolsRoot.DataContext.IsCreatorWorkspaceEditable}">
+                                                                    <TextBlock Text="Propojit"/>
+                                                                </Button>
+                                                            </Grid>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <Button Command="{Binding DeleteCreatorCanvasNodeCommand}" CommandParameter="{Binding SelectedCreatorCanvasNode}" Classes="ghost" Padding="12,8" HorizontalAlignment="Left" IsEnabled="{Binding IsCreatorWorkspaceEditable}">
+                                            <TextBlock Text="Smazat vybranou kartu" Foreground="{DynamicResource WarningBrush}"/>
+                                        </Button>
                                     </StackPanel>
-                                </ScrollViewer>
-                            </Border>
-                        </Grid>
-                    </StackPanel>
-                </ScrollViewer>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Border>
+                    </Grid>
+                </Grid>
             </TabItem>
 
             <!-- ======== TAB 5 — GIT ======== -->
@@ -1627,6 +1536,125 @@
                             </Grid>
                         </Border>
 
+                        <Border Classes="card">
+                            <Grid ColumnDefinitions="1.1*,16,0.9*">
+                                <StackPanel Spacing="12">
+                                    <TextBlock Text="GitHub status" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                    <TextBlock Text="{Binding CreatorGitHubLoginStatus}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+
+                                    <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="10" Padding="12,10">
+                                        <TextBlock Text="GitHub i VOID ID přihlášení jsou nově v pravém Context Docku vedle Minecraft účtu. Tady zůstává jen stav a práce s repem." FontSize="10" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                    </Border>
+
+                                    <Button Command="{Binding UseDefaultContextDockCommand}" Classes="secondary" Padding="14,8" HorizontalAlignment="Left">
+                                        <TextBlock Text="Otevřít Context Dock"/>
+                                    </Button>
+
+                                    <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="10" Padding="12,10" IsVisible="{Binding HasCreatorGitHubSession}">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Text="{Binding CreatorGitHubDisplayName}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                            <TextBlock Text="{Binding CreatorGitHubAccountLabel}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+
+                                <Border Grid.Column="2" Background="{DynamicResource BgElevatedBrush}" CornerRadius="12" Padding="16" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                                    <StackPanel Spacing="12">
+                                        <TextBlock Text="Repo bootstrap" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                        <TextBlock Text="{Binding CreatorGitHubRepositoryStatus}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+
+                                        <Grid ColumnDefinitions="*,12,*">
+                                            <StackPanel Spacing="6">
+                                                <TextBlock Text="Owner" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                                <TextBox Text="{Binding CreatorGitHubRepositoryOwner}" Watermark="owner-or-org"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2" Spacing="6">
+                                                <TextBlock Text="Repo name" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                                <TextBox Text="{Binding CreatorGitHubRepositoryName}" Watermark="{Binding CreatorGitHubSuggestedRepositoryName}"/>
+                                            </StackPanel>
+                                        </Grid>
+
+                                        <StackPanel Spacing="6">
+                                            <TextBlock Text="Description" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                            <TextBox Text="{Binding CreatorGitHubRepositoryDescription}" Watermark="{Binding CreatorGitHubSuggestedDescription}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="68"/>
+                                        </StackPanel>
+
+                                        <CheckBox IsChecked="{Binding CreatorGitHubRepositoryPrivate}" Content="Vytvořit jako private repo"/>
+
+                                        <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="8" Padding="10,8" IsVisible="{Binding HasCreatorGitHubRepositoryPreviewUrl}">
+                                            <TextBlock Text="{Binding CreatorGitHubRepositoryPreviewUrl}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                        </Border>
+
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <Button Command="{Binding CreateGitHubRepositoryCommand}" Classes="primary" Padding="14,8" IsEnabled="{Binding CanCreatorCreateGitHubRepository}">
+                                                <TextBlock Text="{Binding CreatorGitHubCreateRepositoryLabel}"/>
+                                            </Button>
+                                            <Button Command="{Binding OpenUrlCommand}" CommandParameter="{Binding CreatorGitHubNewRepositoryUrl}" Classes="secondary" Padding="14,8" IsVisible="{Binding HasCreatorGitHubNewRepositoryUrl}">
+                                                <TextBlock Text="Vytvořit v browseru"/>
+                                            </Button>
+                                            <Button Command="{Binding OpenUrlCommand}" CommandParameter="{Binding CreatorGitHubRepositoryPreviewUrl}" Classes="secondary" Padding="14,8" IsVisible="{Binding HasCreatorGitHubRepositoryPreviewUrl}">
+                                                <TextBlock Text="Repo URL"/>
+                                            </Button>
+                                        </StackPanel>
+
+                                        <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="10" Padding="12" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                                            <StackPanel Spacing="10">
+                                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                                    <StackPanel Spacing="4">
+                                                        <TextBlock Text="Existující GitHub repa" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                                        <TextBlock Text="{Binding CreatorGitHubRepositoriesStatus}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                                    </StackPanel>
+                                                    <Button Grid.Column="1" Command="{Binding RefreshGitHubRepositoriesCommand}" Classes="secondary" Padding="12,6" IsEnabled="{Binding CanRefreshCreatorGitHubRepositories}" VerticalAlignment="Top">
+                                                        <TextBlock Text="{Binding CreatorGitHubRefreshRepositoriesLabel}"/>
+                                                    </Button>
+                                                </Grid>
+
+                                                <controls:EmptyState IsVisible="{Binding !HasCreatorGitHubRepositories}" Icon="{StaticResource IconInfo}" Title="Žádná repa v listu" Subtitle="Po přihlášení načti repa a pak je můžeš jedním klikem napojit jako origin."/>
+
+                                                <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="300" IsVisible="{Binding HasCreatorGitHubRepositories}">
+                                                    <ItemsControl ItemsSource="{Binding CreatorGitHubRepositories}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate x:CompileBindings="False">
+                                                                <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="10" Padding="12" Margin="0,0,0,8" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                                                                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+                                                                        <StackPanel Spacing="4">
+                                                                            <TextBlock Text="{Binding FullName}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                                                            <TextBlock Text="{Binding Description}" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" IsVisible="{Binding Description.Length}"/>
+                                                                            <TextBlock Text="{Binding HtmlUrl}" FontSize="10" Foreground="{DynamicResource PrimaryBBrush}" TextWrapping="Wrap"/>
+                                                                        </StackPanel>
+
+                                                                        <Border Grid.Column="1" Background="{DynamicResource BgPanelBrush}" CornerRadius="999" Padding="10,4" VerticalAlignment="Top">
+                                                                            <TextBlock Text="{Binding VisibilityLabel}" FontSize="9" Foreground="{DynamicResource TextMutedBrush}"/>
+                                                                        </Border>
+
+                                                                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                                                            <Button Command="{Binding DataContext.UseGitHubRepositoryCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                                    CommandParameter="{Binding}"
+                                                                                    Classes="secondary"
+                                                                                    Padding="12,6"
+                                                                                    IsEnabled="{Binding DataContext.CanUseCreatorGitHubRepository, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                                                                                <TextBlock Text="Použít jako origin"/>
+                                                                            </Button>
+                                                                            <Button Command="{Binding DataContext.OpenUrlCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                                    CommandParameter="{Binding HtmlUrl}"
+                                                                                    Classes="ghost"
+                                                                                    Padding="12,6">
+                                                                                <TextBlock Text="Open"/>
+                                                                            </Button>
+                                                                        </StackPanel>
+                                                                    </Grid>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </ScrollViewer>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </Border>
+
                         <!-- No git repo state -->
                         <Border Classes="card" IsVisible="{Binding !HasCreatorGitRepository}">
                             <StackPanel Spacing="14" HorizontalAlignment="Center">
@@ -1645,65 +1673,29 @@
                                 <StackPanel Spacing="14">
                                     <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
                                         <StackPanel Spacing="4">
-                                            <TextBlock Text="Zmeny" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                            <StackPanel Orientation="Horizontal" Spacing="10">
-                                                <TextBlock FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}">
-                                                    <TextBlock.Text>
-                                                        <MultiBinding StringFormat="{}{0} zmen, {1} staged">
-                                                            <Binding Path="CreatorGitChangesCount"/>
-                                                            <Binding Path="CreatorGitStagedCount"/>
-                                                        </MultiBinding>
-                                                    </TextBlock.Text>
-                                                </TextBlock>
-                                            </StackPanel>
+                                            <TextBlock Text="Publish obsah" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                            <TextBlock Text="Stejný scope jako export do .voidpack. Bez ručního stage seznamu a bez přehrabování tisíců souborů." FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
                                         </StackPanel>
-                                        <Button Grid.Column="1" Command="{Binding CreatorGitStageAllCommand}" Classes="secondary" Padding="12,8" FontSize="11" VerticalAlignment="Top">
-                                            <TextBlock Text="Stage all"/>
+                                        <Button Grid.Column="1" Command="{Binding CreatorExportVoidpackCommand}" Classes="secondary" Padding="12,8" FontSize="11" VerticalAlignment="Top" IsEnabled="{Binding CanCreatorGitGenerateVoidpack}">
+                                            <TextBlock Text="Vygenerovat .voidpack"/>
+                                        </Button>
+                                        <Button Grid.Column="2" Command="{Binding CreatorGitUploadPublishPayloadCommand}" Classes="primary" Padding="12,8" FontSize="11" VerticalAlignment="Top" IsEnabled="{Binding CanCreatorGitUploadPublishPayload}">
+                                            <TextBlock Text="Nahrat na repo"/>
                                         </Button>
                                     </Grid>
 
-                                    <controls:EmptyState IsVisible="{Binding !HasCreatorGitChanges}" Icon="{StaticResource IconSuccess}" Title="Zadne zmeny" Subtitle="Working tree je cisty. Vsechny zmeny uz jsou commitnute."/>
-
-                                    <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="400" IsVisible="{Binding HasCreatorGitChanges}">
-                                        <ItemsControl ItemsSource="{Binding CreatorGitState.Changes}">
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate x:CompileBindings="False">
-                                                    <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="10" Padding="10" Margin="0,0,0,6" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
-                                                        <Grid ColumnDefinitions="Auto,28,*,Auto,Auto" ColumnSpacing="8">
-                                                            <CheckBox IsChecked="{Binding IsStaged, Mode=TwoWay}" VerticalAlignment="Center"/>
-                                                            <Border Grid.Column="1" Background="{DynamicResource BgPanelBrush}" CornerRadius="6" Width="24" Height="24" VerticalAlignment="Center">
-                                                                <TextBlock Text="{Binding StatusMarker}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource PrimaryBBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                            </Border>
-                                                            <StackPanel Grid.Column="2" Spacing="2" VerticalAlignment="Center">
-                                                                <TextBlock Text="{Binding FilePath}" FontSize="12" Foreground="{DynamicResource TextPrimaryBrush}" TextTrimming="CharacterEllipsis"/>
-                                                                <TextBlock Text="{Binding StatusLabel}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
-                                                            </StackPanel>
-                                                            <Button Grid.Column="3" Command="{Binding DataContext.CreatorGitStageFileCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Classes="ghost" Padding="8,4" FontSize="10">
-                                                                <TextBlock Text="Stage"/>
-                                                            </Button>
-                                                            <Button Grid.Column="4" Command="{Binding DataContext.CreatorGitRevertFileCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Classes="ghost" Padding="8,4" FontSize="10">
-                                                                <TextBlock Text="Revert" Foreground="{DynamicResource WarningBrush}"/>
-                                                            </Button>
-                                                        </Grid>
-                                                    </Border>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
-                                    </ScrollViewer>
-
-                                    <!-- Commit area -->
                                     <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="14" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
                                         <StackPanel Spacing="10">
-                                            <TextBlock Text="Commit" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                            <TextBox Text="{Binding CreatorGitCommitMessage}" Watermark="Commit message..." AcceptsReturn="False" MinHeight="36"/>
-                                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                                <Button Command="{Binding CreatorGitCommitCommand}" Classes="primary" Padding="14,8" IsEnabled="{Binding CanCreatorGitCommit}">
-                                                    <TextBlock Text="Commit"/>
-                                                </Button>
-                                                <Button Command="{Binding CreatorGitCommitAndPushCommand}" Classes="secondary" Padding="14,8" IsEnabled="{Binding CanCreatorGitCommit}">
-                                                    <TextBlock Text="Commit &amp; Push"/>
-                                                </Button>
-                                            </StackPanel>
+                                            <TextBlock Text="Stav publish workflow" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                            <TextBlock Text="{Binding CreatorPublishStatus}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                            <TextBlock FontSize="11" Foreground="{DynamicResource TextMutedBrush}">
+                                                <TextBlock.Text>
+                                                    <MultiBinding StringFormat="{}{0} změn v publish scope, {1} staged">
+                                                        <Binding Path="CreatorGitChangesCount"/>
+                                                        <Binding Path="CreatorGitStagedCount"/>
+                                                    </MultiBinding>
+                                                </TextBlock.Text>
+                                            </TextBlock>
                                         </StackPanel>
                                     </Border>
                                 </StackPanel>
@@ -1858,19 +1850,58 @@
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
 
-                                    <!-- VoidPacks registration (WIP) -->
-                                    <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="12" Padding="14" BorderBrush="{DynamicResource PrimaryBBrush}" BorderThickness="1" Opacity="0.7">
-                                        <StackPanel Spacing="8">
+                                    <!-- VOID Launcher publish -->
+                                    <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="12" Padding="14" BorderBrush="{DynamicResource PrimaryBBrush}" BorderThickness="1">
+                                        <StackPanel Spacing="10">
                                             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                                                <TextBlock Text="Registrovat do VoidPacks" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                                <TextBlock Text="Publish do VOID Launcher listu" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                                 <Border Grid.Column="1" Background="{DynamicResource BgPanelBrush}" CornerRadius="999" Padding="10,4">
-                                                    <TextBlock Text="WIP" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource WarningBrush}"/>
+                                                    <TextBlock Text="GitHub + Registry" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource PrimaryBBrush}"/>
                                                 </Border>
                                             </Grid>
-                                            <TextBlock Text="Publikuj svuj modpack do centralni databaze VoidPacks. Vyzaduje Void ID a aktivni backend." FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
-                                            <Button Classes="secondary" Padding="12,6" HorizontalAlignment="Left" IsEnabled="False">
-                                                <TextBlock Text="Pripravujeme..." FontSize="11"/>
-                                            </Button>
+
+                                            <TextBlock Text="{Binding CreatorPublishReadinessLabel}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+
+                                            <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="4">
+                                                <TextBlock Text="VOID ID" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding VoidIdDisplayName}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                                <TextBlock Grid.Row="1" Text="Role" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding VoidIdRoleLabel}" FontSize="11" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                                <TextBlock Grid.Row="2" Text="Repo" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding CreatorGitHubRepositoryLabel}" FontSize="11" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                                                <TextBlock Grid.Row="3" Text="Workflow" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding HasCreatorPublishWorkflow, StringFormat='{}Bootstrap: {0}'}" FontSize="11" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                                <TextBlock Grid.Row="4" Text="Status" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding CreatorPublishStatus}" FontSize="11" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                                            </Grid>
+
+                                            <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="8" Padding="10" IsVisible="{Binding IsVoidIdLoginInProgress}">
+                                                <StackPanel Spacing="6">
+                                                    <TextBlock Text="{Binding VoidIdLoginStatus}" FontSize="11" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                                                    <TextBlock Text="Přihlášení probíhá přes panel účtu vpravo a systémový prohlížeč. Po potvrzení se launcher dokončí automaticky." FontSize="10" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <WrapPanel Orientation="Horizontal" ItemWidth="180" MinHeight="40">
+                                                <Button Command="{Binding UseDefaultContextDockCommand}" Classes="secondary" Padding="12,8">
+                                                    <TextBlock Text="Otevřít Context Dock" FontSize="11"/>
+                                                </Button>
+                                                <Button Command="{Binding BootstrapCreatorPublishWorkflowCommand}" Classes="secondary" Padding="12,8" IsEnabled="{Binding CanBootstrapCreatorPublishWorkflow}">
+                                                    <TextBlock Text="Nastavit / obnovit workflow" FontSize="11"/>
+                                                </Button>
+                                                <Button Command="{Binding PublishCreatorReleaseCommand}" Classes="primary" Padding="12,8" IsEnabled="{Binding CanCreatorPublishRelease}">
+                                                    <TextBlock Text="{Binding CreatorPublishActionLabel}" FontSize="11"/>
+                                                </Button>
+                                            </WrapPanel>
+
+                                            <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding HasCreatorPublishedReleaseLinks}">
+                                                <Button Command="{Binding OpenUrlCommand}" CommandParameter="{Binding CreatorLastPublishedReleaseUrl}" Classes="secondary" Padding="12,6" IsVisible="{Binding HasCreatorPublishedReleaseUrl}">
+                                                    <TextBlock Text="Otevřít GitHub release" FontSize="11"/>
+                                                </Button>
+                                                <Button Command="{Binding OpenUrlCommand}" CommandParameter="{Binding CreatorLastPublishedAssetUrl}" Classes="secondary" Padding="12,6" IsVisible="{Binding HasCreatorPublishedAssetUrl}">
+                                                    <TextBlock Text="Otevřít .voidpack asset" FontSize="11"/>
+                                                </Button>
+                                            </StackPanel>
                                         </StackPanel>
                                     </Border>
                                 </StackPanel>

@@ -2,6 +2,27 @@
 
 Všechny důležité změny v projektu jsou dokumentovány v tomto souboru.
 
+## [3.1.9] - 2026-04-05
+
+### 🚀 Creator Studio publish hardening
+
+### Změněno
+- **Auth placement**: GitHub a VOID ID auth jsou sjednocené u hlavního MC login/context flow, takže Creator publish nevede přes několik oddělených CTA ploch.
+- **Simplified publish flow**: Creator Git panel používá přímočarý tok `Vygenerovat .voidpack` → `Nahrat na repo` a release tag se při uploadu vytváří/pushuje automaticky.
+- **Publish scope**: Git stage/commit scope odpovídá stejnému payloadu jako `.voidpack` export místo celé workspace složky.
+
+### Opraveno
+- **Secure auth persistence**: secure storage zapisuje VOID ID a GitHub session atomicky pod lockem, takže paralelní restore už nerozbije uložené přihlášení.
+- **VOID ID registry auth**: access token expiry se po restore znovu načítá nebo odvodí z JWT a publish flow si session refreshuje ještě před zápisem do VOID Registry.
+- **Git UI freeze**: Creator git operace běží skutečně asynchronně mimo UI thread a `Stage all`/publish už nezamrzá launcher.
+- **Windows scoped commit**: commit publish payloadu už nepřepadne přes command-line limit ani na quoted/special-character path jména.
+- **Draft GitHub releases**: generated workflow po uploadu assetů publikuje existující draft release, takže launcher najde release asset přes `releases/tags/{tag}` endpoint.
+- **Branding packaging**: export/publish flow si u importovaných CF/MR packů automaticky stáhne veřejné logo do `assets/branding` a `.voidpack` i workflow build tyto assety skutečně balí.
+- **Existing archive overwrite**: lokální `.voidpack` export nepadá na existujícím cílovém souboru a zapisuje přes temp archive + atomic replace.
+
+### Změněno v release metadata
+- **Release metadata**: projekt, installer, fallback `User-Agent` a dokumentace jsou srovnané na verzi `3.1.9`.
+
 ## [3.1.8.1] - 2026-04-04
 
 ### 🛠️ Startup a archive download hotfix

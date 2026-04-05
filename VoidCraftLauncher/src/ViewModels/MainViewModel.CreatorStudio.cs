@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using VoidCraftLauncher.Models;
 using VoidCraftLauncher.Models.CreatorStudio;
@@ -75,6 +76,70 @@ public partial class MainViewModel
     private string _currentWorkspaceDescriptionIntro = string.Empty;
 
     private List<InstanceOverviewDescriptionSection> _currentWorkspaceDescriptionSections = new();
+    private CancellationTokenSource? _creatorWorkspaceRefreshCts;
+    private int _creatorWorkspaceRefreshVersion;
+
+    private sealed class CreatorWorkspaceRefreshRequest
+    {
+        public string PreviousWorkspaceId { get; init; } = string.Empty;
+
+        public string? WorkspaceId { get; init; }
+
+        public string? WorkspacePath { get; init; }
+
+        public ModpackInfo? Modpack { get; init; }
+
+        public int LinkedServerCount { get; init; }
+
+        public CreatorWorkbenchFile? SelectedWorkbenchFile { get; init; }
+
+        public IReadOnlyList<CreatorWorkbenchFile> WorkbenchFiles { get; init; } = Array.Empty<CreatorWorkbenchFile>();
+
+        public CreatorShellState ShellState { get; init; } = new();
+
+        public IReadOnlyList<CreatorRecentWorkspace> RecentWorkspaces { get; init; } = Array.Empty<CreatorRecentWorkspace>();
+
+        public DateTimeOffset? LastActivityUtc { get; init; }
+
+        public string? LastActivitySummary { get; init; }
+    }
+
+    private sealed class CreatorBrandingPreviewState
+    {
+        public string? LogoPreview { get; init; }
+
+        public string? CoverPreview { get; init; }
+
+        public string? SquareIconPreview { get; init; }
+
+        public string? WideHeroPreview { get; init; }
+
+        public string? SocialPreviewPreview { get; init; }
+
+        public string? FeaturedScreenshotPreview { get; init; }
+    }
+
+    private sealed class CreatorScreenshotGalleryState
+    {
+        public IReadOnlyList<CreatorScreenshotGalleryItem> Items { get; init; } = Array.Empty<CreatorScreenshotGalleryItem>();
+
+        public string? FeaturedPreview { get; init; }
+    }
+
+    private sealed class CreatorWorkspaceRefreshSnapshot
+    {
+        public string PreviousWorkspaceId { get; init; } = string.Empty;
+
+        public ModpackInfo? Modpack { get; init; }
+
+        public CreatorManifest? ExistingManifest { get; init; }
+
+        public CreatorWorkspaceContext Context { get; init; } = new();
+
+        public CreatorBrandingPreviewState BrandingPreview { get; init; } = new();
+
+        public CreatorScreenshotGalleryState ScreenshotGallery { get; init; } = new();
+    }
 
     partial void OnCurrentModpackCreatorManifestChanged(CreatorManifest? value)
     {
@@ -102,6 +167,17 @@ public partial class MainViewModel
         OnPropertyChanged(nameof(CurrentWorkspaceRecommendedRamLabel));
         OnPropertyChanged(nameof(CurrentWorkspaceHeroPreview));
         OnPropertyChanged(nameof(HasCurrentWorkspaceHeroPreview));
+        OnPropertyChanged(nameof(CanCreatorGitGenerateVoidpack));
+        NotifyCreatorGitHubStateChanged();
+    }
+
+    partial void OnCreatorWorkspaceContextChanged(CreatorWorkspaceContext value)
+    {
+        OnPropertyChanged(nameof(CreatorStudioMinecraftVersion));
+        OnPropertyChanged(nameof(CreatorStudioModLoader));
+        OnPropertyChanged(nameof(CreatorStudioModCountLabel));
+        OnPropertyChanged(nameof(CreatorStudioLinkedServersLabel));
+        NotifyOverviewStateChanged();
     }
 
     partial void OnCurrentWorkspaceDescriptionIntroChanged(string value)
@@ -442,9 +518,17 @@ public partial class MainViewModel
 
     partial void OnCreatorMetadataPackNameChanged(string value) => OnCreatorMetadataEditorChanged();
 
-    partial void OnCreatorMetadataSlugChanged(string value) => OnCreatorMetadataEditorChanged();
+    partial void OnCreatorMetadataSlugChanged(string value)
+    {
+        OnCreatorMetadataEditorChanged();
+        NotifyCreatorGitHubStateChanged();
+    }
 
-    partial void OnCreatorMetadataSummaryChanged(string value) => OnCreatorMetadataEditorChanged();
+    partial void OnCreatorMetadataSummaryChanged(string value)
+    {
+        OnCreatorMetadataEditorChanged();
+        NotifyCreatorGitHubStateChanged();
+    }
 
     partial void OnCreatorMetadataAuthorsChanged(string value) => OnCreatorMetadataEditorChanged();
 
@@ -466,7 +550,11 @@ public partial class MainViewModel
 
     partial void OnCreatorBrandDiscordChanged(string value) => OnCreatorMetadataEditorChanged();
 
-    partial void OnCreatorBrandGitHubChanged(string value) => OnCreatorMetadataEditorChanged();
+    partial void OnCreatorBrandGitHubChanged(string value)
+    {
+        OnCreatorMetadataEditorChanged();
+        NotifyCreatorGitHubStateChanged();
+    }
 
     partial void OnCreatorBrandSupportLinkChanged(string value) => OnCreatorMetadataEditorChanged();
 
@@ -536,39 +624,188 @@ public partial class MainViewModel
 
     private void RefreshCreatorWorkspaceContext()
     {
-        var previousWorkspaceId = CreatorWorkspaceContext.WorkspaceId;
-        var modpack = GetCreatorStudioSelectedModpack();
-        var manifest = GetCreatorStudioSelectedManifest();
+        var request = CreateCreatorWorkspaceRefreshRequest();
+        var refreshVersion = Interlocked.Increment(ref _creatorWorkspaceRefreshVersion);
+
+        var nextRefreshCts = new CancellationTokenSource();
+        var previousRefreshCts = Interlocked.Exchange(ref _creatorWorkspaceRefreshCts, nextRefreshCts);
+        previousRefreshCts?.Cancel();
+        previousRefreshCts?.Dispose();
+
+        _ = RefreshCreatorWorkspaceContextAsync(request, refreshVersion, nextRefreshCts.Token);
+    }
+
+    private CreatorWorkspaceRefreshRequest CreateCreatorWorkspaceRefreshRequest()
+    {
         var workspaceId = SelectedSkinStudioInstance?.Id ?? CreatorPreferences.SelectedWorkspaceId;
         var workspacePath = string.IsNullOrWhiteSpace(workspaceId)
             ? null
             : _launcherService.GetModpackPath(workspaceId);
+        var modpack = GetCreatorStudioSelectedModpack();
         var linkedServers = modpack == null
             ? 0
             : Servers.Count(server =>
                 server.LinkedModpackProjectId == modpack.ProjectId ||
                 ArePackNamesEquivalent(server.LinkedModpackName, modpack.Name));
 
-        CreatorWorkspaceContext = _creatorWorkspaceService.LoadContext(
-            workspaceId,
-            workspacePath,
-            modpack,
-            manifest,
-            CreatorShellState,
-            SelectedCreatorWorkbenchFile,
-            CreatorWorkbenchFiles,
-            linkedServers,
-            CreatorPreferences.RecentWorkspaces,
-            CreatorPreferences.LastActivityUtc,
-            CreatorPreferences.LastActivitySummary);
+        return new CreatorWorkspaceRefreshRequest
+        {
+            PreviousWorkspaceId = CreatorWorkspaceContext.WorkspaceId,
+            WorkspaceId = workspaceId,
+            WorkspacePath = workspacePath,
+            Modpack = modpack,
+            LinkedServerCount = linkedServers,
+            SelectedWorkbenchFile = SelectedCreatorWorkbenchFile,
+            WorkbenchFiles = CreatorWorkbenchFiles.ToList(),
+            ShellState = CloneCreatorShellState(CreatorShellState),
+            RecentWorkspaces = CreatorPreferences.RecentWorkspaces.ToList(),
+            LastActivityUtc = CreatorPreferences.LastActivityUtc,
+            LastActivitySummary = CreatorPreferences.LastActivitySummary
+        };
+    }
 
+    private async Task RefreshCreatorWorkspaceContextAsync(CreatorWorkspaceRefreshRequest request, int refreshVersion, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await Task.Delay(75, cancellationToken);
+            var snapshot = await Task.Run(() => BuildCreatorWorkspaceRefreshSnapshot(request), cancellationToken);
+            if (cancellationToken.IsCancellationRequested || refreshVersion != Volatile.Read(ref _creatorWorkspaceRefreshVersion))
+            {
+                return;
+            }
+
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                if (cancellationToken.IsCancellationRequested || refreshVersion != Volatile.Read(ref _creatorWorkspaceRefreshVersion))
+                {
+                    return;
+                }
+
+                ApplyCreatorWorkspaceRefreshSnapshot(snapshot);
+            });
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            LogService.Error("Creator workspace refresh failed", ex);
+        }
+    }
+
+    private CreatorWorkspaceRefreshSnapshot BuildCreatorWorkspaceRefreshSnapshot(CreatorWorkspaceRefreshRequest request)
+    {
+        var manifest = TryLoadManifestInfo(request.Modpack);
+        var context = _creatorWorkspaceService.LoadContext(
+            request.WorkspaceId,
+            request.WorkspacePath,
+            request.Modpack,
+            manifest,
+            request.ShellState,
+            request.SelectedWorkbenchFile,
+            request.WorkbenchFiles,
+            request.LinkedServerCount,
+            request.RecentWorkspaces,
+            request.LastActivityUtc,
+            request.LastActivitySummary);
+
+        var existingManifest = string.IsNullOrWhiteSpace(request.WorkspacePath)
+            ? null
+            : _creatorManifestService.LoadManifest(request.WorkspacePath);
+
+        return new CreatorWorkspaceRefreshSnapshot
+        {
+            PreviousWorkspaceId = request.PreviousWorkspaceId,
+            Modpack = request.Modpack,
+            ExistingManifest = existingManifest,
+            Context = context,
+            BrandingPreview = BuildCreatorBrandingPreviewState(request.WorkspacePath, existingManifest),
+            ScreenshotGallery = BuildCreatorScreenshotGalleryState(request.WorkspacePath, existingManifest)
+        };
+    }
+
+    private void ApplyCreatorWorkspaceRefreshSnapshot(CreatorWorkspaceRefreshSnapshot snapshot)
+    {
+        CreatorWorkspaceContext = snapshot.Context;
         CreatorShellState.HasWorkspaceChanges = CreatorWorkspaceContext.HasDirtyWorkingTree == true;
         CreatorShellState.HasReleaseWarnings = !CreatorWorkspaceContext.HasCreatorManifest || CreatorWorkspaceContext.MissingStandardFolders.Count > 0;
         CreatorShellState.HasUnsavedFileChanges = CanSaveCreatorWorkbenchFile || (IsCreatorWorkspaceEditable && IsCreatorMetadataDirty);
-        SyncCreatorMetadataEditor(previousWorkspaceId, modpack);
-        RefreshBrandingPreviews();
-        RefreshCreatorScreenshotGallery();
+
+        BrandingLogoPreview = snapshot.BrandingPreview.LogoPreview;
+        BrandingCoverPreview = snapshot.BrandingPreview.CoverPreview;
+        BrandingSquareIconPreview = snapshot.BrandingPreview.SquareIconPreview;
+        BrandingWideHeroPreview = snapshot.BrandingPreview.WideHeroPreview;
+        BrandingSocialPreviewPreview = snapshot.BrandingPreview.SocialPreviewPreview;
+        BrandingFeaturedScreenshotPreview = snapshot.BrandingPreview.FeaturedScreenshotPreview;
+
+        SyncCreatorMetadataEditor(snapshot.PreviousWorkspaceId, snapshot.Modpack, snapshot.ExistingManifest);
+        RefreshBrandStorageStatusCache();
+        NotifyBrandingStateChanged();
+
+        CreatorScreenshotGallery = new System.Collections.ObjectModel.ObservableCollection<CreatorScreenshotGalleryItem>(snapshot.ScreenshotGallery.Items);
+        FeaturedCreatorScreenshotPreview = snapshot.ScreenshotGallery.FeaturedPreview;
+        NotifyCreatorScreenshotStateChanged();
+
         NotifyCreatorShellVisualStateChanged();
+    }
+
+    private static CreatorShellState CloneCreatorShellState(CreatorShellState shellState)
+    {
+        return new CreatorShellState
+        {
+            SelectedTab = shellState.SelectedTab,
+            SelectedSubview = shellState.SelectedSubview,
+            SelectedScope = new CreatorScope
+            {
+                Kind = shellState.SelectedScope.Kind,
+                Label = shellState.SelectedScope.Label,
+                RelativePath = shellState.SelectedScope.RelativePath,
+                ItemCount = shellState.SelectedScope.ItemCount
+            },
+            RightDockMode = shellState.RightDockMode,
+            SecondaryDrawerMode = shellState.SecondaryDrawerMode,
+            HasUnsavedFileChanges = shellState.HasUnsavedFileChanges,
+            HasWorkspaceChanges = shellState.HasWorkspaceChanges,
+            HasReleaseWarnings = shellState.HasReleaseWarnings,
+            LastOpenWorkspaceSection = shellState.LastOpenWorkspaceSection
+        };
+    }
+
+    private CreatorBrandingPreviewState BuildCreatorBrandingPreviewState(string? workspacePath, CreatorManifest? existingManifest)
+    {
+        if (string.IsNullOrWhiteSpace(workspacePath))
+        {
+            return new CreatorBrandingPreviewState();
+        }
+
+        return new CreatorBrandingPreviewState
+        {
+            LogoPreview = _creatorAssetsService.GetAssetPath(workspacePath, BrandingAssetSlot.Logo),
+            CoverPreview = _creatorAssetsService.GetAssetPath(workspacePath, BrandingAssetSlot.Cover),
+            SquareIconPreview = _creatorAssetsService.GetAssetPath(workspacePath, BrandingAssetSlot.SquareIcon),
+            WideHeroPreview = _creatorAssetsService.GetAssetPath(workspacePath, BrandingAssetSlot.WideHero),
+            SocialPreviewPreview = _creatorAssetsService.GetAssetPath(workspacePath, BrandingAssetSlot.SocialPreview),
+            FeaturedScreenshotPreview = _creatorAssetsService.ResolveWorkspaceRelativePath(workspacePath, existingManifest?.Branding?.FeaturedScreenshotPath)
+        };
+    }
+
+    private CreatorScreenshotGalleryState BuildCreatorScreenshotGalleryState(string? workspacePath, CreatorManifest? existingManifest)
+    {
+        if (string.IsNullOrWhiteSpace(workspacePath))
+        {
+            return new CreatorScreenshotGalleryState();
+        }
+
+        var gallery = _creatorAssetsService
+            .GetScreenshotGallery(workspacePath, existingManifest?.Screenshots)
+            .ToList();
+
+        return new CreatorScreenshotGalleryState
+        {
+            Items = gallery,
+            FeaturedPreview = SelectFeaturedCreatorScreenshot(gallery)?.PreviewUri
+        };
     }
 
     private void SetCreatorSelectedTab(CreatorShellTab tab)
@@ -831,7 +1068,7 @@ public partial class MainViewModel
                string.Equals(modpack.Description, "Importováno z .voidpack archivu.", StringComparison.OrdinalIgnoreCase);
     }
 
-    private void SyncCreatorMetadataEditor(string previousWorkspaceId, ModpackInfo? modpack, bool force = false)
+    private void SyncCreatorMetadataEditor(string previousWorkspaceId, ModpackInfo? modpack, CreatorManifest? existingManifest = null, bool force = false)
     {
         if (!HasCreatorWorkspaceContext || string.IsNullOrWhiteSpace(CreatorWorkspaceContext.WorkspacePath))
         {
@@ -856,9 +1093,9 @@ public partial class MainViewModel
         var loaderVersion = modpack?.IsCustomProfile == true
             ? modpack.CustomModLoaderVersion
             : string.Empty;
-        var existingManifest = _creatorManifestService.LoadManifest(CreatorWorkspaceContext.WorkspacePath);
-        var creatorManifest = existingManifest != null
-            ? MergeCreatorManifestWithSourceFallback(existingManifest, modpack, loaderVersion ?? string.Empty)
+        var resolvedManifest = existingManifest ?? _creatorManifestService.LoadManifest(CreatorWorkspaceContext.WorkspacePath);
+        var creatorManifest = resolvedManifest != null
+            ? MergeCreatorManifestWithSourceFallback(resolvedManifest, modpack, loaderVersion ?? string.Empty)
             : CreateCreatorFallbackManifest(modpack, null, loaderVersion ?? string.Empty);
 
         ApplyCreatorMetadata(creatorManifest);
@@ -964,6 +1201,7 @@ public partial class MainViewModel
         IsCreatorMetadataDirty = false;
         _isSyncingCreatorMetadataEditor = false;
         UpdateCreatorDirtyIndicators();
+        NotifyCreatorGitHubStateChanged();
     }
 
     private void ResetCreatorMetadataEditor()
@@ -991,6 +1229,7 @@ public partial class MainViewModel
         _creatorMetadataWorkspaceId = string.Empty;
         _isSyncingCreatorMetadataEditor = false;
         UpdateCreatorDirtyIndicators();
+        NotifyCreatorGitHubStateChanged();
     }
 
     private bool ValidateCreatorMetadata(out string error)
@@ -1057,6 +1296,12 @@ public partial class MainViewModel
 
         manifest.BrandProfile = BuildCurrentBrandProfile();
         manifest.Screenshots = CloneCreatorScreenshotMetadata(existingManifest?.Screenshots);
+        manifest.RegistryProjectId = existingManifest?.RegistryProjectId ?? string.Empty;
+        manifest.RepositoryUrl = string.IsNullOrWhiteSpace(existingManifest?.RepositoryUrl)
+            ? CreatorBrandGitHub.Trim()
+            : existingManifest.RepositoryUrl;
+        manifest.LastPublishedVersion = existingManifest?.LastPublishedVersion ?? string.Empty;
+        manifest.LastPublishedAtUtc = existingManifest?.LastPublishedAtUtc;
         return manifest;
     }
 

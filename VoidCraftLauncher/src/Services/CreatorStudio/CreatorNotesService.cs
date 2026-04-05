@@ -277,12 +277,15 @@ public sealed class CreatorNotesService
         {
             node.Label = string.IsNullOrWhiteSpace(node.Label) ? "Untitled node" : node.Label.Trim();
             node.NodeType = NormalizeNodeType(node.NodeType);
+            node.ContentKind = NormalizeContentKind(node.ContentKind);
             node.Description ??= string.Empty;
+            node.ContentValue ??= string.Empty;
             node.ConnectedNodeIds ??= new List<string>();
             node.ConnectedNodeIds = node.ConnectedNodeIds
                 .Where(id => !string.IsNullOrWhiteSpace(id) && !string.Equals(id, node.Id, StringComparison.OrdinalIgnoreCase))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
+            node.NormalizeCanvasCardSize();
             node.NotifyConnectionsChanged();
         }
 
@@ -300,6 +303,17 @@ public sealed class CreatorNotesService
             "recipe" => "recipe",
             "blocker" => "blocker",
             _ => "idea"
+        };
+    }
+
+    private static string NormalizeContentKind(string? contentKind)
+    {
+        return contentKind?.Trim().ToLowerInvariant() switch
+        {
+            "image" => "image",
+            "file" => "file",
+            "link" => "link",
+            _ => "text"
         };
     }
 

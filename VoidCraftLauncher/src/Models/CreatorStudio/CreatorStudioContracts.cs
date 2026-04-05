@@ -93,7 +93,7 @@ public sealed class CreatorScope
         CreatorScopeKind.MultiFile => $"{ItemCount} souboru v scope",
         CreatorScopeKind.Folder when !string.IsNullOrWhiteSpace(RelativePath) => $"Slozka {RelativePath}",
         CreatorScopeKind.Notes => string.IsNullOrWhiteSpace(RelativePath) ? "Notes workspace" : $"Notes {RelativePath}",
-        CreatorScopeKind.Canvas => "Mind map / canvas",
+        CreatorScopeKind.Canvas => "Canvas",
         CreatorScopeKind.ReleaseBoard => "Release board",
         _ => Label
     };
@@ -132,6 +132,10 @@ public sealed class CreatorRecentWorkspace
 public sealed class CreatorStudioPreferences
 {
     public string? SelectedWorkspaceId { get; set; }
+
+    public string GitHubLastRepositoryOwner { get; set; } = string.Empty;
+
+    public bool GitHubDefaultPrivateRepository { get; set; }
 
     public List<CreatorRecentWorkspace> RecentWorkspaces { get; set; } = new();
 

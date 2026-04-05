@@ -247,7 +247,7 @@ public sealed class CreatorWorkspaceService
             process.StartInfo = new ProcessStartInfo
             {
                 FileName = "git",
-                Arguments = $"-C \"{workspacePath}\" status --porcelain=1 --branch",
+                Arguments = $"-C \"{workspacePath}\" status --porcelain=1 --branch --untracked-files=no",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,

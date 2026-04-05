@@ -19,7 +19,8 @@ public class InstanceExportService
 {
     private const string ManifestEntryName = "voidpack_manifest.json";
     private const string ModlistEntryName = "voidpack_modlist.json";
-    private static readonly string[] DefaultExportCategories = { "saves", "config", "mods", "options.txt", "resourcepacks", "shaderpacks" };
+    private static readonly string[] DefaultExportCategories = { "saves", "config", "mods", "options.txt", "resourcepacks", "shaderpacks", "assets/branding" };
+    private static readonly string[] GitPublishMetadataFiles = { "mods_metadata.json", "voidcraft_manifest.json", "creator_manifest.json" };
 
     private readonly CurseForgeApi _curseForgeApi;
     private readonly ModrinthApi _modrinthApi;
@@ -29,8 +30,109 @@ public class InstanceExportService
     {
         _curseForgeApi = curseForgeApi;
         _modrinthApi = modrinthApi;
-        var launcherVersion = typeof(InstanceExportService).Assembly.GetName().Version?.ToString(4) ?? "3.1.8.1";
+        var launcherVersion = typeof(InstanceExportService).Assembly.GetName().Version?.ToString(4) ?? "3.1.9";
         _httpClient.DefaultRequestHeaders.Add("User-Agent", $"VoidCraftLauncher/{launcherVersion}");
+    }
+
+    public static IReadOnlyList<string> GetGitPublishStatusRoots()
+    {
+        return DefaultExportCategories
+            .Concat(GitPublishMetadataFiles)
+            .ToList();
+    }
+
+    public static IReadOnlyList<string> BuildGitPublishTrackedPaths(string instancePath, IEnumerable<string>? trackedFiles = null)
+    {
+        var tracked = new HashSet<string>(
+            (trackedFiles ?? Array.Empty<string>())
+                .Where(path => !string.IsNullOrWhiteSpace(path))
+                .Select(NormalizeRelativePath),
+            StringComparer.OrdinalIgnoreCase);
+
+        var stagedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var category in DefaultExportCategories)
+        {
+            if (string.Equals(category, "mods", StringComparison.OrdinalIgnoreCase))
+            {
+                var modsPath = Path.Combine(instancePath, category);
+                if (Directory.Exists(modsPath))
+                {
+                    foreach (var filePath in Directory.GetFiles(modsPath, "*", SearchOption.AllDirectories))
+                    {
+                        if (IsTrackedModBinary(filePath) ||
+                            filePath.Contains(Path.Combine("mods", ".mod_metadata"), StringComparison.OrdinalIgnoreCase))
+                        {
+                            continue;
+                        }
+
+                        stagedPaths.Add(NormalizeRelativePath(Path.GetRelativePath(instancePath, filePath)));
+                    }
+                }
+
+                foreach (var trackedPath in tracked)
+                {
+                    if (trackedPath.StartsWith("mods/", StringComparison.OrdinalIgnoreCase) && IsGitPublishPath(trackedPath))
+                    {
+                        stagedPaths.Add(trackedPath);
+                    }
+                }
+
+                continue;
+            }
+
+            AddRootIfPresentOrTracked(stagedPaths, instancePath, category, tracked);
+        }
+
+        foreach (var metadataFile in GitPublishMetadataFiles)
+        {
+            AddRootIfPresentOrTracked(stagedPaths, instancePath, metadataFile, tracked);
+        }
+
+        return stagedPaths
+            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    public static bool IsGitPublishPath(string? relativePath)
+    {
+        var normalizedPath = NormalizeRelativePath(relativePath);
+        if (string.IsNullOrWhiteSpace(normalizedPath))
+        {
+            return false;
+        }
+
+        if (GitPublishMetadataFiles.Any(file => string.Equals(file, normalizedPath, StringComparison.OrdinalIgnoreCase)))
+        {
+            return true;
+        }
+
+        if (string.Equals(normalizedPath, "options.txt", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        if (string.Equals(normalizedPath, "assets/branding", StringComparison.OrdinalIgnoreCase) ||
+            normalizedPath.StartsWith("assets/branding/", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        if (normalizedPath.StartsWith("mods/", StringComparison.OrdinalIgnoreCase))
+        {
+            return !normalizedPath.EndsWith(".jar", StringComparison.OrdinalIgnoreCase) &&
+                   !normalizedPath.EndsWith(".jar.disabled", StringComparison.OrdinalIgnoreCase) &&
+                   !normalizedPath.Contains("mods/.mod_metadata/", StringComparison.OrdinalIgnoreCase);
+        }
+
+        return normalizedPath.StartsWith("saves/", StringComparison.OrdinalIgnoreCase) ||
+               normalizedPath.StartsWith("config/", StringComparison.OrdinalIgnoreCase) ||
+               normalizedPath.StartsWith("resourcepacks/", StringComparison.OrdinalIgnoreCase) ||
+               normalizedPath.StartsWith("shaderpacks/", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(normalizedPath, "saves", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(normalizedPath, "config", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(normalizedPath, "resourcepacks", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(normalizedPath, "shaderpacks", StringComparison.OrdinalIgnoreCase);
     }
 
     public async Task ExportAsync(string instancePath, string instanceName, string outputPath,
@@ -105,31 +207,45 @@ public class InstanceExportService
             }
         }
 
-        await Task.Run(() =>
+        var tempOutputPath = outputPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+
+        try
         {
-            using var archive = ZipFile.Open(outputPath, ZipArchiveMode.Create);
-
-            var manifestEntry = archive.CreateEntry(ManifestEntryName);
-            using (var manifestStream = manifestEntry.Open())
+            await Task.Run(() =>
             {
-                JsonSerializer.Serialize(manifestStream, manifest, new JsonSerializerOptions { WriteIndented = true });
-            }
+                using var archive = ZipFile.Open(tempOutputPath, ZipArchiveMode.Create);
 
-            if (modEntries.Count > 0)
-            {
-                var modlistEntry = archive.CreateEntry(ModlistEntryName);
-                using var modlistStream = modlistEntry.Open();
-                JsonSerializer.Serialize(modlistStream, modEntries, new JsonSerializerOptions { WriteIndented = true });
-            }
+                var manifestEntry = archive.CreateEntry(ManifestEntryName);
+                using (var manifestStream = manifestEntry.Open())
+                {
+                    JsonSerializer.Serialize(manifestStream, manifest, new JsonSerializerOptions { WriteIndented = true });
+                }
 
-            for (int index = 0; index < filesToInclude.Count; index++)
+                if (modEntries.Count > 0)
+                {
+                    var modlistEntry = archive.CreateEntry(ModlistEntryName);
+                    using var modlistStream = modlistEntry.Open();
+                    JsonSerializer.Serialize(modlistStream, modEntries, new JsonSerializerOptions { WriteIndented = true });
+                }
+
+                for (int index = 0; index < filesToInclude.Count; index++)
+                {
+                    var filePath = filesToInclude[index];
+                    var relativePath = Path.GetRelativePath(instancePath, filePath);
+                    archive.CreateEntryFromFile(filePath, relativePath);
+                    progress?.Invoke(filesToInclude.Count == 0 ? 1d : (double)(index + 1) / filesToInclude.Count);
+                }
+            });
+
+            File.Move(tempOutputPath, outputPath, true);
+        }
+        finally
+        {
+            if (File.Exists(tempOutputPath))
             {
-                var filePath = filesToInclude[index];
-                var relativePath = Path.GetRelativePath(instancePath, filePath);
-                archive.CreateEntryFromFile(filePath, relativePath);
-                progress?.Invoke(filesToInclude.Count == 0 ? 1d : (double)(index + 1) / filesToInclude.Count);
+                File.Delete(tempOutputPath);
             }
-        });
+        }
 
         LogService.Log($"InstanceExport: exported {filesToInclude.Count} files and {modEntries.Count} mod references to {outputPath}");
     }
@@ -549,6 +665,32 @@ public class InstanceExportService
     {
         return path.EndsWith(".jar", StringComparison.OrdinalIgnoreCase) ||
                path.EndsWith(".jar.disabled", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static void AddRootIfPresentOrTracked(HashSet<string> stagedPaths, string instancePath, string relativePath, HashSet<string> tracked)
+    {
+        var normalizedPath = NormalizeRelativePath(relativePath);
+        var absolutePath = Path.Combine(instancePath, normalizedPath.Replace('/', Path.DirectorySeparatorChar));
+
+        if (File.Exists(absolutePath) || Directory.Exists(absolutePath))
+        {
+            stagedPaths.Add(normalizedPath);
+            return;
+        }
+
+        if (tracked.Any(trackedPath =>
+                string.Equals(trackedPath, normalizedPath, StringComparison.OrdinalIgnoreCase) ||
+                trackedPath.StartsWith(normalizedPath + "/", StringComparison.OrdinalIgnoreCase)))
+        {
+            stagedPaths.Add(normalizedPath);
+        }
+    }
+
+    private static string NormalizeRelativePath(string? path)
+    {
+        return string.IsNullOrWhiteSpace(path)
+            ? string.Empty
+            : path.Replace('\\', '/').Trim().TrimStart('/');
     }
 
     private static string NormalizeModFileName(string fileName)

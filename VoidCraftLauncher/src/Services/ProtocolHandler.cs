@@ -1,11 +1,28 @@
 using Microsoft.Win32;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Text.Json;
 
 #pragma warning disable CA1416
 
 namespace VoidCraftLauncher.Services;
+
+public sealed class ProtocolLaunchRequest
+{
+    public string? AuthCode { get; init; }
+    public ProtocolInstallRequest? InstallRequest { get; init; }
+}
+
+public sealed class ProtocolInstallRequest
+{
+    public string Source { get; init; } = "registry";
+    public string Slug { get; init; } = "";
+    public string Version { get; init; } = "";
+    public string DownloadUrl { get; init; } = "";
+    public string ProjectName { get; init; } = "";
+}
 
 public static class ProtocolHandler
 {
@@ -43,36 +60,67 @@ public static class ProtocolHandler
         }
     }
 
+    public static ProtocolLaunchRequest? ParseLaunchRequest(string[] args)
+    {
+        if (args.Length == 0) return null;
+
+        var uriText = args[0];
+        if (!uriText.StartsWith($"{ProtocolScheme}://", StringComparison.OrdinalIgnoreCase))
+            return null;
+
+        try
+        {
+            var parsedUri = new Uri(uriText);
+            var query = ParseQuery(parsedUri.Query);
+
+            if (query.TryGetValue("code", out var code) && !string.IsNullOrWhiteSpace(code))
+            {
+                return new ProtocolLaunchRequest
+                {
+                    AuthCode = code.Trim()
+                };
+            }
+
+            var action = parsedUri.Host;
+            if (string.IsNullOrWhiteSpace(action))
+            {
+                action = parsedUri.AbsolutePath.Trim('/');
+            }
+
+            if (string.Equals(action, "install", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!query.TryGetValue("url", out var downloadUrl) || string.IsNullOrWhiteSpace(downloadUrl))
+                {
+                    return null;
+                }
+
+                return new ProtocolLaunchRequest
+                {
+                    InstallRequest = new ProtocolInstallRequest
+                    {
+                        Source = GetQueryValue(query, "source", "registry"),
+                        Slug = GetQueryValue(query, "slug"),
+                        Version = GetQueryValue(query, "version"),
+                        DownloadUrl = downloadUrl.Trim(),
+                        ProjectName = GetQueryValue(query, "name")
+                    }
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Failed to parse protocol URI: {ex.Message}");
+        }
+
+        return null;
+    }
+
     /// <summary>
     /// Checks if the app was launched via protocol and extracts auth code
     /// </summary>
     public static string? ExtractAuthCode(string[] args)
     {
-        if (args.Length == 0) return null;
-
-        var uri = args[0];
-        if (!uri.StartsWith($"{ProtocolScheme}://", StringComparison.OrdinalIgnoreCase))
-            return null;
-
-        try
-        {
-            var parsedUri = new Uri(uri);
-            var query = parsedUri.Query;
-            
-            if (query.Contains("code="))
-            {
-                var code = query.Substring(query.IndexOf("code=") + 5);
-                if (code.Contains("&")) 
-                    code = code.Substring(0, code.IndexOf("&"));
-                return code;
-            }
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"Failed to parse auth URI: {ex.Message}");
-        }
-
-        return null;
+        return ParseLaunchRequest(args)?.AuthCode;
     }
 
     /// <summary>
@@ -104,11 +152,86 @@ public static class ProtocolHandler
         }
     }
 
+    public static void WriteInstallRequestToFile(ProtocolInstallRequest request)
+    {
+        var path = GetInstallRequestFilePath();
+        File.WriteAllText(path, JsonSerializer.Serialize(request));
+    }
+
+    public static ProtocolInstallRequest? ReadInstallRequestFromFile()
+    {
+        var path = GetInstallRequestFilePath();
+        if (!File.Exists(path)) return null;
+
+        try
+        {
+            var json = File.ReadAllText(path);
+            File.Delete(path);
+            if (string.IsNullOrWhiteSpace(json)) return null;
+
+            return JsonSerializer.Deserialize<ProtocolInstallRequest>(json, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     private static string GetAuthCodeFilePath()
+    {
+        var dir = GetProtocolWorkingDirectory();
+        return Path.Combine(dir, "pending_auth_code.txt");
+    }
+
+    private static string GetInstallRequestFilePath()
+    {
+        var dir = GetProtocolWorkingDirectory();
+        return Path.Combine(dir, "pending_install_request.json");
+    }
+
+    private static string GetProtocolWorkingDirectory()
     {
         var appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         var dir = Path.Combine(appData, "VoidCraftLauncher");
         Directory.CreateDirectory(dir);
-        return Path.Combine(dir, "pending_auth_code.txt");
+        return dir;
+    }
+
+    private static Dictionary<string, string> ParseQuery(string query)
+    {
+        var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return result;
+        }
+
+        foreach (var pair in query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var separatorIndex = pair.IndexOf('=');
+            if (separatorIndex < 0)
+            {
+                result[DecodeQueryValue(pair)] = string.Empty;
+                continue;
+            }
+
+            var key = DecodeQueryValue(pair[..separatorIndex]);
+            var value = DecodeQueryValue(pair[(separatorIndex + 1)..]);
+            result[key] = value;
+        }
+
+        return result;
+    }
+
+    private static string GetQueryValue(IReadOnlyDictionary<string, string> query, string key, string fallback = "")
+    {
+        return query.TryGetValue(key, out var value) ? value : fallback;
+    }
+
+    private static string DecodeQueryValue(string value)
+    {
+        return Uri.UnescapeDataString(value.Replace("+", " "));
     }
 }

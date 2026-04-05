@@ -80,7 +80,7 @@ public sealed class ServiceLocator
     {
         // Shared HttpClient (pooled, long-lived)
         var httpClient = new HttpClient();
-        var launcherVersion = typeof(ServiceLocator).Assembly.GetName().Version?.ToString(4) ?? "3.1.8.1";
+        var launcherVersion = typeof(ServiceLocator).Assembly.GetName().Version?.ToString(4) ?? "3.1.9";
         httpClient.DefaultRequestHeaders.Add("User-Agent", $"VoidCraftLauncher/{launcherVersion}");
         Register(httpClient);
 
@@ -93,9 +93,12 @@ public sealed class ServiceLocator
         var secureStorage = new SecureStorageService();
         Register(secureStorage);
         Register(new AuthService(secureStorage));
+        Register(new VoidIdAuthService(httpClient, secureStorage));
+        Register(new GitHubAuthService(httpClient, secureStorage));
         Register(new LauncherService());
         Register(new CurseForgeApi());
         Register(new ModrinthApi());
+        Register(new VoidRegistryService(httpClient));
         Register(new DiscordRpcService());
 
         // Services with dependencies
@@ -109,6 +112,7 @@ public sealed class ServiceLocator
         RegisterFactory(() => new CreatorAssetsService());
         RegisterFactory(() => new CreatorManifestService(Resolve<CreatorWorkspaceService>(), Resolve<CreatorAssetsService>()));
         RegisterFactory(() => new CreatorGitService());
+        RegisterFactory(() => new GitHubReleaseService(Resolve<HttpClient>()));
         RegisterFactory(() => new CreatorNotesService());
         RegisterFactory(() => new CreatorReleaseService(Resolve<CreatorManifestService>(), Resolve<LauncherService>()));
         RegisterFactory(() => new AchievementHubService(Resolve<HttpClient>(), Resolve<LauncherService>(), Resolve<ObservabilityService>()));

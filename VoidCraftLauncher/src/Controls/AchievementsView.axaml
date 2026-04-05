@@ -66,6 +66,27 @@
                     </Grid>
                 </Border>
 
+                <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="{DynamicResource RadiusControl}"
+                        Padding="20" BorderBrush="{DynamicResource PrimaryBBrush}" BorderThickness="1"
+                        IsVisible="{Binding IsAchievementIdentityGateVisible}">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="{Binding AchievementIdentityGateTitle}" FontWeight="Bold" FontSize="14"
+                                       Foreground="{DynamicResource PrimaryBBrush}"/>
+                            <TextBlock Text="{Binding AchievementIdentityGateSubtitle}" FontSize="12"
+                                       Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" LineHeight="18"/>
+                            <TextBlock Text="Přihlášení VOID ID teď spravuješ vpravo v panelu Hraje jako vedle Minecraft účtu."
+                                       FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"
+                                       IsVisible="{Binding AchievementRequiresVoidIdLogin}"/>
+                        </StackPanel>
+
+                        <Button Grid.Column="1" Command="{Binding RefreshAchievementIdentityCommand}" Classes="secondary" Padding="14,8"
+                                IsVisible="{Binding AchievementRequiresMinecraftLink}">
+                            <TextBlock Text="Synchronizovat Minecraft" FontSize="11"/>
+                        </Button>
+                    </Grid>
+                </Border>
+
                 <Grid ColumnDefinitions="*,16,*,16,*,16,*">
                     <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="{DynamicResource RadiusCard}"
                             BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" Padding="20">

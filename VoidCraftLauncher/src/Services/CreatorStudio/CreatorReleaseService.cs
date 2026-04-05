@@ -48,10 +48,15 @@ public sealed class CreatorReleaseService
             : CreatorReleaseStepStatus.Failed;
 
         // Notes + Publish remain pending unless we detect artifacts
-        var exportDir = Path.Combine(workspacePath, ".voidcraft", "exports");
+        var exportDir = Path.Combine(workspacePath, "exports");
         if (Directory.Exists(exportDir) && Directory.EnumerateFiles(exportDir).Any())
         {
             steps[3].Status = CreatorReleaseStepStatus.Completed;
+        }
+
+        if (!string.IsNullOrWhiteSpace(manifest.LastPublishedVersion) &&
+            string.Equals(manifest.LastPublishedVersion, manifest.Version, StringComparison.OrdinalIgnoreCase))
+        {
             steps[4].Status = CreatorReleaseStepStatus.Completed;
         }
 
@@ -153,12 +158,27 @@ public sealed class CreatorReleaseService
             IsReady = manifest != null && !string.IsNullOrWhiteSpace(manifest.PackName)
         });
 
+        profiles.Add(new CreatorExportProfile
+        {
+            Format = "VOID Launcher",
+            Label = "VOID Launcher",
+            IsReady = manifest != null &&
+                      !string.IsNullOrWhiteSpace(manifest.PackName) &&
+                      !string.IsNullOrWhiteSpace(manifest.Slug) &&
+                      !string.IsNullOrWhiteSpace(manifest.Version),
+            BlockerLabel = manifest == null
+                ? "chybi creator manifest"
+                : string.IsNullOrWhiteSpace(manifest.RepositoryUrl) && string.IsNullOrWhiteSpace(manifest.BrandProfile?.GitHub)
+                    ? "chybi github repo"
+                    : string.Empty
+        });
+
         return profiles;
     }
 
     public List<CreatorReleaseHistoryEntry> GetReleaseHistory(string workspacePath)
     {
-        var exportDir = Path.Combine(workspacePath, ".voidcraft", "exports");
+        var exportDir = Path.Combine(workspacePath, "exports");
         if (!Directory.Exists(exportDir))
             return new List<CreatorReleaseHistoryEntry>();
 

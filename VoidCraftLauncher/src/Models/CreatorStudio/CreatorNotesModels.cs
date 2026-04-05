@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Text.Json.Serialization;
 
 namespace VoidCraftLauncher.Models.CreatorStudio;
 
@@ -105,13 +106,29 @@ public partial class CreatorCanvasNode : ObservableObject
     private string _nodeType = "idea";
 
     [ObservableProperty]
+    private string _contentKind = "text";
+
+    [ObservableProperty]
     private double _x;
 
     [ObservableProperty]
     private double _y;
 
     [ObservableProperty]
+    private double _width = 240;
+
+    [ObservableProperty]
+    private double _height = 152;
+
+    [ObservableProperty]
+    [JsonIgnore]
+    private bool _isInlineEditing;
+
+    [ObservableProperty]
     private string _description = string.Empty;
+
+    [ObservableProperty]
+    private string _contentValue = string.Empty;
 
     [ObservableProperty]
     private string? _linkedFilePath;
@@ -130,7 +147,37 @@ public partial class CreatorCanvasNode : ObservableObject
         _ => "Idea"
     };
 
+    public string ContentKindLabel => ContentKind switch
+    {
+        "image" => "Image",
+        "file" => "File",
+        "link" => "Link",
+        _ => "Text"
+    };
+
+    public bool IsTextContent => string.Equals(ContentKind, "text", StringComparison.OrdinalIgnoreCase);
+
+    public bool IsImageContent => string.Equals(ContentKind, "image", StringComparison.OrdinalIgnoreCase);
+
+    public bool IsFileLinkContent => string.Equals(ContentKind, "file", StringComparison.OrdinalIgnoreCase);
+
+    public bool IsExternalLinkContent => string.Equals(ContentKind, "link", StringComparison.OrdinalIgnoreCase);
+
+    public bool HasContentValue => !string.IsNullOrWhiteSpace(ContentValue);
+
     public bool HasLinkedFile => !string.IsNullOrWhiteSpace(LinkedFilePath);
+
+    public bool HasDescription => !string.IsNullOrWhiteSpace(Description);
+
+    public string FileLinkLabel => !string.IsNullOrWhiteSpace(LinkedFilePath)
+        ? LinkedFilePath!
+        : !string.IsNullOrWhiteSpace(ContentValue)
+            ? ContentValue
+            : "Zatim bez navazaneho souboru";
+
+    public string ExternalLinkLabel => !string.IsNullOrWhiteSpace(ContentValue)
+        ? ContentValue
+        : "https://";
 
     public int ConnectionCount => ConnectedNodeIds.Count;
 
@@ -152,14 +199,57 @@ public partial class CreatorCanvasNode : ObservableObject
         OnPropertyChanged(nameof(TypeIcon));
     }
 
+    partial void OnContentKindChanged(string value)
+    {
+        NormalizeCanvasCardSize();
+        OnPropertyChanged(nameof(ContentKindLabel));
+        OnPropertyChanged(nameof(IsTextContent));
+        OnPropertyChanged(nameof(IsImageContent));
+        OnPropertyChanged(nameof(IsFileLinkContent));
+        OnPropertyChanged(nameof(IsExternalLinkContent));
+    }
+
+    partial void OnDescriptionChanged(string value)
+    {
+        OnPropertyChanged(nameof(HasDescription));
+    }
+
+    partial void OnContentValueChanged(string value)
+    {
+        OnPropertyChanged(nameof(HasContentValue));
+        OnPropertyChanged(nameof(FileLinkLabel));
+        OnPropertyChanged(nameof(ExternalLinkLabel));
+    }
+
     partial void OnLinkedFilePathChanged(string? value)
     {
         OnPropertyChanged(nameof(HasLinkedFile));
+        OnPropertyChanged(nameof(FileLinkLabel));
     }
 
     partial void OnConnectedNodeIdsChanged(List<string> value)
     {
         NotifyConnectionsChanged();
+    }
+
+    public void NormalizeCanvasCardSize()
+    {
+        switch (ContentKind?.Trim().ToLowerInvariant())
+        {
+            case "image":
+                Width = Math.Max(260, Width);
+                Height = Math.Max(196, Height);
+                break;
+            case "file":
+            case "link":
+                Width = Math.Max(240, Width);
+                Height = Math.Max(132, Height);
+                break;
+            default:
+                Width = Math.Max(220, Width);
+                Height = Math.Max(152, Height);
+                break;
+        }
     }
 }
 
@@ -220,4 +310,13 @@ public sealed class CreatorGlobalSearchResult
         "Manifest" => "manifest",
         _ => "search"
     };
+}
+
+public sealed class CreatorCanvasSpawnRequest
+{
+    public string NodeKind { get; set; } = "text";
+
+    public double X { get; set; }
+
+    public double Y { get; set; }
 }

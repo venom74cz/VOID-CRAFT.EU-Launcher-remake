@@ -18,6 +18,7 @@ Tahle slozka drzi projektove dokumenty mimo root repo. Ne vsechno uvnitr je stej
 
 ## Release
 
+- [`release/DISCORD-ANNOUNCEMENT-3.1.9.md`](release/DISCORD-ANNOUNCEMENT-3.1.9.md)
 - [`release/DISCORD-ANNOUNCEMENT-3.1.7.md`](release/DISCORD-ANNOUNCEMENT-3.1.7.md)
 - [`release/DISCORD-ANNOUNCEMENT-3.1.0.md`](release/DISCORD-ANNOUNCEMENT-3.1.0.md)
 - [`release/DISCORD-ANNOUNCEMENT-3.0.0.md`](release/DISCORD-ANNOUNCEMENT-3.0.0.md)

@@ -27,6 +27,14 @@ public sealed class CreatorManifest
 
     public string ReleaseChannel { get; set; } = "alpha";
 
+    public string RegistryProjectId { get; set; } = string.Empty;
+
+    public string RepositoryUrl { get; set; } = string.Empty;
+
+    public string LastPublishedVersion { get; set; } = string.Empty;
+
+    public DateTimeOffset? LastPublishedAtUtc { get; set; }
+
     public DateTimeOffset CreatedAtUtc { get; set; } = DateTimeOffset.UtcNow;
 
     public DateTimeOffset UpdatedAtUtc { get; set; } = DateTimeOffset.UtcNow;

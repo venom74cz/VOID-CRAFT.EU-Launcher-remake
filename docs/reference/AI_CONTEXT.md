@@ -2,7 +2,7 @@
 
 ## 1) Project Snapshot
 - **Name**: VoidCraft Launcher
-- **Current version**: **3.1.8.1**
+- **Current version**: **3.1.9**
 - **Stack**: .NET 9 + Avalonia UI 11.3 + CommunityToolkit.Mvvm 8.4
 - **MC Core**: CmlLib.Core 4.0.6
 - **Auth**: Microsoft.Identity.Client (MSAL) + custom Xbox/XSTS/MC token chain
@@ -14,7 +14,7 @@
 - **Main Window**: `src/Views/MainWindow.axaml` – shell orchestrator s `NavRail`, hlavním content hostem, `ContextDock`/creator dock switchem a overlay vrstvami
 - **Views / surfaces**: Dashboard, Library, Discover, Future, Server Hub, Achievement Hub, Skin Studio, Theme Switcher, Localization, Creator Studio a Instance Workspace
 - **Login / create profile / backup flow**: launcher používá overlay sheet vrstvy místo starých izolovaných dialogů
-- **Creator Studio**: production workspace surface pro bootstrap modpacku, metadata, workbench soubory, notes handoff a release workflow
+- **Creator Studio**: production workspace surface pro bootstrap modpacku, metadata, workbench soubory, notes handoff a release workflow od `.voidpack` exportu po GitHub/VOID Registry publish
 - **Potato Mods**: `PotatoModsWindow.axaml` – config pro low-end PC mod disabling
 
 ### MVVM Architecture
@@ -150,6 +150,7 @@ Documents/.voidcraft/
 ## 8) Release History
 | Version | Changes |
 |---------|---------|
+| 3.1.9 | Creator Studio publish hardening: auth centralizace, spolehlivejsi VOID ID/GitHub session restore, real async git publish flow, auto-publish draft GitHub release a branding export/import do `assets/branding` |
 | 3.1.8.1 | Hotfix pro startup a download archive flow: oprava Avalonia key gesture crashe v Streaming Tools a oprava locku pri presunu docasneho .download souboru |
 | 3.1.8 | Modpack download hardening: fallback download kandidati pro CurseForge i Modrinth, validace existujicich souboru a retry flow pro baliky i jednotlive mody |
 | 3.1.7 | Auth launch hotfix: Guest regression fix, MSAL account recovery stabilization, optimization override normalization a hardening Discord release webhooku |
@@ -164,4 +165,4 @@ Documents/.voidcraft/
 | 1.2.8 | Linux Device Code-first flow + robust code parsing |
 
 ---
-*Last updated: 2026-04-02*
+*Last updated: 2026-04-05*

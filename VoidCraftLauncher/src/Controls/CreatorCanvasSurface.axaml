@@ -1,0 +1,127 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:VoidCraftLauncher.ViewModels"
+             xmlns:local="using:VoidCraftLauncher.Controls"
+             xmlns:creatorModels="using:VoidCraftLauncher.Models.CreatorStudio"
+             xmlns:asyncImage="clr-namespace:AsyncImageLoader;assembly=AsyncImageLoader.Avalonia"
+             x:Class="VoidCraftLauncher.Controls.CreatorCanvasSurface"
+             x:DataType="vm:MainViewModel"
+             x:Name="Root">
+
+    <Grid RowDefinitions="Auto,*">
+        <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="12" Padding="14,10" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+            <StackPanel Spacing="4">
+                <TextBlock Text="Canvas surface" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                <TextBlock Text="{Binding CreatorCanvasInteractionHint}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="1"
+                x:Name="ViewportBorder"
+                Margin="0,12,0,0"
+                Background="#141A25"
+                CornerRadius="14"
+                BorderBrush="{DynamicResource StrokeSoftBrush}"
+                BorderThickness="1"
+                ClipToBounds="True"
+                PointerPressed="OnViewportPointerPressed"
+                PointerMoved="OnViewportPointerMoved"
+                PointerReleased="OnViewportPointerReleased"
+                PointerCaptureLost="OnViewportPointerCaptureLost">
+            <Border.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Přidat text" Click="OnAddTextNodeClicked"/>
+                    <MenuItem Header="Přidat obrázek" Click="OnAddImageNodeClicked"/>
+                    <MenuItem Header="Přidat odkaz na soubor" Click="OnAddFileNodeClicked"/>
+                    <MenuItem Header="Přidat web link" Click="OnAddLinkNodeClicked"/>
+                </ContextMenu>
+            </Border.ContextMenu>
+
+            <Grid>
+                <local:CreatorCanvasBackdrop x:Name="BackdropLayer"/>
+
+                <ItemsControl x:Name="NodeLayer" x:CompileBindings="False" ItemsSource="{Binding SelectedCreatorCanvasGraph.Nodes}" IsVisible="{Binding HasSelectedCreatorCanvasGraph}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <Canvas/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="creatorModels:CreatorCanvasNode">
+                            <Border Canvas.Left="{Binding X}"
+                                    Canvas.Top="{Binding Y}"
+                                    Width="{Binding Width}"
+                                    Height="{Binding Height}"
+                                    Padding="12"
+                                    Background="{DynamicResource BgElevatedBrush}"
+                                    BorderBrush="{DynamicResource StrokeSoftBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="12"
+                                    Cursor="Hand"
+                                    Tag="{Binding}">
+                                <StackPanel Spacing="8">
+                                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                                        <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="999" Padding="8,3">
+                                            <TextBlock Text="{Binding TypeIcon}" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryBBrush}"/>
+                                        </Border>
+                                        <TextBlock Grid.Column="1" Text="{Binding Label}" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap" IsVisible="{Binding !IsInlineEditing}"/>
+                                        <TextBox Grid.Column="1" Text="{Binding Label, UpdateSourceTrigger=PropertyChanged}" IsVisible="{Binding IsInlineEditing}" Background="#162030" BorderBrush="{DynamicResource PrimaryBBrush}" BorderThickness="1" CornerRadius="8" Padding="8,6" Watermark="Nazev karty" KeyDown="OnInlineEditorKeyDown"/>
+                                        <Border Grid.Column="2" Background="#223449" CornerRadius="999" Padding="8,3">
+                                            <TextBlock Text="{Binding ContentKindLabel}" FontSize="9" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                        </Border>
+                                    </Grid>
+
+                                    <StackPanel Spacing="6" IsVisible="{Binding IsTextContent}">
+                                        <TextBlock Text="{Binding Description}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" MaxLines="4" IsVisible="{Binding !IsInlineEditing}"/>
+                                        <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="84" IsVisible="{Binding IsInlineEditing}" Background="#10141D" BorderBrush="{DynamicResource PrimaryBBrush}" BorderThickness="1" CornerRadius="8" Padding="10,8" Watermark="Text karty" KeyDown="OnInlineEditorKeyDown"/>
+                                    </StackPanel>
+
+                                    <StackPanel Spacing="6" IsVisible="{Binding IsImageContent}">
+                                        <Border Background="#10141D" CornerRadius="10" Height="112" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" ClipToBounds="True" IsVisible="{Binding !IsInlineEditing}">
+                                            <Grid>
+                                                <asyncImage:AdvancedImage Source="{Binding ContentValue}" Stretch="UniformToFill" IsVisible="{Binding HasContentValue}"/>
+                                                <TextBlock Text="Image placeholder" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasContentValue}"/>
+                                            </Grid>
+                                        </Border>
+                                        <TextBox Text="{Binding ContentValue, UpdateSourceTrigger=PropertyChanged}" IsVisible="{Binding IsInlineEditing}" Background="#10141D" BorderBrush="{DynamicResource PrimaryBBrush}" BorderThickness="1" CornerRadius="8" Padding="10,8" Watermark="Cesta k obrazku" KeyDown="OnInlineEditorKeyDown"/>
+                                    </StackPanel>
+
+                                    <StackPanel Spacing="6" IsVisible="{Binding IsFileLinkContent}">
+                                        <Border Background="#10141D" CornerRadius="10" Padding="10,8" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" IsVisible="{Binding !IsInlineEditing}">
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Text="Soubor" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                                <TextBlock Text="{Binding FileLinkLabel}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap" MaxLines="3"/>
+                                            </StackPanel>
+                                        </Border>
+                                        <TextBox Text="{Binding ContentValue, UpdateSourceTrigger=PropertyChanged}" IsVisible="{Binding IsInlineEditing}" Background="#10141D" BorderBrush="{DynamicResource PrimaryBBrush}" BorderThickness="1" CornerRadius="8" Padding="10,8" Watermark="Relativni cesta k souboru" KeyDown="OnInlineEditorKeyDown"/>
+                                    </StackPanel>
+
+                                    <StackPanel Spacing="6" IsVisible="{Binding IsExternalLinkContent}">
+                                        <Border Background="#10141D" CornerRadius="10" Padding="10,8" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" IsVisible="{Binding !IsInlineEditing}">
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Text="Web link" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                                <TextBlock Text="{Binding ExternalLinkLabel}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap" MaxLines="3"/>
+                                            </StackPanel>
+                                        </Border>
+                                        <TextBox Text="{Binding ContentValue, UpdateSourceTrigger=PropertyChanged}" IsVisible="{Binding IsInlineEditing}" Background="#10141D" BorderBrush="{DynamicResource PrimaryBBrush}" BorderThickness="1" CornerRadius="8" Padding="10,8" Watermark="https://" KeyDown="OnInlineEditorKeyDown"/>
+                                    </StackPanel>
+
+                                    <TextBlock Text="{Binding ConnectionSummary}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" IsVisible="{Binding !IsInlineEditing}"/>
+                                    <Button Content="Hotovo" Click="OnInlineEditDoneClicked" Classes="secondary" Padding="10,6" HorizontalAlignment="Left" IsVisible="{Binding IsInlineEditing}"/>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <Border Background="#44101620" CornerRadius="12" Padding="16" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasSelectedCreatorCanvasGraphNodes}" IsHitTestVisible="False">
+                    <StackPanel Spacing="4" MaxWidth="360">
+                        <TextBlock Text="{Binding CreatorCanvasEmptyTitle}" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" HorizontalAlignment="Center"/>
+                        <TextBlock Text="{Binding CreatorCanvasEmptySubtitle}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" TextAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

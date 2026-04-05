@@ -87,49 +87,21 @@ public partial class MainViewModel
         !IsCreatorWorkbenchSaving &&
         !string.Equals(_creatorWorkbenchLoadedContent, CreatorWorkbenchContent ?? string.Empty, StringComparison.Ordinal);
 
-    public string CreatorStudioMinecraftVersion => GetCreatorStudioSelectedManifest()?.MinecraftVersion switch
-    {
-        { Length: > 0 } version => version,
-        _ when !string.IsNullOrWhiteSpace(GetCreatorStudioSelectedModpack()?.CustomMcVersion) => GetCreatorStudioSelectedModpack()!.CustomMcVersion,
-        _ => "Nezjištěno"
-    };
+    public string CreatorStudioMinecraftVersion => CreatorWorkspaceContext.MinecraftVersion;
 
-    public string CreatorStudioModLoader => FormatCreatorStudioLoaderLabel(GetCreatorStudioSelectedManifest()?.ModLoaderId, GetCreatorStudioSelectedModpack());
+    public string CreatorStudioModLoader => CreatorWorkspaceContext.LoaderLabel;
 
     public string CreatorStudioModCountLabel
     {
         get
         {
-            var modpack = GetCreatorStudioSelectedModpack();
-            var manifest = GetCreatorStudioSelectedManifest();
-            var modCount = manifest?.ModCount ?? 0;
-
-            if (modCount <= 0 && modpack != null)
-            {
-                modCount = GetInstalledModCount(modpack);
-            }
-
-            return modCount > 0 ? $"{modCount} modů" : "Počet modů není k dispozici";
+            return CreatorWorkspaceContext.ModCount > 0
+                ? $"{CreatorWorkspaceContext.ModCount} modů"
+                : "Počet modů není k dispozici";
         }
     }
 
-    public string CreatorStudioLinkedServersLabel
-    {
-        get
-        {
-            var modpack = GetCreatorStudioSelectedModpack();
-            if (modpack == null)
-            {
-                return "Bez navázané instance";
-            }
-
-            var count = Servers.Where(server =>
-                server.LinkedModpackProjectId == modpack.ProjectId ||
-                ArePackNamesEquivalent(server.LinkedModpackName, modpack.Name)).Count();
-
-            return count == 0 ? "Žádné navázané servery" : $"{count} navázaných serverů";
-        }
-    }
+    public string CreatorStudioLinkedServersLabel => CreatorWorkspaceContext.LinkedServersLabel;
 
     public bool CanManageCreatorModsInPlace => ResolveModManagementTargetModpack()?.IsCustomProfile == true && IsCreatorWorkspaceEditable;
 

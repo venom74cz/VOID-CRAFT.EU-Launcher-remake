@@ -17,8 +17,8 @@
                 <Border Background="{DynamicResource BgElevatedBrush}" Padding="20,18" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="0,0,0,1">
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                         <StackPanel Spacing="4">
-                            <TextBlock Text="Notes / Mind Map Drawer" FontSize="18" FontWeight="ExtraBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                            <TextBlock Text="Rychly workspace pro poznamky, handoff a progression map bez opusteni aktualni creator zalozky." FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                            <TextBlock Text="Notes / Canvas Drawer" FontSize="18" FontWeight="ExtraBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                            <TextBlock Text="Rychly workspace pro poznamky, handoff a canvas flow bez opusteni aktualni creator zalozky." FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
                         </StackPanel>
                         <Button Grid.Column="1" Command="{Binding CloseCreatorNotesDrawerCommand}" Classes="ghost" Padding="8,6" VerticalAlignment="Top">
                             <TextBlock Text="Zavrit"/>

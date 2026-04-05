@@ -25,6 +25,30 @@
 - Branch list + git init pro workspace bez repo.
 - Pull/Push akce s toast feedback.
 
+## 3.1.9 - 2026-04-05
+
+### Creator Studio publish, auth a branding hardening
+
+#### Auth & session persistence
+- GitHub a VOID ID auth jsou soustredene u hlavniho MC login/context flow, takze Creator Studio uz nema prihlaseni rozhazene po vice plochach.
+- Secure storage zapisuje session pod lockem a atomicky pres temp file replace, takze soubezny restore uz nerozbije perzistenci VOID ID a GitHub session.
+- VOID ID access token expiry se po restore znovu nacita nebo dopocte z JWT `exp`, session se pred publish flow refreshuje s dostatecnou rezervou a registry auth chyby vraceji citelnejsi hlasky.
+
+#### GitHub / release pipeline
+- Creator publish uz nepouziva fake-async git wrapper; dlouhe git operace bezí mimo UI thread a `Stage all`/publish uz nelaguje launcher.
+- Publish scope je srovnany s realnym `.voidpack` export payloadem misto celeho workspace a scoped commit uz na Windows nepada na command-line limit ani na quoted path jmena.
+- Creator Git panel je zjednoduseny na tok `Vygenerovat .voidpack` -> `Nahrat na repo`, upload vytvori/pushne release tag a GitHub workflow se umi bootstrapnout i znovu zapsat z launcheru.
+- Workflow po uploadu assetu automaticky publikuje existujici draft release, takze launcher vidi release asset pres public GitHub endpoint a muze pokracovat do VOID Registry.
+
+#### Branding & export
+- Export/publish flow si umi automaticky pripravit fallback `creator_manifest.json` i pro importovane nebo read-only workspace instance.
+- Verejne logo CurseForge/Modrinth packu se pri exportu/publish automaticky stahne do `assets/branding`, i kdyz bezny Creator workspace zustava read-only preview.
+- `.voidpack` export i GitHub workflow build ted pribalují `assets/branding`, takze logo a square icon skonci v archivu, v repu/tagu i v raw URL pro VOID Registry.
+- Lokální export `.voidpack` uz necrashne, kdyz cilovy archiv existuje; zapis probiha pres temp archiv a atomicky replace.
+
+#### Release metadata
+- Srovnana release verze na `3.1.9` v launcher projektu, installeru, fallback `User-Agent` hodnotach a aktualni dokumentaci.
+
 ## 3.1.8.1 - 2026-04-04
 
 ### Startup a archive download hotfix

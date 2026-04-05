@@ -1,8 +1,8 @@
 # VOID-CRAFT Launcher - Aktuální Stav
 
-Snapshot: 2026-04-04
+Snapshot: 2026-04-05
 
-Aktuální release: 3.1.8.1
+Aktuální release: 3.1.9
 
 ## Co je dnes reálně v produktu
 
@@ -30,12 +30,16 @@ Dnes už je reálné a hotové hlavně toto:
 - bootstrap nové instance přes `Blank`, `Template`, `Import CF`, `Import MR`, `Clone Git`, `Restore Snapshot`
 - `creator_manifest.json` a standardní creator workspace struktura
 - metadata editace přímo v launcheru
+- GitHub + VOID ID auth sjednocené v hlavním context flow místo rozházených creator CTA panelů
 - Creator workspace selection se obnovuje z perzistentni volby i po restartu launcheru, takze studio drzi posledni zvoleny workspace konzistentneji napric Metadata, Mods i Files
 - novy Creator workspace pri zalozeni predvyplni autora z aktualne prihlasene identity, ale autor zustava editovatelny
 - branding pipeline pro `logo`, `cover`, `square icon`, `wide hero`, `social preview`
+- export/publish si umi u importovanych CF/MR packu automaticky dodelat `assets/branding` z verejneho loga, i kdyz workspace zustava read-only preview
 - validace assetů, media kit export a promo screenshot kurátorství
 - `Mods` tab má plný in-tab workflow: vetsi katalog pro hledani a pridavani modu, local `.jar` import, multi-select, bulk add/remove, zapínání/vypínání modů a fallback ze striktně kompatibilniho vyhledani do sirsiho katalogu
 - `.voidpack` export/import drží mody jako textový modlist manifest místo balení `mods/*.jar`; import se je pokouší znovu stáhnout a hlásí ruční follow-up kusy
+- Creator publish flow je ted zjednoduseny na `Vygenerovat .voidpack` + `Nahrat na repo`, publish scope je stejny jako export payload a workflow umi automaticky vytvorit release tag i publikovat draft release
+- `.voidpack` export i GitHub workflow build uz balí `assets/branding`, takze branding assety skonci v archivu, repu/tagu i raw URL pro VOID Registry
 - `Files` tab má realny editor host s režimy `Form`, `Editor`, `Porovnání`, parsery pro běžné config formáty, outline/focus workflow a diff proti snapshotu/exportu/default counterpartu
 - `Files` layout je zjednoduseny na levy seznam souboru, jeden hlavni editor a jeden pomocny panel s navigaci, formem a kontrolou, aby byl citelny i na vetsich workspacech
 
@@ -46,7 +50,7 @@ To odpovídá realitě po Creator Workbench F0-F2 a následných polish hotfixec
 Největší otevřené mezery vůči roadmapě jsou stále:
 
 - plnohodnotný notes/wiki + quest/progression canvas
-- lokální Git workflow a GitHub desk
+- plnohodnotny GitHub desktop-level workflow (repo chooser, private clone, fetch/sync dashboard, PR/issues/release metadata)
 - CurseForge/Modrinth kompatibilní packaging a release validace
 - AI-native patch/apply flow nad workbenchem
 - release board, QA gate a publish orchestrace

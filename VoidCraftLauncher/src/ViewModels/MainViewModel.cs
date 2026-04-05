@@ -71,6 +71,9 @@ public partial class MainViewModel : ViewModelBase
 
     // ===== SERVICES =====
     private readonly AuthService _authService;
+    private readonly VoidIdAuthService _voidIdAuthService;
+    private readonly GitHubAuthService _gitHubAuthService;
+    private readonly VoidRegistryService _voidRegistryService;
     private readonly LauncherService _launcherService;
     private readonly CurseForgeApi _curseForgeApi;
     private readonly ModrinthApi _modrinthApi;
@@ -88,6 +91,7 @@ public partial class MainViewModel : ViewModelBase
     private readonly CreatorManifestService _creatorManifestService;
     private readonly CreatorAssetsService _creatorAssetsService;
     private readonly CreatorGitService _creatorGitService;
+    private readonly GitHubReleaseService _gitHubReleaseService;
     private readonly CreatorNotesService _creatorNotesService;
     private readonly CreatorReleaseService _creatorReleaseService;
     private ModpackManifestInfo _lastManifestInfo;
@@ -546,6 +550,9 @@ public partial class MainViewModel : ViewModelBase
         // Init services (resolved from DI container)
         var sl = ServiceLocator.Current;
         _authService = sl.Resolve<AuthService>();
+        _voidIdAuthService = sl.Resolve<VoidIdAuthService>();
+        _gitHubAuthService = sl.Resolve<GitHubAuthService>();
+        _voidRegistryService = sl.Resolve<VoidRegistryService>();
         _launcherService = sl.Resolve<LauncherService>();
         _curseForgeApi = sl.Resolve<CurseForgeApi>();
         _modrinthApi = sl.Resolve<ModrinthApi>();
@@ -562,6 +569,7 @@ public partial class MainViewModel : ViewModelBase
         _creatorManifestService = sl.Resolve<CreatorManifestService>();
         _creatorAssetsService = sl.Resolve<CreatorAssetsService>();
         _creatorGitService = sl.Resolve<CreatorGitService>();
+        _gitHubReleaseService = sl.Resolve<GitHubReleaseService>();
         _creatorNotesService = sl.Resolve<CreatorNotesService>();
         _creatorReleaseService = sl.Resolve<CreatorReleaseService>();
         InitializeCreatorWorkbenchEditorState();
@@ -650,6 +658,19 @@ public partial class MainViewModel : ViewModelBase
         var obs = sl.Resolve<ObservabilityService>();
         Task.Run(async () => { using var op = obs.BeginOperation("LoadModpackData"); try { await LoadModpackData(); op.Complete(); } catch (Exception ex) { op.Fail(ex.Message); } });
         Task.Run(async () => { using var op = obs.BeginOperation("AutoLogin"); try { await TryAutoLogin(); op.Complete(); } catch (Exception ex) { op.Fail(ex.Message); } });
+        Task.Run(async () => { using var op = obs.BeginOperation("VoidIdSessionRestore"); try { await InitializeVoidIdSessionAsync(); op.Complete(); } catch (Exception ex) { op.Fail(ex.Message); } });
+        Task.Run(async () => { using var op = obs.BeginOperation("GitHubSessionRestore"); try { await InitializeGitHubSessionAsync(); op.Complete(); } catch (Exception ex) { op.Fail(ex.Message); } });
+        Task.Run(async () =>
+        {
+            await Task.Delay(TimeSpan.FromSeconds(2));
+            using var op = obs.BeginOperation("ProtocolInstallStartup");
+            try { await HandlePendingProtocolLaunchAsync(); op.Complete(); } catch (Exception ex) { op.Fail(ex.Message); }
+        });
+        Task.Run(async () =>
+        {
+            await Task.Delay(TimeSpan.FromSeconds(2));
+            await PollProtocolInstallRequestsAsync();
+        });
         Task.Run(async () =>
         {
             await Task.Delay(TimeSpan.FromSeconds(1.5));

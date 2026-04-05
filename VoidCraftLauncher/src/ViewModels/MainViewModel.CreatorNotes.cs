@@ -1,3 +1,4 @@
+using Avalonia.Controls;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -17,6 +18,11 @@ namespace VoidCraftLauncher.ViewModels;
 
 public partial class MainViewModel
 {
+    private static readonly HashSet<string> CreatorCanvasNodeTransientProperties = new(StringComparer.Ordinal)
+    {
+        nameof(CreatorCanvasNode.IsInlineEditing)
+    };
+
     private static readonly string[] CreatorCanvasNodeTypeValues =
     {
         "idea",
@@ -26,6 +32,14 @@ public partial class MainViewModel
         "dimension",
         "recipe",
         "blocker"
+    };
+
+    private static readonly string[] CreatorCanvasContentKindValues =
+    {
+        "text",
+        "image",
+        "file",
+        "link"
     };
 
     private CreatorCanvasGraph? _observedCreatorCanvasGraph;
@@ -56,6 +70,9 @@ public partial class MainViewModel
     [ObservableProperty]
     private bool _isCreatorCanvasDirty;
 
+    [ObservableProperty]
+    private bool _isCreatorCanvasExpanded;
+
     public ObservableCollection<CreatorNoteDocument> CreatorNoteDocuments { get; } = new();
 
     public ObservableCollection<CreatorNoteDocument> CreatorWikiDocuments { get; } = new();
@@ -67,6 +84,8 @@ public partial class MainViewModel
     public ObservableCollection<CreatorCanvasNode> CreatorCanvasAvailableNodes { get; } = new();
 
     public IReadOnlyList<string> CreatorCanvasNodeTypes => CreatorCanvasNodeTypeValues;
+
+    public IReadOnlyList<string> CreatorCanvasContentKinds => CreatorCanvasContentKindValues;
 
     public bool HasCreatorNoteDocuments => CreatorNoteDocuments.Count > 0;
 
@@ -95,14 +114,14 @@ public partial class MainViewModel
         0 => "Docs",
         1 => "Wiki",
         2 => "Canvas",
-        3 => "Mind Map",
         _ => "Docs"
     };
 
     public bool IsCreatorNotesModeDocs => CreatorNotesModeIndex == 0;
     public bool IsCreatorNotesModeWiki => CreatorNotesModeIndex == 1;
     public bool IsCreatorNotesModeCanvas => CreatorNotesModeIndex == 2;
-    public bool IsCreatorNotesModeMindMap => CreatorNotesModeIndex == 3;
+
+    public bool IsCreatorNotesModeMindMap => false;
 
     public string CreatorNotesDocumentsSummary =>
         $"{CreatorNoteDocuments.Count} docs • {CreatorWikiDocuments.Count} wiki • {CreatorCanvasGraphs.Count} grafu";
@@ -110,10 +129,36 @@ public partial class MainViewModel
     public string CreatorNotesPrimaryActionLabel => CreatorNotesModeIndex switch
     {
         1 => "Nova wiki stranka",
-        2 => "Novy canvas graf",
-        3 => "Nova mind mapa",
+        2 => "Novy canvas",
         _ => "Novy dokument"
     };
+
+    public string CreatorCanvasInteractionHint =>
+        "Pravy klik prida kartu presne do mista kliknuti. Prostredni tlacitko taha canvas. Tazenim presouvas kartu, dvojklik ji edituje inline a Ctrl + levy klik propoji vybrany node s cilem.";
+
+    public string CreatorCanvasExpandLabel => IsCreatorCanvasExpanded
+        ? "Normalni layout"
+        : "Rozsirit canvas";
+
+    public GridLength CreatorCanvasSidebarWidth => IsCreatorCanvasExpanded
+        ? new GridLength(0)
+        : new GridLength(300);
+
+    public GridLength CreatorCanvasSidebarGapWidth => IsCreatorCanvasExpanded
+        ? new GridLength(0)
+        : new GridLength(16);
+
+    public GridLength CreatorCanvasInspectorWidth => IsCreatorCanvasExpanded
+        ? new GridLength(0)
+        : new GridLength(320);
+
+    public string CreatorCanvasEmptyTitle => HasSelectedCreatorCanvasGraph
+        ? "Prazdny canvas"
+        : "Vyber nebo vytvor canvas";
+
+    public string CreatorCanvasEmptySubtitle => HasSelectedCreatorCanvasGraph
+        ? "Pravy klik do gridu prida text, obrazek, file link nebo web link."
+        : "Vytvor novy canvas nebo vyber existujici graph vlevo.";
 
     public string CreatorSelectedNoteLinkSummary => SelectedCreatorNoteDocument?.LinkSummary ?? "Bez wiki odkazu";
 
@@ -136,7 +181,7 @@ public partial class MainViewModel
         IsCreatorCanvasDirty;
 
     public bool CanSaveActiveCreatorNotesSurface =>
-        IsCreatorNotesModeCanvas || IsCreatorNotesModeMindMap
+        IsCreatorNotesModeCanvas
             ? CanSaveCreatorCanvasGraph
             : CanSaveCreatorNote;
 
@@ -189,10 +234,10 @@ public partial class MainViewModel
         if (string.IsNullOrWhiteSpace(workspacePath))
             return;
 
-        if (IsCreatorNotesModeCanvas || IsCreatorNotesModeMindMap)
+        if (IsCreatorNotesModeCanvas)
         {
             var graphName = string.IsNullOrWhiteSpace(title)
-                ? (IsCreatorNotesModeMindMap ? "Nova mind mapa" : "Novy canvas graf")
+                ? "Novy canvas"
                 : title.Trim();
 
             var createdGraph = await _creatorNotesService.CreateCanvasGraphAsync(workspacePath, graphName);
@@ -218,7 +263,7 @@ public partial class MainViewModel
     [RelayCommand]
     private async Task SaveActiveCreatorNotesSurface()
     {
-        if (IsCreatorNotesModeCanvas || IsCreatorNotesModeMindMap)
+        if (IsCreatorNotesModeCanvas)
         {
             await SaveCreatorCanvasGraph();
             return;
@@ -305,10 +350,15 @@ public partial class MainViewModel
         CreatorNotesModeIndex = mode?.Trim().ToLowerInvariant() switch
         {
             "wiki" => 1,
-            "canvas" => 2,
-            "mindmap" => 3,
+            "canvas" or "mindmap" => 2,
             _ => 0
         };
+    }
+
+    [RelayCommand]
+    private void ToggleCreatorCanvasExpanded()
+    {
+        IsCreatorCanvasExpanded = !IsCreatorCanvasExpanded;
     }
 
     [RelayCommand]
@@ -323,22 +373,22 @@ public partial class MainViewModel
     [RelayCommand]
     private void CreateCreatorCanvasNode()
     {
-        if (SelectedCreatorCanvasGraph == null)
+        var graph = SelectedCreatorCanvasGraph;
+        if (graph == null)
             return;
 
-        var node = new CreatorCanvasNode
+        CreateCreatorCanvasNodeCore(new CreatorCanvasSpawnRequest
         {
-            Label = BuildNextCreatorCanvasNodeLabel(SelectedCreatorCanvasGraph),
-            NodeType = "idea",
-            Description = string.Empty
-        };
+            NodeKind = "text",
+            X = 72 + (graph.Nodes.Count * 18),
+            Y = 72 + (graph.Nodes.Count * 18)
+        });
+    }
 
-        SelectedCreatorCanvasGraph.Nodes.Add(node);
-        SelectedCreatorCanvasGraph.NotifyNodesChanged();
-        SelectedCreatorCanvasNode = node;
-        IsCreatorCanvasDirty = true;
-        RebuildCreatorCanvasConnectionCollections();
-        TrackCreatorActivity($"Pridan canvas node: {node.Label}");
+    [RelayCommand]
+    private void CreateCreatorCanvasNodeAt(CreatorCanvasSpawnRequest? request)
+    {
+        CreateCreatorCanvasNodeCore(request);
     }
 
     [RelayCommand]
@@ -523,6 +573,8 @@ public partial class MainViewModel
         OnPropertyChanged(nameof(HasSelectedCreatorCanvasGraph));
         OnPropertyChanged(nameof(HasSelectedCreatorCanvasGraphNodes));
         OnPropertyChanged(nameof(CreatorSelectedCanvasGraphStatus));
+        OnPropertyChanged(nameof(CreatorCanvasEmptyTitle));
+        OnPropertyChanged(nameof(CreatorCanvasEmptySubtitle));
         OnPropertyChanged(nameof(CanSaveCreatorCanvasGraph));
         OnPropertyChanged(nameof(CanSaveActiveCreatorNotesSurface));
     }
@@ -541,9 +593,18 @@ public partial class MainViewModel
         OnPropertyChanged(nameof(IsCreatorNotesModeDocs));
         OnPropertyChanged(nameof(IsCreatorNotesModeWiki));
         OnPropertyChanged(nameof(IsCreatorNotesModeCanvas));
-        OnPropertyChanged(nameof(IsCreatorNotesModeMindMap));
         OnPropertyChanged(nameof(CreatorNotesPrimaryActionLabel));
         OnPropertyChanged(nameof(CanSaveActiveCreatorNotesSurface));
+        OnPropertyChanged(nameof(CreatorCanvasEmptyTitle));
+        OnPropertyChanged(nameof(CreatorCanvasEmptySubtitle));
+    }
+
+    partial void OnIsCreatorCanvasExpandedChanged(bool value)
+    {
+        OnPropertyChanged(nameof(CreatorCanvasExpandLabel));
+        OnPropertyChanged(nameof(CreatorCanvasSidebarWidth));
+        OnPropertyChanged(nameof(CreatorCanvasSidebarGapWidth));
+        OnPropertyChanged(nameof(CreatorCanvasInspectorWidth));
     }
 
     partial void OnCreatorNoteEditorContentChanged(string value)
@@ -600,6 +661,8 @@ public partial class MainViewModel
         OnPropertyChanged(nameof(HasSelectedCreatorCanvasGraphNodes));
         OnPropertyChanged(nameof(CreatorSelectedCanvasGraphStatus));
         OnPropertyChanged(nameof(CreatorSelectedCanvasNodeStatus));
+        OnPropertyChanged(nameof(CreatorCanvasEmptyTitle));
+        OnPropertyChanged(nameof(CreatorCanvasEmptySubtitle));
         OnPropertyChanged(nameof(CanSaveCreatorNote));
         OnPropertyChanged(nameof(CanSaveCreatorCanvasGraph));
         OnPropertyChanged(nameof(CanSaveActiveCreatorNotesSurface));
@@ -675,6 +738,74 @@ public partial class MainViewModel
         return $"Node {index}";
     }
 
+    private void CreateCreatorCanvasNodeCore(CreatorCanvasSpawnRequest? request)
+    {
+        if (SelectedCreatorCanvasGraph == null)
+            return;
+
+        var node = BuildCreatorCanvasNode(request);
+        SelectedCreatorCanvasGraph.Nodes.Add(node);
+        SelectedCreatorCanvasGraph.NotifyNodesChanged();
+        SelectedCreatorCanvasNode = node;
+        IsCreatorCanvasDirty = true;
+        RebuildCreatorCanvasConnectionCollections();
+        TrackCreatorActivity($"Pridan canvas node: {node.Label}");
+    }
+
+    private CreatorCanvasNode BuildCreatorCanvasNode(CreatorCanvasSpawnRequest? request)
+    {
+        var kind = request?.NodeKind?.Trim().ToLowerInvariant() switch
+        {
+            "image" => "image",
+            "file" => "file",
+            "link" => "link",
+            _ => "text"
+        };
+
+        var graph = SelectedCreatorCanvasGraph!;
+        var label = BuildDefaultCreatorCanvasNodeLabel(graph, kind);
+        var node = new CreatorCanvasNode
+        {
+            Label = label,
+            NodeType = "idea",
+            ContentKind = kind,
+            X = Math.Max(24, request?.X ?? 72),
+            Y = Math.Max(24, request?.Y ?? 72),
+            Description = kind == "text" ? "Nova textova karta" : string.Empty,
+            ContentValue = kind == "link" ? "https://" : string.Empty
+        };
+
+        if (kind == "file" && HasSelectedCreatorWorkbenchFile)
+        {
+            node.LinkedFilePath = SelectedCreatorWorkbenchFile!.RelativePath;
+            node.ContentValue = SelectedCreatorWorkbenchFile.RelativePath;
+            node.Label = Path.GetFileNameWithoutExtension(SelectedCreatorWorkbenchFile.RelativePath);
+            node.Description = "Soubor navazany z Files tabu";
+        }
+
+        node.NormalizeCanvasCardSize();
+        return node;
+    }
+
+    private string BuildDefaultCreatorCanvasNodeLabel(CreatorCanvasGraph graph, string kind)
+    {
+        var baseLabel = kind switch
+        {
+            "image" => "Image",
+            "file" => "File",
+            "link" => "Link",
+            _ => "Text"
+        };
+
+        var index = 1;
+        while (graph.Nodes.Any(node => string.Equals(node.Label, $"{baseLabel} {index}", StringComparison.OrdinalIgnoreCase)))
+        {
+            index++;
+        }
+
+        return $"{baseLabel} {index}";
+    }
+
     private void AttachCreatorCanvasGraphObservers(CreatorCanvasGraph? graph)
     {
         if (ReferenceEquals(_observedCreatorCanvasGraph, graph))
@@ -746,12 +877,18 @@ public partial class MainViewModel
         }
 
         RebuildCreatorCanvasConnectionCollections();
+        OnPropertyChanged(nameof(HasSelectedCreatorCanvasGraphNodes));
         OnPropertyChanged(nameof(CreatorSelectedCanvasGraphStatus));
+        OnPropertyChanged(nameof(CreatorCanvasEmptyTitle));
+        OnPropertyChanged(nameof(CreatorCanvasEmptySubtitle));
     }
 
     private void OnObservedCreatorCanvasNodePropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (_isHydratingCreatorCanvasState)
+            return;
+
+        if (!string.IsNullOrWhiteSpace(e.PropertyName) && CreatorCanvasNodeTransientProperties.Contains(e.PropertyName))
             return;
 
         IsCreatorCanvasDirty = true;

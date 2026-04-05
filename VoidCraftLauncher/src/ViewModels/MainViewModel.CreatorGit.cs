@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -20,6 +21,15 @@ public partial class MainViewModel
 
     [ObservableProperty]
     private bool _isCreatorGitOperationRunning;
+
+    partial void OnIsCreatorGitOperationRunningChanged(bool value)
+    {
+        OnPropertyChanged(nameof(CanCreatorGitCommit));
+        OnPropertyChanged(nameof(CanCreatorGitStageAll));
+        OnPropertyChanged(nameof(CanCreatorGitStageIndividualFiles));
+        OnPropertyChanged(nameof(CanCreatorGitGenerateVoidpack));
+        OnPropertyChanged(nameof(CanCreatorGitUploadPublishPayload));
+    }
 
     public ObservableCollection<string> CreatorGitBranches { get; } = new();
 
@@ -44,8 +54,25 @@ public partial class MainViewModel
     public bool CanCreatorGitCommit =>
         HasCreatorGitRepository &&
         !IsCreatorGitOperationRunning &&
-        !string.IsNullOrWhiteSpace(CreatorGitCommitMessage) &&
         CreatorGitStagedCount > 0;
+
+    public bool CanCreatorGitStageAll =>
+        HasCreatorGitRepository &&
+        HasCreatorGitChanges &&
+        !IsCreatorGitOperationRunning;
+
+    public bool CanCreatorGitGenerateVoidpack =>
+        !IsCreatorGitOperationRunning &&
+        HasCreatorWorkspaceContext;
+
+    public bool CanCreatorGitUploadPublishPayload =>
+        HasCreatorGitRepository &&
+        CreatorGitState.HasRemote &&
+        !IsCreatorGitOperationRunning;
+
+    public bool CanCreatorGitStageIndividualFiles =>
+        HasCreatorGitRepository &&
+        !IsCreatorGitOperationRunning;
 
     [RelayCommand]
     private async Task RefreshCreatorGitStatus()
@@ -53,7 +80,10 @@ public partial class MainViewModel
         var workspacePath = SkinStudioSelectedInstancePath;
         if (string.IsNullOrWhiteSpace(workspacePath)) return;
 
-        var status = await _creatorGitService.GetStatusAsync(workspacePath);
+        var status = await GetCreatorPublishGitStatusAsync(workspacePath);
+        var branches = status.IsRepository
+            ? await _creatorGitService.GetBranchesAsync(workspacePath)
+            : new System.Collections.Generic.List<string>();
 
         await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
         {
@@ -61,7 +91,7 @@ public partial class MainViewModel
             CreatorGitBranches.Clear();
             if (status.IsRepository)
             {
-                foreach (var branch in _creatorGitService.GetBranches(workspacePath))
+                foreach (var branch in branches)
                     CreatorGitBranches.Add(branch);
             }
             NotifyCreatorGitStateChanged();
@@ -101,8 +131,22 @@ public partial class MainViewModel
         var workspacePath = SkinStudioSelectedInstancePath;
         if (string.IsNullOrWhiteSpace(workspacePath)) return;
 
-        await _creatorGitService.StageAllAsync(workspacePath);
-        await RefreshCreatorGitStatus();
+        IsCreatorGitOperationRunning = true;
+        try
+        {
+            var publishTrackedPaths = await GetCreatorPublishTrackedPathsAsync(workspacePath);
+            var ok = await _creatorGitService.StagePathsAsync(workspacePath, publishTrackedPaths);
+            if (!ok)
+            {
+                ShowToast("Git", "Stage publish payload selhal.", ToastSeverity.Error, 2500);
+            }
+
+            await RefreshCreatorGitStatus();
+        }
+        finally
+        {
+            IsCreatorGitOperationRunning = false;
+        }
     }
 
     [RelayCommand]
@@ -112,12 +156,24 @@ public partial class MainViewModel
         var workspacePath = SkinStudioSelectedInstancePath;
         if (string.IsNullOrWhiteSpace(workspacePath)) return;
 
-        if (change.IsStaged)
-            await _creatorGitService.UnstageFileAsync(workspacePath, change.FilePath);
-        else
-            await _creatorGitService.StageFileAsync(workspacePath, change.FilePath);
+        IsCreatorGitOperationRunning = true;
+        try
+        {
+            var ok = change.IsStaged
+                ? await _creatorGitService.UnstageFileAsync(workspacePath, change.FilePath)
+                : await _creatorGitService.StageFileAsync(workspacePath, change.FilePath);
 
-        await RefreshCreatorGitStatus();
+            if (!ok)
+            {
+                ShowToast("Git", $"Operace nad {change.FilePath} selhala.", ToastSeverity.Error, 2600);
+            }
+
+            await RefreshCreatorGitStatus();
+        }
+        finally
+        {
+            IsCreatorGitOperationRunning = false;
+        }
     }
 
     [RelayCommand]
@@ -131,11 +187,13 @@ public partial class MainViewModel
         IsCreatorGitOperationRunning = true;
         try
         {
-            var ok = await _creatorGitService.CommitAsync(workspacePath, CreatorGitCommitMessage);
+            var commitMessage = ResolveCreatorGitCommitMessage();
+            var stagedPublishPaths = GetStagedCreatorGitPaths();
+            var ok = await _creatorGitService.CommitAsync(workspacePath, commitMessage, stagedPublishPaths);
             if (ok)
             {
                 ShowToast("Git", "Commit odeslan.", ToastSeverity.Success, 2500);
-                TrackCreatorActivity($"Commit: \"{CreatorGitCommitMessage}\"");
+                TrackCreatorActivity($"Commit: \"{commitMessage}\"");
                 CreatorGitCommitMessage = string.Empty;
                 await RefreshCreatorGitStatus();
             }
@@ -153,9 +211,113 @@ public partial class MainViewModel
     [RelayCommand]
     private async Task CreatorGitCommitAndPush()
     {
+        var hadStagedChanges = CreatorGitStagedCount > 0;
         await CreatorGitCommit();
-        if (CreatorGitState.HasRemote)
+        if (hadStagedChanges && CreatorGitState.HasRemote)
             await CreatorGitPush();
+    }
+
+    [RelayCommand]
+    private async Task CreatorGitUploadPublishPayload()
+    {
+        var workspacePath = SkinStudioSelectedInstancePath;
+        if (string.IsNullOrWhiteSpace(workspacePath)) return;
+
+        IsCreatorGitOperationRunning = true;
+        try
+        {
+            var manifest = await EnsureCreatorManifestForPublishAsync(workspacePath, showToast: true);
+            if (manifest == null)
+            {
+                return;
+            }
+
+            if (!_gitHubReleaseService.HasWorkflowFiles(workspacePath))
+            {
+                await BootstrapCreatorPublishWorkflow();
+            }
+
+            CreatorPublishStatus = "Staguji publish obsah pro GitHub...";
+            var publishTrackedPaths = await GetCreatorPublishTrackedPathsAsync(workspacePath);
+            if (!await _creatorGitService.StagePathsAsync(workspacePath, publishTrackedPaths))
+            {
+                ShowToast("Git", "Upload publish obsahu selhal při stage.", ToastSeverity.Error, 3200);
+                return;
+            }
+
+            var gitStatus = await GetCreatorPublishGitStatusAsync(workspacePath);
+            var stagedPublishPaths = gitStatus.Changes
+                .Where(change => change.IsStaged)
+                .Select(change => change.FilePath)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            var createdCommit = false;
+            if (stagedPublishPaths.Count == 0)
+            {
+                CreatorPublishStatus = "Publish obsah je beze změn. Spustím workflow nad aktuálním stavem repa.";
+            }
+
+            if (stagedPublishPaths.Count > 0)
+            {
+                var commitMessage = ResolveCreatorGitCommitMessage();
+                CreatorPublishStatus = $"Commituji publish obsah: {commitMessage}";
+                var commitOk = await _creatorGitService.CommitAsync(workspacePath, commitMessage, stagedPublishPaths);
+                if (!commitOk)
+                {
+                    ShowToast("Git", "Commit publish obsahu selhal.", ToastSeverity.Error, 3200);
+                    return;
+                }
+
+                createdCommit = true;
+                CreatorGitCommitMessage = string.Empty;
+            }
+
+            CreatorPublishStatus = createdCommit
+                ? "Pushuji publish obsah na GitHub..."
+                : "Kontroluji GitHub repo před spuštěním workflow...";
+            var pushOk = await _creatorGitService.PushAsync(workspacePath, CreatorGitHubSession?.AccessToken);
+            if (!pushOk)
+            {
+                ShowToast("Git", "Push publish obsahu selhal.", ToastSeverity.Error, 3200);
+                return;
+            }
+
+            var tagName = _gitHubReleaseService.BuildTagName(manifest.Version);
+            CreatorPublishStatus = $"Vytvářím workflow tag {tagName}...";
+            var tagOk = await _creatorGitService.CreateOrUpdateTagAsync(workspacePath, tagName, $"Release {manifest.PackName} {tagName}");
+            if (!tagOk)
+            {
+                ShowToast("Git", "Vytvoření workflow tagu selhalo.", ToastSeverity.Error, 3200);
+                return;
+            }
+
+            CreatorPublishStatus = $"Pushuji workflow tag {tagName} na GitHub...";
+            var pushTagOk = await _creatorGitService.PushTagAsync(workspacePath, tagName, CreatorGitHubSession?.AccessToken);
+            if (!pushTagOk)
+            {
+                ShowToast("Git", "Push workflow tagu selhal.", ToastSeverity.Error, 3200);
+                return;
+            }
+
+            CreatorPublishStatus = $"Publish obsah je na GitHubu a workflow {tagName} bylo spuštěné.";
+            ShowToast(
+                "Git",
+                createdCommit
+                    ? $"Publish obsah byl nahraný a workflow {tagName} spuštěné."
+                    : $"Repo už bylo synchronizované. Workflow {tagName} bylo spuštěné znovu.",
+                ToastSeverity.Success,
+                3600);
+            TrackCreatorActivity($"Publish obsah + workflow {tagName}: {manifest.Slug} v{manifest.Version}", "Git");
+
+            await RefreshCreatorGitStatus();
+            await RefreshCreatorReleasePipeline();
+        }
+        finally
+        {
+            IsCreatorGitOperationRunning = false;
+            NotifyCreatorGitStateChanged();
+        }
     }
 
     [RelayCommand]
@@ -167,7 +329,7 @@ public partial class MainViewModel
         IsCreatorGitOperationRunning = true;
         try
         {
-            var ok = await _creatorGitService.PullAsync(workspacePath);
+            var ok = await _creatorGitService.PullAsync(workspacePath, CreatorGitHubSession?.AccessToken);
             ShowToast("Git", ok ? "Pull dokoncen." : "Pull selhal.", ok ? ToastSeverity.Success : ToastSeverity.Error, 2500);
             if (ok) TrackCreatorActivity("Git pull dokoncen.");
             await RefreshCreatorGitStatus();
@@ -187,7 +349,7 @@ public partial class MainViewModel
         IsCreatorGitOperationRunning = true;
         try
         {
-            var ok = await _creatorGitService.PushAsync(workspacePath);
+            var ok = await _creatorGitService.PushAsync(workspacePath, CreatorGitHubSession?.AccessToken);
             ShowToast("Git", ok ? "Push dokoncen." : "Push selhal.", ok ? ToastSeverity.Success : ToastSeverity.Error, 2500);
             if (ok) TrackCreatorActivity("Git push dokoncen.");
             await RefreshCreatorGitStatus();
@@ -205,11 +367,20 @@ public partial class MainViewModel
         var workspacePath = SkinStudioSelectedInstancePath;
         if (string.IsNullOrWhiteSpace(workspacePath)) return;
 
-        var ok = await _creatorGitService.RevertFileAsync(workspacePath, change.FilePath);
-        if (ok)
+        IsCreatorGitOperationRunning = true;
+        try
         {
-            ShowToast("Git", $"Soubor {change.FilePath} vracen.", ToastSeverity.Success, 2000);
+            var ok = await _creatorGitService.RevertFileAsync(workspacePath, change.FilePath);
+            if (ok)
+            {
+                ShowToast("Git", $"Soubor {change.FilePath} vracen.", ToastSeverity.Success, 2000);
+            }
+
             await RefreshCreatorGitStatus();
+        }
+        finally
+        {
+            IsCreatorGitOperationRunning = false;
         }
     }
 
@@ -223,6 +394,51 @@ public partial class MainViewModel
         OnPropertyChanged(nameof(CreatorGitLastCommitLabel));
         OnPropertyChanged(nameof(CreatorGitRemoteLabel));
         OnPropertyChanged(nameof(CanCreatorGitCommit));
+        OnPropertyChanged(nameof(CanCreatorGitStageAll));
+        OnPropertyChanged(nameof(CanCreatorGitGenerateVoidpack));
+        OnPropertyChanged(nameof(CanCreatorGitStageIndividualFiles));
+        OnPropertyChanged(nameof(CanCreatorGitUploadPublishPayload));
         OnPropertyChanged(nameof(CreatorGitIsAvailable));
+        NotifyCreatorGitHubStateChanged();
+    }
+
+    private async Task<CreatorGitStatus> GetCreatorPublishGitStatusAsync(string workspacePath)
+    {
+        var statusScopePaths = _gitHubReleaseService.GetPublishStatusScopePaths(workspacePath);
+        var status = await _creatorGitService.GetStatusAsync(workspacePath, statusScopePaths);
+        status.Changes = status.Changes
+            .Where(change => _gitHubReleaseService.IsPublishTrackedPath(change.FilePath))
+            .ToList();
+        return status;
+    }
+
+    private IReadOnlyList<string> GetStagedCreatorGitPaths()
+    {
+        return CreatorGitState.Changes
+            .Where(change => change.IsStaged)
+            .Select(change => change.FilePath)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private string ResolveCreatorGitCommitMessage()
+    {
+        if (!string.IsNullOrWhiteSpace(CreatorGitCommitMessage))
+        {
+            return CreatorGitCommitMessage.Trim();
+        }
+
+        var manifest = CurrentModpackCreatorManifest;
+        if (manifest != null)
+        {
+            var label = !string.IsNullOrWhiteSpace(manifest.Slug) ? manifest.Slug : manifest.PackName;
+            var versionSuffix = !string.IsNullOrWhiteSpace(manifest.Version) ? $" v{manifest.Version}" : string.Empty;
+            if (!string.IsNullOrWhiteSpace(label))
+            {
+                return $"publish: {label}{versionSuffix}";
+            }
+        }
+
+        return "publish: update voidpack sources";
     }
 }

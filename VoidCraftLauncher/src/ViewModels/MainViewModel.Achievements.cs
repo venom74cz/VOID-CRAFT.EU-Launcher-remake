@@ -7,6 +7,7 @@ using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using VoidCraftLauncher.Models;
+using VoidCraftLauncher.Services;
 
 namespace VoidCraftLauncher.ViewModels;
 
@@ -55,11 +56,25 @@ public partial class MainViewModel
 
     public bool HasAchievementPlayer => AchievementCurrentPlayer != null;
 
+    public bool AchievementRequiresVoidIdLogin => !HasVoidIdSession;
+
+    public bool AchievementRequiresMinecraftLink => HasVoidIdSession && CreatorVoidIdSession?.Profile?.HasMinecraftLink != true;
+
+    public bool IsAchievementIdentityGateVisible => !HasAchievementPlayer && (AchievementRequiresVoidIdLogin || AchievementRequiresMinecraftLink);
+
     public bool HasAchievementGroups => FilteredAchievementGroups.Count > 0;
 
     public bool HasAchievementLeaderboard => AchievementLeaderboard.Count > 0;
 
     public string AchievementHeaderTitle => L("Achievements.Header.Title");
+
+    public string AchievementIdentityGateTitle => AchievementRequiresVoidIdLogin
+        ? "Přihlas se přes VOID ID"
+        : "Chybí navázaný Minecraft účet";
+
+    public string AchievementIdentityGateSubtitle => AchievementRequiresVoidIdLogin
+        ? "Osobní achievements, sezónní progress a statistiky jsou nově vázané na tvůj VOID ID účet, ne na lokální launcher profil. Přihlas se a launcher použije propojený Minecraft účet z VOID-CRAFT.EU."
+        : "Na tomhle VOID ID účtu zatím není navázaný Minecraft profil pro VOID-CRAFT.EU. Spusť synchronizaci a launcher zkusí převzít vazbu z VOIDIUM linku.";
 
     public string AchievementFilterLabel => L("Achievements.Header.Filter");
 
@@ -109,13 +124,21 @@ public partial class MainViewModel
 
     public string AchievementLeaderboardSubtitle => L("Achievements.Leaderboard.Subtitle");
 
-    public string AchievementEmptyTitle => HasAchievementSnapshot
-        ? L("Achievements.Empty.Title")
-        : L("Achievements.NoData.Title");
+    public string AchievementEmptyTitle => AchievementRequiresVoidIdLogin
+        ? "Přihlas se přes VOID ID"
+        : AchievementRequiresMinecraftLink
+            ? "Minecraft účet není propojený"
+            : HasAchievementSnapshot
+                ? "Pro tenhle účet nejsou sezónní data"
+                : L("Achievements.NoData.Title");
 
-    public string AchievementEmptySubtitle => HasAchievementSnapshot
-        ? L("Achievements.Empty.Subtitle")
-        : L("Achievements.NoData.Subtitle");
+    public string AchievementEmptySubtitle => AchievementRequiresVoidIdLogin
+        ? "Launcher už nebere osobní achievements podle lokálního Minecraft profilu. Přihlas se přes VOID ID a zobrazí se tvoje vlastní sezónní statistiky." 
+        : AchievementRequiresMinecraftLink
+            ? "VOID ID účet zatím nemá přiřazený Minecraft profil. Použij synchronizaci a potom obnov data achievements." 
+            : HasAchievementSnapshot
+                ? "V aktuální sezóně zatím nejsou pro navázaný účet dostupné statistiky nebo quest progress."
+                : L("Achievements.NoData.Subtitle");
 
     public int UnlockedAchievementCount => FilteredAchievementGroups.SelectMany(group => group.Items).Count(card => card.IsUnlocked);
 
@@ -358,6 +381,19 @@ public partial class MainViewModel
         await LoadAchievementSnapshotAsync(true);
     }
 
+    [RelayCommand]
+    private async Task RefreshAchievementIdentity()
+    {
+        if (!HasVoidIdSession)
+        {
+            await LoginVoidId();
+            return;
+        }
+
+        await RefreshAchievementVoidIdProfileAsync(reconcileMinecraft: true);
+        await LoadAchievementSnapshotAsync(true);
+    }
+
     private async Task LoadAchievementSnapshotAsync(bool forceRefresh = false)
     {
         if (IsAchievementLoading)
@@ -366,6 +402,11 @@ public partial class MainViewModel
         IsAchievementLoading = true;
         try
         {
+            if (HasVoidIdSession)
+            {
+                await RefreshAchievementVoidIdProfileAsync(reconcileMinecraft: CreatorVoidIdSession?.Profile?.HasMinecraftLink != true);
+            }
+
             var snapshot = await _achievementHubService.GetSnapshotAsync(forceRefresh);
             await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
             {
@@ -395,7 +436,14 @@ public partial class MainViewModel
         if (snapshot?.Players.Count > 0 != true)
             return null;
 
-        var uuid = ActiveAccount?.Uuid ?? UserSession?.UUID;
+        if (!HasVoidIdSession)
+            return null;
+
+        var linkedProfile = CreatorVoidIdSession?.Profile;
+        if (linkedProfile?.HasMinecraftLink != true)
+            return null;
+
+        var uuid = linkedProfile.MinecraftUuid;
         if (!string.IsNullOrWhiteSpace(uuid))
         {
             var byUuid = snapshot.Players.FirstOrDefault(player =>
@@ -408,9 +456,8 @@ public partial class MainViewModel
 
         var candidateNames = new[]
         {
-            ActiveAccount?.DisplayName,
-            UserSession?.Username,
-            OfflineUsername
+            linkedProfile.MinecraftName,
+            linkedProfile.DisplayName
         }
         .Where(name => !string.IsNullOrWhiteSpace(name))
         .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -420,10 +467,63 @@ public partial class MainViewModel
             candidateNames.Any(name => string.Equals(name, player.Name, StringComparison.OrdinalIgnoreCase)));
     }
 
+    private async Task RefreshAchievementVoidIdProfileAsync(bool reconcileMinecraft)
+    {
+        if (!await EnsureFreshVoidIdSessionAsync())
+        {
+            return;
+        }
+
+        var session = CreatorVoidIdSession;
+        var accessToken = session?.AccessToken;
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            return;
+        }
+
+        try
+        {
+            var profile = await _voidIdAuthService.RefreshProfileAsync(accessToken, reconcileMinecraft);
+            if (profile == null)
+            {
+                return;
+            }
+
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                CreatorVoidIdSession = new VoidIdSession
+                {
+                    AccessToken = session?.AccessToken ?? string.Empty,
+                    RefreshToken = session?.RefreshToken ?? string.Empty,
+                    AccessTokenExpiresAtUtc = session?.AccessTokenExpiresAtUtc,
+                    Profile = profile
+                };
+
+                VoidIdLoginStatus = $"VOID ID aktivní: {profile.DisplayName}";
+            });
+        }
+        catch (Exception ex)
+        {
+            LogService.Error("Achievement VOID ID profile refresh failed", ex);
+        }
+    }
+
+    private void HandleAchievementIdentityChanged()
+    {
+        AchievementCurrentPlayer = MatchAchievementPlayer(AchievementSnapshot);
+        RebuildAchievementSurface();
+        NotifyAchievementSummaryStateChanged();
+    }
+
     private void NotifyAchievementSummaryStateChanged()
     {
         OnPropertyChanged(nameof(HasAchievementSnapshot));
         OnPropertyChanged(nameof(HasAchievementPlayer));
+        OnPropertyChanged(nameof(AchievementRequiresVoidIdLogin));
+        OnPropertyChanged(nameof(AchievementRequiresMinecraftLink));
+        OnPropertyChanged(nameof(IsAchievementIdentityGateVisible));
+        OnPropertyChanged(nameof(AchievementIdentityGateTitle));
+        OnPropertyChanged(nameof(AchievementIdentityGateSubtitle));
         OnPropertyChanged(nameof(HasAchievementLeaderboard));
         OnPropertyChanged(nameof(AchievementHeaderTitle));
         OnPropertyChanged(nameof(AchievementFilterLabel));

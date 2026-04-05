@@ -3,7 +3,7 @@
 Oficialni vlastni Minecraft launcher pro komunitu **VOID-CRAFT**. Postaveny na
 .NET 9 (C#) a Avalonia UI.
 
-Aktualni release: **3.1.8.1**
+Aktualni release: **3.1.9**
 
 ![VOID-CRAFT Logo](https://void-craft.eu/logo.png)
 
@@ -21,7 +21,7 @@ Aktualni release: **3.1.8.1**
 - Prihlaseni pres Microsoft ucet
 - Centralizovana data launcheru v `Documents/.voidcraft`
 - Produkcni `Dashboard`, `Server Hub`, `Achievement Hub`, `Skin Studio` a `Instance Workspace`
-- `Creator Studio` pro bootstrap modpacku, metadata, workbench soubory a release-ready creator workflow
+- `Creator Studio` pro bootstrap modpacku, metadata, workbench soubory a release-ready workflow od `.voidpack` exportu po GitHub/VOID Registry publish
 - Instalacni a release flow pro oficialni distribuci VOID-CRAFT Launcheru
 
 ## Instalace

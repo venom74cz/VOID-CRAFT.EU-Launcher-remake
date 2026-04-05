@@ -16,6 +16,7 @@ namespace VoidCraftLauncher.Services;
 public class SecureStorageService
 {
     private readonly string _storagePath;
+    private readonly object _syncRoot = new();
 
     public SecureStorageService()
     {
@@ -29,10 +30,15 @@ public class SecureStorageService
     /// </summary>
     public void Set(string key, string value)
     {
-        var store = LoadStore();
-        var encrypted = Protect(Encoding.UTF8.GetBytes(value));
-        store[key] = Convert.ToBase64String(encrypted);
-        SaveStore(store);
+        ArgumentException.ThrowIfNullOrWhiteSpace(key);
+
+        lock (_syncRoot)
+        {
+            var store = LoadStoreUnsafe();
+            var encrypted = Protect(Encoding.UTF8.GetBytes(value));
+            store[key] = Convert.ToBase64String(encrypted);
+            SaveStoreUnsafe(store);
+        }
     }
 
     public Task SetAsync(string key, string value)
@@ -41,25 +47,54 @@ public class SecureStorageService
         return Task.CompletedTask;
     }
 
+    public void SetMany(IReadOnlyDictionary<string, string> values)
+    {
+        ArgumentNullException.ThrowIfNull(values);
+
+        lock (_syncRoot)
+        {
+            var store = LoadStoreUnsafe();
+            foreach (var (key, value) in values)
+            {
+                if (string.IsNullOrWhiteSpace(key))
+                {
+                    continue;
+                }
+
+                var encrypted = Protect(Encoding.UTF8.GetBytes(value));
+                store[key] = Convert.ToBase64String(encrypted);
+            }
+
+            SaveStoreUnsafe(store);
+        }
+    }
+
     /// <summary>
     /// Retrieves and decrypts a value by key. Returns null if not found.
     /// </summary>
     public string? Get(string key)
     {
-        var store = LoadStore();
-        if (!store.TryGetValue(key, out var b64))
-            return null;
+        ArgumentException.ThrowIfNullOrWhiteSpace(key);
 
-        try
+        lock (_syncRoot)
         {
-            var encrypted = Convert.FromBase64String(b64);
-            var decrypted = Unprotect(encrypted);
-            return Encoding.UTF8.GetString(decrypted);
-        }
-        catch (Exception ex)
-        {
-            LogService.Error($"SecureStorage: failed to decrypt key '{key}'", ex);
-            return null;
+            var store = LoadStoreUnsafe();
+            if (!store.TryGetValue(key, out var b64))
+            {
+                return null;
+            }
+
+            try
+            {
+                var encrypted = Convert.FromBase64String(b64);
+                var decrypted = Unprotect(encrypted);
+                return Encoding.UTF8.GetString(decrypted);
+            }
+            catch (Exception ex)
+            {
+                LogService.Error($"SecureStorage: failed to decrypt key '{key}'", ex);
+                return null;
+            }
         }
     }
 
@@ -70,9 +105,16 @@ public class SecureStorageService
     /// </summary>
     public void Remove(string key)
     {
-        var store = LoadStore();
-        if (store.Remove(key))
-            SaveStore(store);
+        ArgumentException.ThrowIfNullOrWhiteSpace(key);
+
+        lock (_syncRoot)
+        {
+            var store = LoadStoreUnsafe();
+            if (store.Remove(key))
+            {
+                SaveStoreUnsafe(store);
+            }
+        }
     }
 
     public Task RemoveAsync(string key)
@@ -81,17 +123,48 @@ public class SecureStorageService
         return Task.CompletedTask;
     }
 
+    public void RemoveMany(params string[] keys)
+    {
+        ArgumentNullException.ThrowIfNull(keys);
+
+        lock (_syncRoot)
+        {
+            var store = LoadStoreUnsafe();
+            var changed = false;
+
+            foreach (var key in keys)
+            {
+                if (string.IsNullOrWhiteSpace(key))
+                {
+                    continue;
+                }
+
+                changed |= store.Remove(key);
+            }
+
+            if (changed)
+            {
+                SaveStoreUnsafe(store);
+            }
+        }
+    }
+
     /// <summary>
     /// Checks whether a key exists in the store.
     /// </summary>
     public bool ContainsKey(string key)
     {
-        return LoadStore().ContainsKey(key);
+        ArgumentException.ThrowIfNullOrWhiteSpace(key);
+
+        lock (_syncRoot)
+        {
+            return LoadStoreUnsafe().ContainsKey(key);
+        }
     }
 
     public Task<bool> ContainsKeyAsync(string key) => Task.FromResult(ContainsKey(key));
 
-    private Dictionary<string, string> LoadStore()
+    private Dictionary<string, string> LoadStoreUnsafe()
     {
         if (!File.Exists(_storagePath))
             return new();
@@ -107,14 +180,16 @@ public class SecureStorageService
         }
     }
 
-    private void SaveStore(Dictionary<string, string> store)
+    private void SaveStoreUnsafe(Dictionary<string, string> store)
     {
         var dir = Path.GetDirectoryName(_storagePath);
         if (dir != null && !Directory.Exists(dir))
             Directory.CreateDirectory(dir);
 
         var json = JsonSerializer.Serialize(store, new JsonSerializerOptions { WriteIndented = false });
-        File.WriteAllText(_storagePath, json);
+        var tempPath = _storagePath + ".tmp";
+        File.WriteAllText(tempPath, json);
+        File.Move(tempPath, _storagePath, true);
     }
 
     private static byte[] Protect(byte[] data)

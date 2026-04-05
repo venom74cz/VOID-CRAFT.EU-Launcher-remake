@@ -3,272 +3,288 @@
              xmlns:vm="using:VoidCraftLauncher.ViewModels"
              xmlns:controls="using:VoidCraftLauncher.Controls"
              xmlns:asyncImage="clr-namespace:AsyncImageLoader;assembly=AsyncImageLoader.Avalonia"
-             xmlns:converters="using:VoidCraftLauncher.Converters"
              x:Class="VoidCraftLauncher.Controls.DashboardView"
              x:DataType="vm:MainViewModel">
 
-    <UserControl.Resources>
-        <converters:ObjectEqualityConverter x:Key="ObjectEqualityConverter"/>
-        <converters:ObjectInequalityConverter x:Key="ObjectInequalityConverter"/>
-    </UserControl.Resources>
-
     <ScrollViewer HorizontalScrollBarVisibility="Disabled">
-        <Border Padding="32,28,32,60">
-            <StackPanel Spacing="28">
-
-                <!-- ══ HERO BANNER ══ -->
-                <Border Background="{DynamicResource BgShellBrush}" CornerRadius="20" Padding="32,28"
+        <Border Padding="28,28,28,56">
+            <StackPanel Spacing="24">
+                <Border Background="{DynamicResource BgShellBrush}" CornerRadius="24" Padding="28"
                         BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
-                    <Grid RowDefinitions="Auto,Auto" RowSpacing="22">
-                        <Grid ColumnDefinitions="*,280">
-                            <StackPanel Spacing="12" VerticalAlignment="Center">
-                                <TextBlock Text="Vítej zpět!" FontSize="28" FontWeight="ExtraBold"
-                                           Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                <TextBlock Text="{Binding Greeting}" FontSize="14" Foreground="{DynamicResource TextSecondaryBrush}"
-                                           TextWrapping="Wrap" MaxWidth="580"/>
-                                <TextBlock Text="{Binding StreamingContextModpackName, StringFormat='Aktivní workspace: {0}'}" FontSize="12"
-                                           Foreground="{DynamicResource TextMutedBrush}"/>
-                                <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,8,0,0">
-                                    <Button Command="{Binding GoToHomeCommand}" Classes="primary" FontSize="14" Padding="24,12">
-                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <TextBlock Text="{StaticResource IconLibrary}" FontSize="14"/>
-                                            <TextBlock Text="Knihovna" FontWeight="Bold"/>
-                                        </StackPanel>
-                                    </Button>
-                                    <Button Command="{Binding GoToBrowserCommand}" Classes="secondary" FontSize="14" Padding="24,12">
-                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <TextBlock Text="{StaticResource IconDiscover}" FontSize="14"/>
-                                            <TextBlock Text="Procházet" FontWeight="SemiBold"/>
-                                        </StackPanel>
-                                    </Button>
-                                </StackPanel>
+                    <Grid ColumnDefinitions="*,20,320">
+                        <StackPanel Spacing="16">
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="Přehled launcheru" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AccentTealBrush}"/>
+                                <TextBlock Text="Všechno důležité z launcheru na jednom místě." FontSize="30" FontWeight="ExtraBold" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                                <TextBlock Text="{Binding Greeting}" FontSize="14" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" MaxWidth="720"/>
+                                <TextBlock Text="{Binding StreamingContextModpackName, StringFormat='Aktivní instance: {0}'}" FontSize="12" Foreground="{DynamicResource TextMutedBrush}"/>
                             </StackPanel>
 
-                            <Button Grid.Column="1" Command="{Binding QuickConnectCommand}" CommandParameter="{Binding PinnedServer}" Background="{DynamicResource BgPanelBrush}" CornerRadius="16" Padding="16"
-                                    BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" VerticalAlignment="Center" Cursor="Hand"
-                                    MinWidth="240" MaxWidth="280">
+                            <WrapPanel Orientation="Horizontal" ItemHeight="44">
+                                <Button Command="{Binding GoToHomeCommand}" Classes="primary" FontSize="13" Padding="18,10" Margin="0,0,12,12">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBlock Text="{StaticResource IconLibrary}" FontSize="14"/>
+                                        <TextBlock Text="Otevřít knihovnu"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Command="{Binding GoToBrowserCommand}" Classes="secondary" FontSize="13" Padding="18,10" Margin="0,0,12,12">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBlock Text="{StaticResource IconDiscover}" FontSize="14"/>
+                                        <TextBlock Text="Najít nový pack"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Command="{Binding QuickConnectCommand}" CommandParameter="{Binding PinnedServer}" Classes="secondary" FontSize="13" Padding="18,10" Margin="0,0,12,12">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBlock Text="{StaticResource IconServerHub}" FontSize="14"/>
+                                        <TextBlock Text="Rychlé připojení"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Command="{Binding GoToStreamingToolsCommand}" Classes="secondary" FontSize="13" Padding="18,10" Margin="0,0,12,12">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBlock Text="{StaticResource IconStreaming}" FontSize="14"/>
+                                        <TextBlock Text="Creator Studio"/>
+                                    </StackPanel>
+                                </Button>
+                            </WrapPanel>
+
+                            <Grid ColumnDefinitions="*,12,*,12,*,12,*">
+                                <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="16" Padding="16,14" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="Instance" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                        <TextBlock Text="{Binding InstalledModpacks.Count}" FontSize="24" FontWeight="ExtraBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                        <TextBlock Text="Lokálně připravené instance" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Column="2" Background="{DynamicResource BgPanelBrush}" CornerRadius="16" Padding="16,14" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="Síť" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                        <TextBlock Text="{Binding TotalServerCount, StringFormat='{}{0} serverů'}" FontSize="24" FontWeight="ExtraBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                        <TextBlock Text="Stav sítě a rychlé připojení" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Column="4" Background="{DynamicResource BgPanelBrush}" CornerRadius="16" Padding="16,14" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="Úspěchy" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                        <TextBlock Text="{Binding AchievementSummaryPlayerName}" FontSize="18" FontWeight="ExtraBold" Foreground="{DynamicResource TextPrimaryBrush}" TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Text="{Binding AchievementSummaryProgressValue, StringFormat='Postup: {0}'}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Column="6" Background="{DynamicResource BgPanelBrush}" CornerRadius="16" Padding="16,14" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="VOID ID přístup" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                        <TextBlock Text="{Binding VoidIdAccessLevelLabel}" FontSize="18" FontWeight="ExtraBold" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                                        <TextBlock Text="{Binding VoidIdDisplayName}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextTrimming="CharacterEllipsis"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2" Spacing="14">
+                            <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="18" Padding="18" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Text="VOID ID přístup" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AccentTealBrush}"/>
+                                    <TextBlock Text="{Binding VoidIdAccessLevelLabel}" FontSize="22" FontWeight="ExtraBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                    <TextBlock Text="{Binding VoidIdAccessSummary}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                    <TextBlock Text="{Binding VoidIdMinecraftLabel}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" IsVisible="{Binding HasVoidIdSession}"/>
+                                    <TextBlock Text="{Binding VoidIdLastLoginLabel}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" IsVisible="{Binding HasVoidIdSession}"/>
+                                    <TextBlock Text="{Binding VoidIdLoginStatus}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" IsVisible="{Binding !HasVoidIdSession}"/>
+
+                                    <Button Command="{Binding OpenUrlCommand}" CommandParameter="{Binding VoidIdProfileEntryUrl}" Classes="primary" FontSize="12" Padding="16,9" IsVisible="{Binding HasVoidIdSession}">
+                                        <TextBlock Text="{Binding VoidIdProfileEntryLabel}"/>
+                                    </Button>
+                                    <Button Command="{Binding LoginVoidIdCommand}" Classes="secondary" FontSize="12" Padding="16,9" IsVisible="{Binding !HasVoidIdSession}">
+                                        <TextBlock Text="Přihlásit přes VOID ID"/>
+                                    </Button>
+                                </StackPanel>
+                            </Border>
+
+                            <Button Command="{Binding QuickConnectCommand}" CommandParameter="{Binding PinnedServer}" Background="{DynamicResource BgPanelBrush}" CornerRadius="18" Padding="18"
+                                    BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" Cursor="Hand">
                                 <StackPanel Spacing="10" HorizontalAlignment="Stretch">
-                                    <!-- Header: Icon & Name & Status -->
                                     <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
-                                        <!-- Server Icon -->
-                                        <Border CornerRadius="6" ClipToBounds="True" Width="36" Height="36" Background="{DynamicResource BgShellBrush}"
-                                                VerticalAlignment="Center">
+                                        <Border CornerRadius="10" ClipToBounds="True" Width="42" Height="42" Background="{DynamicResource BgShellBrush}" VerticalAlignment="Center">
                                             <asyncImage:AdvancedImage Source="{Binding PinnedServer.IconUrl}" Stretch="UniformToFill"/>
                                         </Border>
-
-                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                                            <TextBlock Text="{Binding PinnedServer.Name, FallbackValue='mc.void-craft.eu'}" FontWeight="Bold" FontSize="14"
-                                                       Foreground="{DynamicResource TextPrimaryBrush}" TextTrimming="CharacterEllipsis"/>
-                                            <TextBlock Text="{Binding PinnedServer.Address, FallbackValue='mc.void-craft.eu'}" FontSize="11"
-                                                       Foreground="{DynamicResource PrimaryBBrush}" TextTrimming="CharacterEllipsis"/>
+                                        <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding PinnedServer.Name, FallbackValue='VOID-CRAFT'}" FontWeight="Bold" FontSize="14" Foreground="{DynamicResource TextPrimaryBrush}" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="{Binding PinnedServer.Address, FallbackValue='mc.void-craft.eu'}" FontSize="11" Foreground="{DynamicResource PrimaryBBrush}" TextTrimming="CharacterEllipsis"/>
                                         </StackPanel>
-                                        
-                                        <!-- Status Dot -->
-                                        <Panel Grid.Column="2" VerticalAlignment="Top" Margin="0,4,0,0">
-                                            <Border Width="10" Height="10" CornerRadius="5" Background="{DynamicResource PrimaryBBrush}" IsVisible="{Binding PinnedServer.IsOnline}">
-                                                <Border.Effect><DropShadowEffect BlurRadius="8" Color="#7c6fff" Opacity="0.6"/></Border.Effect>
-                                            </Border>
-                                            <Border Width="10" Height="10" CornerRadius="5" Background="{DynamicResource DangerBrush}" IsVisible="{Binding !PinnedServer.IsOnline}"/>
-                                        </Panel>
+                                        <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="2">
+                                            <TextBlock Text="ONLINE" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentTealBrush}" HorizontalAlignment="Right" IsVisible="{Binding PinnedServer.IsOnline}"/>
+                                            <TextBlock Text="OFFLINE" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource DangerBrush}" HorizontalAlignment="Right" IsVisible="{Binding !PinnedServer.IsOnline}"/>
+                                        </StackPanel>
                                     </Grid>
-                                    
-                                    <!-- MOTD -->
-                                    <TextBlock Text="{Binding PinnedServer.Motd}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" 
-                                               TextWrapping="Wrap" MaxHeight="32" TextTrimming="CharacterEllipsis"/>
 
-                                    <!-- Players -->
+                                    <TextBlock Text="{Binding PinnedServer.Motd}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" MaxHeight="48" TextTrimming="CharacterEllipsis"/>
+
                                     <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
-                                        <TextBlock Text="{Binding PinnedServer.PlayerCountLabel}" Foreground="{DynamicResource TextMutedBrush}" FontSize="11" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding PinnedServer.PlayerCountLabel}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center"/>
                                         <ProgressBar Grid.Column="1" Value="{Binding PinnedServer.PlayerCount}" Maximum="{Binding PinnedServer.MaxPlayers}" Height="4" CornerRadius="2" VerticalAlignment="Center"/>
                                     </Grid>
 
-                                    <!-- Quick Connect Label -->
-                                    <Border Background="{DynamicResource PrimaryBBrush}" CornerRadius="6" Padding="0,6" Margin="0,4,0,0" Opacity="0.9">
-                                        <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
-                                            <TextBlock Text="▶" FontSize="12" Foreground="White" VerticalAlignment="Center"/>
-                                            <TextBlock Text="Quick Connect" FontSize="12" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
-                                        </StackPanel>
+                                    <Border Background="{DynamicResource PrimaryBBrush}" CornerRadius="8" Padding="0,8" Margin="0,2,0,0">
+                                        <TextBlock Text="Připojit se k serveru" FontSize="12" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center"/>
                                     </Border>
                                 </StackPanel>
                             </Button>
-                        </Grid>
-
-                        <Grid Grid.Row="1" ColumnDefinitions="*,12,*,12,*">
-                            <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="16" Padding="18,16"
-                                    BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
-                                <StackPanel Spacing="4">
-                                    <TextBlock Text="Nainstalované instance" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
-                                    <TextBlock Text="{Binding InstalledModpacks.Count}" FontSize="24" FontWeight="ExtraBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                </StackPanel>
-                            </Border>
-                            <Border Grid.Column="2" Background="{DynamicResource BgPanelBrush}" CornerRadius="16" Padding="18,16"
-                                    BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
-                                <StackPanel Spacing="4">
-                                    <TextBlock Text="Síť serverů" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
-                                    <TextBlock Text="{Binding TotalServerCount, StringFormat='{}{0} serverů'}" FontSize="24" FontWeight="ExtraBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                </StackPanel>
-                            </Border>
-                            <Border Grid.Column="4" Background="{DynamicResource BgPanelBrush}" CornerRadius="16" Padding="18,16"
-                                    BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
-                                <StackPanel Spacing="4">
-                                    <TextBlock Text="Achievement Hub" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
-                                    <TextBlock Text="{Binding AchievementSummaryPlayerName}" FontSize="18" FontWeight="ExtraBold" Foreground="{DynamicResource TextPrimaryBrush}" TextTrimming="CharacterEllipsis"/>
-                                    <TextBlock Text="{Binding AchievementSummaryProgressValue, StringFormat='Progress: {0}'}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"/>
-                                </StackPanel>
-                            </Border>
-                        </Grid>
+                        </StackPanel>
                     </Grid>
                 </Border>
 
-                <!-- ══ OPERATIONS ══ -->
-                <StackPanel Spacing="14" IsVisible="{Binding !!InstalledModpacks.Count}">
-                    <TextBlock Text="Operační přehled" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                <Grid ColumnDefinitions="*,18,*">
+                    <StackPanel Spacing="18">
+                        <Border Background="{DynamicResource BgShellBrush}" CornerRadius="20" Padding="22" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                            <StackPanel Spacing="16">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Další kroky" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                    <TextBlock Text="Launcher sem řadí nejbližší kroky podle aktivní instance, serverů a tvůrčích nástrojů." FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                </StackPanel>
 
-                    <Grid ColumnDefinitions="*,14,*,14,*">
-                        <Border Background="{DynamicResource BgShellBrush}" CornerRadius="14" Padding="18"
-                                BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
-                            <StackPanel Spacing="10">
-                                <TextBlock Text="Creator Studio" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                <TextBlock Text="{Binding CreatorStudioInstanceLabel}" FontSize="13" Foreground="{DynamicResource PrimaryBBrush}"/>
-                                <TextBlock Text="{Binding CreatorStudioModCountLabel}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"/>
-                                <Button Content="Otevřít studio" Command="{Binding GoToStreamingToolsCommand}"
-                                        Classes="secondary" FontSize="12" Padding="14,8"/>
-                            </StackPanel>
-                        </Border>
-
-                        <Border Grid.Column="2" Background="{DynamicResource BgShellBrush}" CornerRadius="14" Padding="18"
-                                BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
-                            <StackPanel Spacing="10">
-                                <TextBlock Text="Server Hub" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                <TextBlock Text="{Binding TotalServerCount, StringFormat='{}{0} serverů v síti'}" FontSize="13" Foreground="{DynamicResource PrimaryBBrush}"/>
-                                <TextBlock Text="{Binding PinnedServer.PlayerCountLabel}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"/>
-                                <Button Content="Otevřít servery" Command="{Binding GoToServerHubCommand}"
-                                        Classes="secondary" FontSize="12" Padding="14,8"/>
-                            </StackPanel>
-                        </Border>
-
-                        <Border Grid.Column="4" Background="{DynamicResource BgShellBrush}" CornerRadius="14" Padding="18"
-                                BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
-                            <StackPanel Spacing="10">
-                                <TextBlock Text="Novinky a feed" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                <TextBlock Text="Discord, YouTube a Minecraft novinky na jednom místě." FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
-                                <Button Content="Otevřít novinky" Command="{Binding GoToNewsCommand}"
-                                        Classes="secondary" FontSize="12" Padding="14,8"/>
-                            </StackPanel>
-                        </Border>
-                    </Grid>
-
-                    <TextBlock Text="Rychlá navigace" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,10,0,-4"/>
-                    <StackPanel Orientation="Horizontal" Spacing="12">
-                        <Button Command="{Binding GoToSkinStudioCommand}" Classes="secondary" FontSize="13" Padding="16,10">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <TextBlock Text="{StaticResource IconPalette}" FontSize="14"/>
-                                <TextBlock Text="Skin Studio"/>
-                            </StackPanel>
-                        </Button>
-                        <Button Command="{Binding GoToAchievementsCommand}" Classes="secondary" FontSize="13" Padding="16,10">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <TextBlock Text="{StaticResource IconTrophy}" FontSize="14"/>
-                                <TextBlock Text="Achievements"/>
-                            </StackPanel>
-                        </Button>
-                        <Button Command="{Binding GoToSettingsCommand}" Classes="secondary" FontSize="13" Padding="16,10">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <TextBlock Text="{StaticResource IconSettings}" FontSize="14"/>
-                                <TextBlock Text="Nastavení"/>
-                            </StackPanel>
-                        </Button>
-                        <Button Command="{Binding GoToThemeSwitcherCommand}" Classes="secondary" FontSize="13" Padding="16,10">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <TextBlock Text="{StaticResource IconBrush}" FontSize="14"/>
-                                <TextBlock Text="Motivy"/>
-                            </StackPanel>
-                        </Button>
-                        <Button Command="{Binding ToggleAccountPickerCommand}" Classes="secondary" FontSize="13" Padding="16,10">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <TextBlock Text="{StaticResource IconUser}" FontSize="14"/>
-                                <TextBlock Text="Účet"/>
-                            </StackPanel>
-                        </Button>
-                    </StackPanel>
-
-                    <!-- ══ RECENT INSTANCES ══ -->
-                    <StackPanel Spacing="14" IsVisible="{Binding HasRecentModpacks}" Margin="0,16,0,0">
-                        <TextBlock Text="Nedávno hráno" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                        <ItemsControl ItemsSource="{Binding RecentModpacks}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <WrapPanel/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="12" Padding="12" Width="260"
-                                            BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" Margin="0,0,14,14">
-                                        <Grid ColumnDefinitions="48,12,*">
-                                            <Border CornerRadius="8" ClipToBounds="True" Background="{DynamicResource BgShellBrush}" Width="48" Height="48" VerticalAlignment="Center">
-                                                <asyncImage:AdvancedImage Source="{Binding LogoUrl}" Stretch="UniformToFill"/>
-                                            </Border>
-                                            
-                                            <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="2">
-                                                <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" TextTrimming="CharacterEllipsis"/>
-                                                <TextBlock Text="{Binding CurrentVersion.Name, FallbackValue='Verze neznámá'}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextTrimming="CharacterEllipsis"/>
-                                                <Button Content="Spustit" FontSize="11" Classes="primary" Padding="12,4" HorizontalAlignment="Left" Margin="0,6,0,0"
-                                                        Command="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).SelectAndPlayCommand}" CommandParameter="{Binding}"/>
-                                            </StackPanel>
-                                        </Grid>
+                                <Grid ColumnDefinitions="*,14,*">
+                                    <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="16" Padding="18" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                                        <StackPanel Spacing="10">
+                                            <TextBlock Text="Creator Studio" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                            <TextBlock Text="{Binding CreatorStudioInstanceLabel}" FontSize="13" Foreground="{DynamicResource PrimaryBBrush}" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding CreatorStudioModCountLabel}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                            <Button Content="Otevřít Creator Studio" Command="{Binding GoToStreamingToolsCommand}" Classes="secondary" FontSize="12" Padding="14,8"/>
+                                        </StackPanel>
                                     </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </StackPanel>
 
-                </StackPanel>
-
-                <Border IsVisible="{Binding HasFeaturedMinecraftNews}" Background="{DynamicResource BgShellBrush}" CornerRadius="16" Padding="22"
-                        BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
-                    <Grid ColumnDefinitions="220,20,*" DataContext="{Binding FeaturedMinecraftNews}">
-                        <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="14" ClipToBounds="True"
-                                BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
-                            <asyncImage:AdvancedImage Source="{Binding ThumbnailUrl}" Height="180" Stretch="UniformToFill"/>
+                                    <Border Grid.Column="2" Background="{DynamicResource BgPanelBrush}" CornerRadius="16" Padding="18" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                                        <StackPanel Spacing="10">
+                                            <TextBlock Text="Komunita a servery" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                            <TextBlock Text="{Binding TotalServerCount, StringFormat='{}{0} serverů v síti'}" FontSize="13" Foreground="{DynamicResource PrimaryBBrush}"/>
+                                            <TextBlock Text="Novinky, servery a úspěchy máš vedle sebe bez zbytečného přepínání mezi obrazovkami." FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                            <WrapPanel Orientation="Horizontal">
+                                                <Button Command="{Binding GoToServerHubCommand}" Classes="secondary" FontSize="12" Padding="14,8" Margin="0,0,10,10">
+                                                    <TextBlock Text="Servery"/>
+                                                </Button>
+                                                <Button Command="{Binding GoToNewsCommand}" Classes="secondary" FontSize="12" Padding="14,8" Margin="0,0,10,10">
+                                                    <TextBlock Text="Novinky"/>
+                                                </Button>
+                                                <Button Command="{Binding GoToAchievementsCommand}" Classes="secondary" FontSize="12" Padding="14,8" Margin="0,0,10,10">
+                                                    <TextBlock Text="Úspěchy"/>
+                                                </Button>
+                                            </WrapPanel>
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                            </StackPanel>
                         </Border>
 
-                        <StackPanel Grid.Column="2" Spacing="12" VerticalAlignment="Center">
-                            <StackPanel Spacing="4">
-                                <TextBlock Text="Oficiální Minecraft novinka" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AccentTealBrush}"/>
-                                <TextBlock Text="{Binding Title}" FontSize="22" FontWeight="ExtraBold" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
-                                <TextBlock Text="{Binding PublishedAt, StringFormat='{}{0:dd.MM.yyyy HH:mm}'}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
-                            </StackPanel>
-
-                            <TextBlock Text="{Binding Body}" FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" LineHeight="20" MaxHeight="84"/>
-
-                            <StackPanel Orientation="Horizontal" Spacing="10">
-                                <Button Content="Otevřít článek" Command="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).OpenFeedItemCommand}"
-                                        CommandParameter="{Binding}" Classes="primary" FontSize="12" Padding="16,8"/>
-                                <Button Content="Všechny novinky" Command="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).GoToNewsCommand}"
-                                        Classes="secondary" FontSize="12" Padding="16,8"/>
-                            </StackPanel>
+                        <StackPanel Spacing="14" IsVisible="{Binding HasRecentModpacks}">
+                            <TextBlock Text="Nedávno hrané instance" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                            <ItemsControl ItemsSource="{Binding RecentModpacks}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="14" Padding="14" Width="280" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" Margin="0,0,14,14">
+                                            <Grid ColumnDefinitions="52,12,*">
+                                                <Border CornerRadius="10" ClipToBounds="True" Background="{DynamicResource BgShellBrush}" Width="52" Height="52" VerticalAlignment="Center">
+                                                    <asyncImage:AdvancedImage Source="{Binding LogoUrl}" Stretch="UniformToFill"/>
+                                                </Border>
+                                                <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="3">
+                                                    <TextBlock Text="{Binding DisplayLabel}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock Text="{Binding VersionTransitionText, FallbackValue='Verze neznámá'}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                                    <Button Content="Spustit" FontSize="11" Classes="primary" Padding="12,4" HorizontalAlignment="Left" Margin="0,6,0,0"
+                                                            Command="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).SelectAndPlayCommand}" CommandParameter="{Binding}"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
                         </StackPanel>
-                    </Grid>
-                </Border>
 
-                <!-- ══ EMPTY STATE ══ -->
-                <Border IsVisible="{Binding !InstalledModpacks.Count}" Background="{DynamicResource BgShellBrush}"
-                        CornerRadius="16" Padding="40,40,40,48" HorizontalAlignment="Stretch"
-                        BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
-                    <StackPanel HorizontalAlignment="Center" Spacing="8">
-                        <controls:EmptyState Icon="{StaticResource IconLibrary}"
-                                             Title="Zatím žádné instance"
-                                             Subtitle="Přidej modpack z prohlížeče nebo vytvoř vlastní instanci"/>
-                        <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Center">
-                            <Button Content="+ Vytvořit instanci" Command="{Binding OpenCreateProfileModalCommand}"
-                                    Classes="primary" FontSize="14" Padding="24,12"/>
-                            <Button Content="Procházet" Command="{Binding GoToBrowserCommand}"
-                                    Classes="secondary" FontSize="14" Padding="24,12"/>
-                        </StackPanel>
+                        <Border IsVisible="{Binding !InstalledModpacks.Count}" Background="{DynamicResource BgShellBrush}" CornerRadius="20" Padding="34,34,34,42" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                            <StackPanel HorizontalAlignment="Center" Spacing="10">
+                                <controls:EmptyState Icon="{StaticResource IconLibrary}" Title="Zatím žádné instance" Subtitle="Začni importem modpacku nebo si vytvoř čistou instanci podle toho, co teď potřebuješ dělat."/>
+                                <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <Button Content="+ Vytvořit instanci" Command="{Binding OpenCreateProfileModalCommand}" Classes="primary" FontSize="14" Padding="22,12" Margin="0,0,12,12"/>
+                                    <Button Content="Procházet katalog" Command="{Binding GoToBrowserCommand}" Classes="secondary" FontSize="14" Padding="22,12" Margin="0,0,12,12"/>
+                                </WrapPanel>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
-                </Border>
 
+                    <StackPanel Grid.Column="2" Spacing="18">
+                        <Border Background="{DynamicResource BgShellBrush}" CornerRadius="20" Padding="22" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                            <StackPanel Spacing="14">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Rychlé moduly" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                    <TextBlock Text="Nejčastější části launcheru dostupné jedním kliknutím před hraním i po něm." FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                </StackPanel>
+
+                                <WrapPanel Orientation="Horizontal" ItemWidth="140">
+                                    <Button Command="{Binding GoToSkinStudioCommand}" Classes="secondary" FontSize="12" Padding="16,10" Margin="0,0,12,12">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBlock Text="{StaticResource IconPalette}" FontSize="13"/>
+                                            <TextBlock Text="Skin Studio"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Command="{Binding GoToAchievementsCommand}" Classes="secondary" FontSize="12" Padding="16,10" Margin="0,0,12,12">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBlock Text="{StaticResource IconTrophy}" FontSize="13"/>
+                                            <TextBlock Text="Achievements"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Command="{Binding GoToSettingsCommand}" Classes="secondary" FontSize="12" Padding="16,10" Margin="0,0,12,12">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBlock Text="{StaticResource IconSettings}" FontSize="13"/>
+                                            <TextBlock Text="Nastavení"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Command="{Binding GoToThemeSwitcherCommand}" Classes="secondary" FontSize="12" Padding="16,10" Margin="0,0,12,12">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBlock Text="{StaticResource IconBrush}" FontSize="13"/>
+                                            <TextBlock Text="Motivy"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Command="{Binding ToggleAccountPickerCommand}" Classes="secondary" FontSize="12" Padding="16,10" Margin="0,0,12,12">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBlock Text="{StaticResource IconUser}" FontSize="13"/>
+                                            <TextBlock Text="Účty"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Command="{Binding OpenUrlCommand}" CommandParameter="{Binding VoidIdProfileEntryUrl}" Classes="secondary" FontSize="12" Padding="16,10" Margin="0,0,12,12" IsVisible="{Binding HasVoidIdSession}">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBlock Text="{StaticResource IconOpen}" FontSize="13"/>
+                                            <TextBlock Text="Webový profil"/>
+                                        </StackPanel>
+                                    </Button>
+                                </WrapPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border IsVisible="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).HasFeaturedMinecraftNews}" Background="{DynamicResource BgShellBrush}" CornerRadius="20" Padding="22" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" DataContext="{Binding FeaturedMinecraftNews}">
+                            <StackPanel Spacing="14">
+                                <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="16" ClipToBounds="True" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                                    <asyncImage:AdvancedImage Source="{Binding ThumbnailUrl}" Height="180" Stretch="UniformToFill"/>
+                                </Border>
+
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="Oficiální Minecraft novinka" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AccentTealBrush}"/>
+                                    <TextBlock Text="{Binding Title}" FontSize="22" FontWeight="ExtraBold" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                                    <TextBlock Text="{Binding PublishedAt, StringFormat='{}{0:dd.MM.yyyy HH:mm}'}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                </StackPanel>
+
+                                <TextBlock Text="{Binding Body}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" LineHeight="18" MaxHeight="96"/>
+
+                                <WrapPanel Orientation="Horizontal">
+                                    <Button Content="Otevřít článek" Command="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).OpenFeedItemCommand}" CommandParameter="{Binding}" Classes="primary" FontSize="12" Padding="16,8" Margin="0,0,10,10"/>
+                                    <Button Content="Všechny novinky" Command="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).GoToNewsCommand}" Classes="secondary" FontSize="12" Padding="16,8" Margin="0,0,10,10"/>
+                                </WrapPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
             </StackPanel>
         </Border>
     </ScrollViewer>

@@ -5,118 +5,223 @@
              x:Class="VoidCraftLauncher.Controls.NavRail"
              x:DataType="vm:MainViewModel">
 
-    <Border Background="{DynamicResource BgShellBrush}" BorderBrush="{DynamicResource BgInteractiveBrush}" BorderThickness="0,0,1,0">
+    <Border Width="{Binding NavRailWidth}"
+            Background="{DynamicResource BgShellBrush}"
+            BorderBrush="{DynamicResource BgInteractiveBrush}"
+            BorderThickness="0,0,1,0">
+        <Border.Transitions>
+            <Transitions>
+                <DoubleTransition Property="Width" Duration="0:0:0.22" Easing="CubicEaseOut"/>
+            </Transitions>
+        </Border.Transitions>
+
         <Grid RowDefinitions="Auto,*,Auto">
+            <StackPanel Grid.Row="0" Margin="12,18,12,10" Spacing="12">
+                <Grid ColumnDefinitions="Auto,*">
+                    <Border Width="40" Height="40" CornerRadius="12" Background="{DynamicResource BgPanelBrush}" Padding="4">
+                        <Image Source="avares://VoidCraftLauncher/src/Assets/icon.png"
+                               Width="32"
+                               Height="32"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               RenderOptions.BitmapInterpolationMode="HighQuality"/>
+                    </Border>
 
-            <!-- ══ LOGO ══ -->
-            <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,18,0,8">
-                <Image Source="avares://VoidCraftLauncher/src/Assets/icon.png" Width="36" Height="36"
-                       RenderOptions.BitmapInterpolationMode="HighQuality"/>
+                    <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center" Spacing="1" IsVisible="{Binding IsNavRailExpanded}">
+                        <TextBlock Text="VOID-CRAFT" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <TextBlock Text="Desktop launcher" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                    </StackPanel>
+                </Grid>
+
+                <Border Background="{DynamicResource BgPanelBrush}"
+                        BorderBrush="{DynamicResource StrokeSoftBrush}"
+                        BorderThickness="1"
+                        CornerRadius="14"
+                        Padding="12"
+                        IsVisible="{Binding IsNavRailExpanded}">
+                    <StackPanel Spacing="3">
+                        <TextBlock Text="{Binding MainPanelTitle}" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <TextBlock Text="{Binding Greeting}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" MaxWidth="170"/>
+                    </StackPanel>
+                </Border>
             </StackPanel>
 
-            <!-- ══ NAV ICONS ══ -->
-            <StackPanel Grid.Row="1" Spacing="4" Margin="8,12,8,0">
-                <!-- Dashboard -->
-                <Button Command="{Binding GoToDashboardCommand}" Classes="navIcon"
-                        Classes.active="{Binding IsDashboardView}" ToolTip.Tip="Dashboard">
-                    <TextBlock Text="{StaticResource IconDashboard}" FontSize="20" HorizontalAlignment="Center"/>
+            <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Spacing="6" Margin="10,0,10,0">
+                    <TextBlock Text="Hlavní" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextMutedBrush}" Margin="4,4,4,2" IsVisible="{Binding IsNavRailExpanded}"/>
+
+                    <Button Command="{Binding GoToDashboardCommand}" Classes="navRailItem" Classes.active="{Binding IsDashboardView}" ToolTip.Tip="Domů">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="{StaticResource IconDashboard}" FontSize="18" Width="22" HorizontalAlignment="Center" Foreground="{DynamicResource PrimaryBBrush}"/>
+                            <StackPanel IsVisible="{Binding IsNavRailExpanded}" Spacing="1">
+                                <TextBlock Text="Domů" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Přehled a rychlé akce launcheru" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding GoToHomeCommand}" Classes="navRailItem" Classes.active="{Binding IsLibraryView}" ToolTip.Tip="Knihovna">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="{StaticResource IconLibrary}" FontSize="18" Width="22" HorizontalAlignment="Center" Foreground="{DynamicResource PrimaryBBrush}"/>
+                            <StackPanel IsVisible="{Binding IsNavRailExpanded}" Spacing="1">
+                                <TextBlock Text="Knihovna" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Nainstalované instance a projekty" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding GoToBrowserCommand}" Classes="navRailItem" Classes.active="{Binding IsDiscoverView}" ToolTip.Tip="Procházet">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="{StaticResource IconDiscover}" FontSize="18" Width="22" HorizontalAlignment="Center" Foreground="{DynamicResource PrimaryBBrush}"/>
+                            <StackPanel IsVisible="{Binding IsNavRailExpanded}" Spacing="1">
+                                <TextBlock Text="Procházet" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Nové packy a importy" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding GoToIdentityCommand}" Classes="navRailItem" Classes.active="{Binding IsIdentityView}" ToolTip.Tip="VOID ID">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="{StaticResource IconUser}" FontSize="18" Width="22" HorizontalAlignment="Center" Foreground="{DynamicResource PrimaryBBrush}"/>
+                            <StackPanel IsVisible="{Binding IsNavRailExpanded}" Spacing="1">
+                                <TextBlock Text="VOID ID" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Webový profil, GitHub a týmový přístup" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Button>
+
+                    <Border Height="1" Background="{DynamicResource BgInteractiveBrush}" Margin="4,8"/>
+                    <TextBlock Text="Hraní a komunita" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextMutedBrush}" Margin="4,0,4,2" IsVisible="{Binding IsNavRailExpanded}"/>
+
+                    <Button Command="{Binding GoToServerHubCommand}" Classes="navRailItem" Classes.active="{Binding IsServerHubView}" ToolTip.Tip="Servery">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="{StaticResource IconServerHub}" FontSize="18" Width="22" HorizontalAlignment="Center" Foreground="{DynamicResource PrimaryBBrush}"/>
+                            <StackPanel IsVisible="{Binding IsNavRailExpanded}" Spacing="1">
+                                <TextBlock Text="Servery" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Přehled serverů, rychlé připojení a stav" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding GoToNewsCommand}" Classes="navRailItem" Classes.active="{Binding IsNewsView}" ToolTip.Tip="Novinky">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="{StaticResource IconNews}" FontSize="18" Width="22" HorizontalAlignment="Center" Foreground="{DynamicResource PrimaryBBrush}"/>
+                            <StackPanel IsVisible="{Binding IsNavRailExpanded}" Spacing="1">
+                                <TextBlock Text="Novinky" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Novinky, změny a oznámení" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding GoToAchievementsCommand}" Classes="navRailItem" Classes.active="{Binding IsAchievementsView}" ToolTip.Tip="Úspěchy">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="{StaticResource IconAchievements}" FontSize="18" Width="22" HorizontalAlignment="Center" Foreground="{DynamicResource PrimaryBBrush}"/>
+                            <StackPanel IsVisible="{Binding IsNavRailExpanded}" Spacing="1">
+                                <TextBlock Text="Úspěchy" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Osobní progres a sezónní data" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding GoToSkinStudioCommand}" Classes="navRailItem" Classes.active="{Binding IsSkinStudioView}" ToolTip.Tip="Skin Studio">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="{StaticResource IconSkinStudio}" FontSize="18" Width="22" HorizontalAlignment="Center" Foreground="{DynamicResource PrimaryBBrush}"/>
+                            <StackPanel IsVisible="{Binding IsNavRailExpanded}" Spacing="1">
+                                <TextBlock Text="Skin Studio" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Skins, náhled a export" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding GoToStreamingToolsCommand}" Classes="navRailItem" Classes.active="{Binding IsStreamingToolsView}" ToolTip.Tip="Creator Studio">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="{StaticResource IconStreaming}" FontSize="18" Width="22" HorizontalAlignment="Center" Foreground="{DynamicResource PrimaryBBrush}"/>
+                            <StackPanel IsVisible="{Binding IsNavRailExpanded}" Spacing="1">
+                                <TextBlock Text="Creator Studio" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Branding, vydání a soubory projektu" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding GoToFutureCommand}" Classes="navRailItem" Classes.active="{Binding IsFutureView}" ToolTip.Tip="Roadmapa">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="{StaticResource IconFuture}" FontSize="18" Width="22" HorizontalAlignment="Center" Foreground="{DynamicResource PrimaryBBrush}"/>
+                            <StackPanel IsVisible="{Binding IsNavRailExpanded}" Spacing="1">
+                                <TextBlock Text="Roadmapa" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Další směr vývoje produktu" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Button>
+
+                    <Border Height="1" Background="{DynamicResource BgInteractiveBrush}" Margin="4,8"/>
+                    <TextBlock Text="Tvorba" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextMutedBrush}" Margin="4,0,4,2" IsVisible="{Binding IsNavRailExpanded}"/>
+
+                    <Button Command="{Binding OpenCreateProfileModalCommand}" Classes="navRailItem" ToolTip.Tip="Nová instance">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="{StaticResource IconAdd}" FontSize="18" Width="22" HorizontalAlignment="Center" Foreground="{DynamicResource PrimaryBBrush}"/>
+                            <StackPanel IsVisible="{Binding IsNavRailExpanded}" Spacing="1">
+                                <TextBlock Text="Nová instance" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Prázdný profil nebo import" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </ScrollViewer>
+
+            <StackPanel Grid.Row="2" Spacing="6" Margin="10,0,10,14">
+                <Button Command="{Binding CheckForUpdatesCommand}" Classes="navRailItem" ToolTip.Tip="Hledat aktualizace">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <TextBlock Text="{StaticResource IconUpdate}" FontSize="18" Width="22" HorizontalAlignment="Center" Foreground="{DynamicResource PrimaryBBrush}"/>
+                        <StackPanel IsVisible="{Binding IsNavRailExpanded}" Spacing="1">
+                            <TextBlock Text="Aktualizace" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                            <TextBlock Text="Verze launcheru a přehled změn" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                        </StackPanel>
+                    </StackPanel>
                 </Button>
 
-                <!-- Library -->
-                <Button Command="{Binding GoToHomeCommand}" Classes="navIcon"
-                        Classes.active="{Binding IsLibraryView}" ToolTip.Tip="Knihovna">
-                    <TextBlock Text="{StaticResource IconLibrary}" FontSize="20" HorizontalAlignment="Center"/>
+                <Button Command="{Binding GoToSettingsCommand}" Classes="navRailItem" Classes.active="{Binding IsSettingsView}" ToolTip.Tip="Nastavení">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <TextBlock Text="{StaticResource IconSettings}" FontSize="18" Width="22" HorizontalAlignment="Center" Foreground="{DynamicResource PrimaryBBrush}"/>
+                        <StackPanel IsVisible="{Binding IsNavRailExpanded}" Spacing="1">
+                            <TextBlock Text="Nastavení" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                            <TextBlock Text="Runtime, výkon a instance" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                        </StackPanel>
+                    </StackPanel>
                 </Button>
 
-                <!-- Browse / Discover -->
-                <Button Command="{Binding GoToBrowserCommand}" Classes="navIcon"
-                        Classes.active="{Binding IsDiscoverView}" ToolTip.Tip="Procházet">
-                    <TextBlock Text="{StaticResource IconDiscover}" FontSize="20" HorizontalAlignment="Center"/>
+                <Button Command="{Binding GoToThemeSwitcherCommand}" Classes="navRailItem" Classes.active="{Binding IsThemeSwitcherView}" ToolTip.Tip="Motivy">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <TextBlock Text="{StaticResource IconTheme}" FontSize="18" Width="22" HorizontalAlignment="Center" Foreground="{DynamicResource PrimaryBBrush}"/>
+                        <StackPanel IsVisible="{Binding IsNavRailExpanded}" Spacing="1">
+                            <TextBlock Text="Motivy" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                            <TextBlock Text="Vizuální režimy a animace" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                        </StackPanel>
+                    </StackPanel>
                 </Button>
 
-                <Border Height="1" Background="{DynamicResource BgInteractiveBrush}" Margin="4,8"/>
-
-                <!-- Server Hub -->
-                <Button Command="{Binding GoToServerHubCommand}" Classes="navIcon"
-                        Classes.active="{Binding IsServerHubView}" ToolTip.Tip="Server Hub">
-                    <TextBlock Text="{StaticResource IconServerHub}" FontSize="20" HorizontalAlignment="Center"/>
+                <Button Command="{Binding GoToLocalizationCommand}" Classes="navRailItem" Classes.active="{Binding IsLocalizationView}" ToolTip.Tip="Jazyk">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <TextBlock Text="{StaticResource IconLanguage}" FontSize="18" Width="22" HorizontalAlignment="Center" Foreground="{DynamicResource PrimaryBBrush}"/>
+                        <StackPanel IsVisible="{Binding IsNavRailExpanded}" Spacing="1">
+                            <TextBlock Text="Jazyk" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                            <TextBlock Text="Lokalizace a texty" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                        </StackPanel>
+                    </StackPanel>
                 </Button>
 
-                <!-- News -->
-                <Button Command="{Binding GoToNewsCommand}" Classes="navIcon"
-                        Classes.active="{Binding IsNewsView}" ToolTip.Tip="Novinky">
-                    <TextBlock Text="{StaticResource IconNews}" FontSize="20" HorizontalAlignment="Center"/>
-                </Button>
-
-                <!-- Achievements -->
-                <Button Command="{Binding GoToAchievementsCommand}" Classes="navIcon"
-                        Classes.active="{Binding IsAchievementsView}" ToolTip.Tip="Achievementy">
-                    <TextBlock Text="{StaticResource IconAchievements}" FontSize="20" HorizontalAlignment="Center"/>
-                </Button>
-
-                <!-- Skin Studio -->
-                <Button Command="{Binding GoToSkinStudioCommand}" Classes="navIcon"
-                        Classes.active="{Binding IsSkinStudioView}" ToolTip.Tip="Skin Studio">
-                    <TextBlock Text="{StaticResource IconSkinStudio}" FontSize="20" HorizontalAlignment="Center"/>
-                </Button>
-
-                <!-- Creator Studio -->
-                <Button Command="{Binding GoToStreamingToolsCommand}" Classes="navIcon"
-                    Classes.active="{Binding IsStreamingToolsView}" ToolTip.Tip="Creator Studio">
-                    <TextBlock Text="{StaticResource IconStreaming}" FontSize="20" HorizontalAlignment="Center"/>
-                </Button>
-
-                <Button Command="{Binding GoToFutureCommand}" Classes="navIcon"
-                        Classes.active="{Binding IsFutureView}" ToolTip.Tip="Future roadmap">
-                    <TextBlock Text="{StaticResource IconFuture}" FontSize="18" HorizontalAlignment="Center"/>
-                </Button>
-
-                <Border Height="1" Background="{DynamicResource BgInteractiveBrush}" Margin="4,8"/>
-
-                <!-- Create New -->
-                <Button Command="{Binding OpenCreateProfileModalCommand}" Classes="navIcon"
-                        ToolTip.Tip="Nová instance">
-                    <TextBlock Text="{StaticResource IconAdd}" FontSize="18" HorizontalAlignment="Center"/>
-                </Button>
-            </StackPanel>
-
-            <!-- ══ BOTTOM ICONS ══ -->
-            <StackPanel Grid.Row="2" Spacing="4" Margin="8,0,8,14">
-                <!-- Refresh / Check Updates -->
-                <Button Command="{Binding CheckForUpdatesCommand}" Classes="navIcon"
-                        ToolTip.Tip="Hledat aktualizace">
-                    <TextBlock Text="{StaticResource IconUpdate}" FontSize="18" HorizontalAlignment="Center"/>
-                </Button>
-
-                <!-- Settings -->
-                <Button Command="{Binding GoToSettingsCommand}" Classes="navIcon"
-                        Classes.active="{Binding IsSettingsView}" ToolTip.Tip="Nastavení">
-                    <TextBlock Text="{StaticResource IconSettings}" FontSize="20" HorizontalAlignment="Center"/>
-                </Button>
-
-                <!-- Theme -->
-                <Button Command="{Binding GoToThemeSwitcherCommand}" Classes="navIcon"
-                        Classes.active="{Binding IsThemeSwitcherView}" ToolTip.Tip="Motivy">
-                    <TextBlock Text="{StaticResource IconTheme}" FontSize="18" HorizontalAlignment="Center"/>
-                </Button>
-
-                <!-- Language -->
-                <Button Command="{Binding GoToLocalizationCommand}" Classes="navIcon"
-                        Classes.active="{Binding IsLocalizationView}" ToolTip.Tip="Jazyk">
-                    <TextBlock Text="{StaticResource IconLanguage}" FontSize="18" HorizontalAlignment="Center"/>
-                </Button>
-
-                <!-- Login -->
-                <Button Command="{Binding OpenLoginModalCommand}" Classes="navIcon"
-                        ToolTip.Tip="{Binding UserSession.Username, FallbackValue='Přihlásit se'}">
-                    <Panel>
-                    <TextBlock Text="{StaticResource IconLogin}" FontSize="18" HorizontalAlignment="Center" IsVisible="{Binding !IsLoggedIn}"/>
-                        <Border Width="32" Height="32" CornerRadius="16" ClipToBounds="True" IsVisible="{Binding IsLoggedIn}"
-                                Background="{DynamicResource BgInteractiveBrush}">
-                            <asyncImage:AdvancedImage Width="32" Height="32"
-                                Source="{Binding PlayerSkinUrl, FallbackValue='https://crafatar.com/avatars/MHF_Steve?size=32&amp;overlay'}"/>
-                        </Border>
-                    </Panel>
+                <Button Command="{Binding OpenLoginModalCommand}" Classes="navRailItem" ToolTip.Tip="{Binding UserSession.Username, FallbackValue='Přihlásit se'}">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <Panel Width="22">
+                            <TextBlock Text="{StaticResource IconLogin}" FontSize="18" HorizontalAlignment="Center" IsVisible="{Binding !IsLoggedIn}" Foreground="{DynamicResource PrimaryBBrush}"/>
+                            <Border Width="22" Height="22" CornerRadius="11" ClipToBounds="True" IsVisible="{Binding IsLoggedIn}" Background="{DynamicResource BgInteractiveBrush}">
+                                <asyncImage:AdvancedImage Width="22" Height="22" Source="{Binding PlayerSkinUrl, FallbackValue='https://crafatar.com/avatars/MHF_Steve?size=32&amp;overlay'}"/>
+                            </Border>
+                        </Panel>
+                        <StackPanel IsVisible="{Binding IsNavRailExpanded}" Spacing="1">
+                            <TextBlock Text="Účet" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                            <TextBlock Text="{Binding UserSession.Username, FallbackValue='Přihlásit se'}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
+                    </StackPanel>
                 </Button>
             </StackPanel>
         </Grid>

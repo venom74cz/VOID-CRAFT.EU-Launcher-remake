@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 namespace VoidCraftLauncher.ViewModels;
 
 /// <summary>
-/// Modpack browser/discover: CurseForge + Modrinth search, pagination, install from browser.
+/// Modpack browser/discover: CurseForge + Modrinth + VOID Registry search, pagination, install from browser.
 /// </summary>
 public partial class MainViewModel
 {
@@ -27,7 +27,7 @@ public partial class MainViewModel
     private string _browserSearchQuery = "";
 
     [ObservableProperty]
-    private string _browserSource = "CurseForge"; // "CurseForge" or "Modrinth"
+    private string _browserSource = "CurseForge"; // "CurseForge", "Modrinth" or "VoidRegistry"
 
     [ObservableProperty]
     private bool _isSearching = false;
@@ -110,9 +110,13 @@ public partial class MainViewModel
         {
             await SearchCurseForge(page);
         }
-        else
+        else if (BrowserSource == "Modrinth")
         {
             await SearchModrinth(page);
+        }
+        else
+        {
+            await SearchVoidRegistry(page);
         }
     }
 
@@ -189,6 +193,43 @@ public partial class MainViewModel
         }
     }
 
+    private async Task SearchVoidRegistry(int page)
+    {
+        const int pageSize = 20;
+        var projects = await _voidRegistryService.SearchProjectsAsync(BrowserSearchQuery, page + 1, pageSize);
+
+        HasMoreResults = projects.Count >= pageSize;
+
+        foreach (var project in projects)
+        {
+            var iconUrl = !string.IsNullOrWhiteSpace(project.LogoUrl)
+                ? project.LogoUrl
+                : !string.IsNullOrWhiteSpace(project.IconUrl)
+                    ? project.IconUrl
+                    : project.CoverUrl;
+            var description = !string.IsNullOrWhiteSpace(project.Summary)
+                ? project.Summary
+                : $"{project.MinecraftVersion} • {project.ModLoader}";
+
+            BrowserResults.Add(new ModpackItem
+            {
+                Name = project.Name,
+                Description = description,
+                Author = string.IsNullOrWhiteSpace(project.Author) ? "VOID Registry" : project.Author,
+                IconUrl = iconUrl,
+                Id = project.ProjectId,
+                Source = "VoidRegistry",
+                WebLink = !string.IsNullOrWhiteSpace(project.Slug)
+                    ? $"https://void-craft.eu/modpacky/{project.Slug}"
+                    : project.RepositoryUrl,
+                DownloadCount = project.DownloadCount,
+                Slug = project.Slug,
+                VersionId = project.LatestVersion,
+                FileId = project.LatestVersion
+            });
+        }
+    }
+
     [RelayCommand]
     public async Task InstallModpackFromBrowser(ModpackItem item)
     {
@@ -206,6 +247,8 @@ public partial class MainViewModel
             WebLink = item.WebLink,
             Source = item.Source,
             ModrinthId = item.Source == "Modrinth" ? item.Id : "",
+            VoidRegistryProjectId = item.Source == "VoidRegistry" ? item.Id : "",
+            VoidRegistrySlug = item.Source == "VoidRegistry" ? item.Slug : "",
             ProjectId = item.Source == "CurseForge" ? (int.TryParse(item.Id, out var id) ? id : 0) : 0
         };
         
@@ -229,6 +272,7 @@ public partial class MainViewModel
                 string versionId = "0";
                 string versionDisplayName = "Latest";
                 List<string> downloadCandidates;
+                VoidRegistryInstallManifest? registryManifest = null;
 
                 if (item.Source == "CurseForge")
                 {
@@ -249,7 +293,7 @@ public partial class MainViewModel
                     if (!int.TryParse(versionId, out var curseFileId)) throw new Exception("Chybí validní FileId modpacku.");
                     downloadCandidates = await BuildCurseForgeArchiveDownloadCandidatesAsync(int.Parse(item.Id), curseFileId, downloadUrl, fileName);
                 }
-                else // Modrinth
+                else if (item.Source == "Modrinth")
                 {
                     var json = await _modrinthApi.GetProjectVersionsAsync(item.Id);
                     var versions = JsonNode.Parse(json)?.AsArray();
@@ -270,8 +314,28 @@ public partial class MainViewModel
                     versionDisplayName = version["version_number"]?.ToString() ?? versionId ?? "1.0";
                     downloadCandidates = BuildModrinthArchiveDownloadCandidates(files, primaryFile);
                 }
+                else
+                {
+                    registryManifest = await _voidRegistryService.GetInstallManifestAsync(item.Slug);
+                    if (registryManifest == null || string.IsNullOrWhiteSpace(registryManifest.FileUrl))
+                    {
+                        throw new Exception("VOID Registry nevrátil validní install manifest.");
+                    }
+
+                    downloadUrl = registryManifest.FileUrl;
+                    fileName = registryManifest.FileName;
+                    versionId = string.IsNullOrWhiteSpace(registryManifest.VersionId)
+                        ? registryManifest.Version
+                        : registryManifest.VersionId;
+                    versionDisplayName = string.IsNullOrWhiteSpace(registryManifest.Version)
+                        ? "Latest"
+                        : registryManifest.Version;
+                    downloadCandidates = new List<string> { registryManifest.FileUrl };
+                }
 
                 if (downloadCandidates.Count == 0) throw new Exception("Chybí URL.");
+
+                fileName = Path.GetFileName(string.IsNullOrWhiteSpace(fileName) ? "modpack.zip" : fileName);
 
                 Avalonia.Threading.Dispatcher.UIThread.Post(() => LaunchStatus = "Stahuji balíček...");
                 var tempPath = Path.Combine(Path.GetTempPath(), fileName);
@@ -326,19 +390,36 @@ public partial class MainViewModel
                     CurrentModpack = new ModpackInfo
                     {
                         Name = safeName,
-                        DisplayName = item.Name,
+                        DisplayName = item.Source == "VoidRegistry" ? (registryManifest?.Name ?? item.Name) : item.Name,
                         ProjectId = item.Source == "CurseForge" ? int.Parse(item.Id) : 0,
                         Source = item.Source,
                         ModrinthId = item.Source == "Modrinth" ? item.Id : "",
-                        LogoUrl = item.IconUrl,
+                        VoidRegistryProjectId = item.Source == "VoidRegistry" ? (registryManifest?.ProjectId ?? item.Id) : "",
+                        VoidRegistrySlug = item.Source == "VoidRegistry" ? (registryManifest?.Slug ?? item.Slug) : "",
+                        LogoUrl = item.Source == "VoidRegistry"
+                            ? (!string.IsNullOrWhiteSpace(registryManifest?.Branding?.Logo)
+                                ? registryManifest!.Branding.Logo
+                                : !string.IsNullOrWhiteSpace(registryManifest?.Branding?.Icon)
+                                    ? registryManifest!.Branding.Icon
+                                    : item.IconUrl)
+                            : item.IconUrl,
                         Author = item.Author,
-                        WebLink = item.WebLink,
+                        WebLink = item.Source == "VoidRegistry"
+                            ? (!string.IsNullOrWhiteSpace(item.WebLink)
+                                ? item.WebLink
+                                : $"https://void-craft.eu/modpacky/{registryManifest?.Slug ?? item.Slug}")
+                            : item.WebLink,
                         Description = item.Description,
-                        CurrentVersion = versionInfo
+                        CurrentVersion = versionInfo,
+                        CustomMcVersion = item.Source == "VoidRegistry" ? (registryManifest?.MinecraftVersion ?? "") : "",
+                        CustomModLoader = item.Source == "VoidRegistry" ? (registryManifest?.ModLoader ?? "") : "",
+                        CustomModLoaderVersion = item.Source == "VoidRegistry" ? (registryManifest?.ModLoaderVersion ?? "") : ""
                     };
 
                     var existing = InstalledModpacks.FirstOrDefault(m => 
                         (CurrentModpack.ProjectId > 0 && m.ProjectId == CurrentModpack.ProjectId) ||
+                        (!string.IsNullOrWhiteSpace(CurrentModpack.VoidRegistrySlug) &&
+                         string.Equals(m.VoidRegistrySlug, CurrentModpack.VoidRegistrySlug, StringComparison.OrdinalIgnoreCase)) ||
                         m.Name.Equals(CurrentModpack.Name, StringComparison.OrdinalIgnoreCase));
 
                         if (existing != null)

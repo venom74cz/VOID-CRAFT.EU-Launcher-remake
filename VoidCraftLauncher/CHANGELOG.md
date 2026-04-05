@@ -2,6 +2,24 @@
 
 Všechny důležité změny v projektu jsou dokumentovány v tomto souboru.
 
+## [3.1.10] - 2026-04-05
+
+### ✨ Shell, VOID ID a registry workflow
+
+### Přidáno
+- **VOID ID surface**: launcher má vlastní identitní plochu pro linked accounts, aktivní relace, GitHub provider stav a přehled projektových oprávnění.
+- **VOID Registry source**: `Discover` umí procházet i `VOID Registry` a launcher nad ním zvládá install/update flow přes install manifest a update check.
+- **Collaborator management**: `Creator Studio` umí po přihlášení přes VOID ID načíst spolupracovníky registry projektu, hledat účty, měnit role a odebírat přístupy.
+
+### Změněno
+- **Shell navigation**: levý nav rail se rozbaluje na hover/focus, ukazuje názvy sekcí a drží jasnější produktovou orientaci.
+- **Dashboard home**: `Dashboard` funguje jako command-center přehled s rychlými akcemi, server pulse a VOID ID vrstvou místo staré výplňové plochy.
+- **Product copy**: shell a creator texty jsou srovnané do čistší produkční češtiny napříč launcherem.
+
+### Opraveno
+- **Access semantics**: launcher rozlišuje reálnou admin roli, Discord týmový přístup a capability-based admin surface bez zploštění bezpečnostní logiky.
+- **Release metadata**: projekt, installer, fallback `User-Agent` a dokumentace jsou srovnané na verzi `3.1.10`.
+
 ## [3.1.9] - 2026-04-05
 
 ### 🚀 Creator Studio publish hardening

@@ -2,7 +2,7 @@
 
 Snapshot: 2026-04-05
 
-Aktuální release: 3.1.9
+Aktuální release: 3.1.10
 
 ## Co je dnes reálně v produktu
 
@@ -16,11 +16,18 @@ Aktuální release: 3.1.9
 ### Hlavní hotové plochy
 
 - `Dashboard`
+- `VOID ID`
 - `Server Hub`
 - `Achievement Hub`
 - `Skin Studio`
 - `Instance Workspace`
 - custom profile flow a správa instancí
+
+Aktualni shell realita navic znamena:
+
+- levy nav rail uz umi hover/focus expand s labely a neni to jen icon-only sidebar
+- `Dashboard` funguje jako command-center home pro dalsi krok, server pulse, rychle workflow akce a VOID ID vrstvu
+- dedikovana `VOID ID` plocha ukazuje linked accounts, aktivni sessions, GitHub provider stav a registry membershipy
 
 ### Creator Studio / Creator Workbench
 
@@ -31,6 +38,7 @@ Dnes už je reálné a hotové hlavně toto:
 - `creator_manifest.json` a standardní creator workspace struktura
 - metadata editace přímo v launcheru
 - GitHub + VOID ID auth sjednocené v hlavním context flow místo rozházených creator CTA panelů
+- browser-based VOID ID login přes backend launcher flow, secure storage restore a refresh před registry publish
 - Creator workspace selection se obnovuje z perzistentni volby i po restartu launcheru, takze studio drzi posledni zvoleny workspace konzistentneji napric Metadata, Mods i Files
 - novy Creator workspace pri zalozeni predvyplni autora z aktualne prihlasene identity, ale autor zustava editovatelny
 - branding pipeline pro `logo`, `cover`, `square icon`, `wide hero`, `social preview`
@@ -52,6 +60,7 @@ Největší otevřené mezery vůči roadmapě jsou stále:
 - plnohodnotný notes/wiki + quest/progression canvas
 - plnohodnotny GitHub desktop-level workflow (repo chooser, private clone, fetch/sync dashboard, PR/issues/release metadata)
 - CurseForge/Modrinth kompatibilní packaging a release validace
+- dalsi rozsireni VOID ID control plane napric celym launcherem; zakladni linked accounts, sessions a registry membership vrstva uz existuji, ale chybi plne propsani do vsech produktovych flow
 - AI-native patch/apply flow nad workbenchem
 - release board, QA gate a publish orchestrace
 

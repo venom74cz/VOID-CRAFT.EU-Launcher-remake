@@ -112,6 +112,21 @@
         <Setter Property="RenderTransform" Value="scale(0.94)"/>
     </Style>
 
+    <Style Selector="Button.navRailItem">
+        <Setter Property="RenderTransform" Value="scale(1)"/>
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.16"/>
+                <BrushTransition Property="Foreground" Duration="0:0:0.16"/>
+                <BrushTransition Property="BorderBrush" Duration="0:0:0.16"/>
+                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.12" Easing="CubicEaseOut"/>
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Button.navRailItem:pressed">
+        <Setter Property="RenderTransform" Value="scale(0.97)"/>
+    </Style>
+
     <!-- ═══════════════ VIEW TRANSITIONS ═══════════════ -->
     <!-- Content area views fade in when becoming visible -->
     <Style Selector="UserControl.view-panel">

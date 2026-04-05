@@ -358,6 +358,7 @@ public partial class MainViewModel
     partial void OnActiveAccountChanged(AccountProfile? value)
     {
         NotifySkinStudioStateChanged();
+        NotifyVoidIdStateChanged();
         _ = LoadSkinHistoryAsync(true);
         _ = LoadAchievementSnapshotAsync();
     }

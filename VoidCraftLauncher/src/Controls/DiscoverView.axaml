@@ -45,7 +45,7 @@
                         </Grid>
                     </Border>
 
-                    <!-- Source Toggle (CurseForge / Modrinth) -->
+                    <!-- Source Toggle (CurseForge / Modrinth / VOID Registry) -->
                     <Border Grid.Column="1" Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusControl}"
                             Padding="4" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
                         <StackPanel Orientation="Horizontal" Spacing="4">
@@ -76,6 +76,20 @@
                                     <Style Selector="Button.active"><Setter Property="Background" Value="{DynamicResource PrimaryBBrush}"/><Setter Property="Foreground" Value="{DynamicResource BgCanvasBrush}"/></Style>
                                 </Button.Styles>
                                 <TextBlock Text="Modrinth" FontWeight="Bold" FontSize="12"/>
+                            </Button>
+                            <Button Command="{Binding SetBrowserSourceCommand}" CommandParameter="VoidRegistry"
+                                    CornerRadius="{DynamicResource RadiusSmall}" Padding="14,8" Cursor="Hand">
+                                <Classes.active>
+                                    <MultiBinding Converter="{StaticResource ObjectEqualityConverter}">
+                                        <Binding Path="BrowserSource"/>
+                                        <Binding><Binding.Source>VoidRegistry</Binding.Source></Binding>
+                                    </MultiBinding>
+                                </Classes.active>
+                                <Button.Styles>
+                                    <Style Selector="Button"><Setter Property="Background" Value="Transparent"/><Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/></Style>
+                                    <Style Selector="Button.active"><Setter Property="Background" Value="#00C2A8"/><Setter Property="Foreground" Value="#061414"/></Style>
+                                </Button.Styles>
+                                <TextBlock Text="VOID Registry" FontWeight="Bold" FontSize="12"/>
                             </Button>
                         </StackPanel>
                     </Border>

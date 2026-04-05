@@ -51,6 +51,51 @@ public sealed class VoidRegistryProjectSummary
     public string LatestVersion { get; set; } = string.Empty;
 
     public string ReleaseChannel { get; set; } = string.Empty;
+
+    public string Status { get; set; } = string.Empty;
+
+    public string Visibility { get; set; } = string.Empty;
+
+    public string ViewerRole { get; set; } = string.Empty;
+
+    public bool CanView { get; set; }
+
+    public bool CanEditMetadata { get; set; }
+
+    public bool CanPublish { get; set; }
+
+    public bool CanManageCollaborators { get; set; }
+
+    public bool CanArchive { get; set; }
+
+    public string OwnerAvatarUrl { get; set; } = string.Empty;
+
+    public DateTimeOffset? LatestPublishedAtUtc { get; set; }
+
+    public bool HasLatestVersion => !string.IsNullOrWhiteSpace(LatestVersion);
+
+    public string MembershipRoleLabel => ViewerRole switch
+    {
+        "owner" => "Vlastník",
+        "maintainer" => "Správce",
+        "editor" => "Editor",
+        "viewer" => "Pozorovatel",
+        _ => "Bez role"
+    };
+
+    public string PermissionSummary => CanManageCollaborators
+        ? "Plná správa projektu i spolupracovníků"
+        : CanPublish
+            ? "Může vydávat nové verze a upravovat metadata"
+            : CanEditMetadata
+                ? "Může upravovat metadata projektu"
+                : "Přístup jen pro čtení";
+
+    public string StateSummary => string.IsNullOrWhiteSpace(Status)
+        ? Visibility
+        : string.IsNullOrWhiteSpace(Visibility)
+            ? Status
+            : $"{Status} / {Visibility}";
 }
 
 public sealed class VoidRegistryInstallManifest
@@ -99,6 +144,9 @@ public sealed class VoidRegistryVersionInfo
 {
     [JsonPropertyName("version")]
     public string Version { get; set; } = string.Empty;
+
+    [JsonPropertyName("version_id")]
+    public string VersionId { get; set; } = string.Empty;
 
     [JsonPropertyName("channel")]
     public string Channel { get; set; } = string.Empty;
@@ -218,4 +266,54 @@ public sealed class VoidRegistryPublishResult
     public string Slug { get; set; } = string.Empty;
 
     public string VersionNumber { get; set; } = string.Empty;
+}
+
+public sealed class VoidRegistryCollaboratorPermissions
+{
+    public string Role { get; set; } = string.Empty;
+
+    public bool CanView { get; set; }
+
+    public bool CanEditMetadata { get; set; }
+
+    public bool CanPublish { get; set; }
+
+    public bool CanManageCollaborators { get; set; }
+
+    public bool CanArchive { get; set; }
+}
+
+public sealed class VoidRegistryCollaboratorEntry
+{
+    public int AccountId { get; set; }
+
+    public string Role { get; set; } = string.Empty;
+
+    public string AddedAt { get; set; } = string.Empty;
+
+    public string DisplayName { get; set; } = string.Empty;
+
+    public string AvatarUrl { get; set; } = string.Empty;
+
+    public bool IsOwner { get; set; }
+}
+
+public sealed class VoidRegistryCollaboratorBundle
+{
+    public VoidRegistryCollaboratorEntry? Owner { get; set; }
+
+    public IReadOnlyList<VoidRegistryCollaboratorEntry> Data { get; set; } = Array.Empty<VoidRegistryCollaboratorEntry>();
+
+    public VoidRegistryCollaboratorPermissions Permissions { get; set; } = new();
+}
+
+public sealed class VoidRegistryAccountSearchEntry
+{
+    public int AccountId { get; set; }
+
+    public string DisplayName { get; set; } = string.Empty;
+
+    public string AvatarUrl { get; set; } = string.Empty;
+
+    public string DiscordUsername { get; set; } = string.Empty;
 }

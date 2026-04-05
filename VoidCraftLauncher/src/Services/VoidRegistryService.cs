@@ -77,6 +77,116 @@ public sealed class VoidRegistryService
         return JsonSerializer.Deserialize<VoidRegistryUpdateCheckResponse>(body, JsonOptions);
     }
 
+    public async Task<IReadOnlyList<VoidRegistryProjectSummary>> GetProjectsForActorAsync(string accessToken, int page = 1, int limit = 50)
+    {
+        using var response = await SendAuthorizedAsync(
+            HttpMethod.Get,
+            $"/api/registry/me/projects?page={Math.Max(1, page)}&limit={Math.Clamp(limit, 1, 100)}",
+            accessToken);
+        var body = await response.Content.ReadAsStringAsync();
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException($"VOID Registry moje projekty selhaly: {body}");
+        }
+
+        var root = JsonNode.Parse(body);
+        var items = root?[
+            "data"]?.AsArray()
+            ?? root?["projects"]?.AsArray()
+            ?? new JsonArray();
+
+        return items
+            .Select(ParseProjectSummary)
+            .Where(project => project != null)
+            .Cast<VoidRegistryProjectSummary>()
+            .ToList();
+    }
+
+    public async Task<VoidRegistryCollaboratorBundle> GetCollaboratorsAsync(string accessToken, string slug)
+    {
+        using var response = await SendAuthorizedAsync(HttpMethod.Get, $"/api/registry/projects/{Uri.EscapeDataString(slug)}/collaborators", accessToken);
+        var body = await response.Content.ReadAsStringAsync();
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException($"VOID Registry collaborators selhal: {body}");
+        }
+
+        return ParseCollaboratorBundle(body);
+    }
+
+    public async Task<IReadOnlyList<VoidRegistryAccountSearchEntry>> SearchAccountsAsync(string accessToken, string query, int limit = 8)
+    {
+        var normalizedQuery = (query ?? string.Empty).Trim();
+        if (normalizedQuery.Length < 2)
+        {
+            return Array.Empty<VoidRegistryAccountSearchEntry>();
+        }
+
+        using var response = await SendAuthorizedAsync(
+            HttpMethod.Get,
+            $"/api/registry/accounts/search?q={Uri.EscapeDataString(normalizedQuery)}&limit={Math.Clamp(limit, 1, 20)}",
+            accessToken);
+        var body = await response.Content.ReadAsStringAsync();
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException($"VOID Registry account search selhal: {body}");
+        }
+
+        return ParseAccountSearchResults(body);
+    }
+
+    public async Task<VoidRegistryCollaboratorBundle> AddCollaboratorAsync(string accessToken, string slug, int accountId, string role)
+    {
+        using var response = await SendAuthorizedJsonAsync(
+            HttpMethod.Post,
+            $"/api/registry/projects/{Uri.EscapeDataString(slug)}/collaborators",
+            accessToken,
+            new
+            {
+                accountId,
+                role
+            });
+        var body = await response.Content.ReadAsStringAsync();
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException($"VOID Registry add collaborator selhal: {body}");
+        }
+
+        return ParseCollaboratorBundle(body);
+    }
+
+    public async Task<VoidRegistryCollaboratorBundle> UpdateCollaboratorAsync(string accessToken, string slug, int accountId, string role)
+    {
+        using var response = await SendAuthorizedJsonAsync(
+            HttpMethod.Put,
+            $"/api/registry/projects/{Uri.EscapeDataString(slug)}/collaborators/{accountId}",
+            accessToken,
+            new
+            {
+                role
+            });
+        var body = await response.Content.ReadAsStringAsync();
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException($"VOID Registry update collaborator selhal: {body}");
+        }
+
+        return ParseCollaboratorBundle(body);
+    }
+
+    public async Task RemoveCollaboratorAsync(string accessToken, string slug, int accountId)
+    {
+        using var response = await SendAuthorizedAsync(
+            HttpMethod.Delete,
+            $"/api/registry/projects/{Uri.EscapeDataString(slug)}/collaborators/{accountId}",
+            accessToken);
+        var body = await response.Content.ReadAsStringAsync();
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException($"VOID Registry remove collaborator selhal: {body}");
+        }
+    }
+
     public async Task<VoidRegistryPublishResult> RegisterGitHubReleaseAsync(
         string accessToken,
         CreatorManifest manifest,
@@ -193,11 +303,18 @@ public sealed class VoidRegistryService
 
     private async Task<HttpResponseMessage> SendAuthorizedJsonAsync(HttpMethod method, string path, string accessToken, object payload)
     {
-        var request = new HttpRequestMessage(method, $"{BaseApiUrl}{path}")
-        {
-            Content = new StringContent(JsonSerializer.Serialize(payload, JsonOptions), Encoding.UTF8, "application/json")
-        };
+        return await SendAuthorizedAsync(
+            method,
+            path,
+            accessToken,
+            new StringContent(JsonSerializer.Serialize(payload, JsonOptions), Encoding.UTF8, "application/json"));
+    }
+
+    private async Task<HttpResponseMessage> SendAuthorizedAsync(HttpMethod method, string path, string accessToken, HttpContent? content = null)
+    {
+        var request = new HttpRequestMessage(method, $"{BaseApiUrl}{path}");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        request.Content = content;
         return await _httpClient.SendAsync(request);
     }
 
@@ -225,6 +342,7 @@ public sealed class VoidRegistryService
 
         var branding = node["branding"];
         var latest = node["latest"] ?? node["latest_version"];
+        var permissions = node["permissions"];
 
         return new VoidRegistryProjectSummary
         {
@@ -233,6 +351,7 @@ public sealed class VoidRegistryService
             Name = node["name"]?.ToString() ?? string.Empty,
             Summary = node["summary"]?.ToString() ?? string.Empty,
             Author = node["author"]?.ToString() ?? node["owner_name"]?.ToString() ?? string.Empty,
+            OwnerAvatarUrl = node["owner"]?["avatar_url"]?.ToString() ?? node["owner_avatar_url"]?.ToString() ?? string.Empty,
             LogoUrl = node["logo_url"]?.ToString() ?? branding?["logo"]?.ToString() ?? string.Empty,
             CoverUrl = node["cover_url"]?.ToString() ?? branding?["cover"]?.ToString() ?? string.Empty,
             IconUrl = node["square_icon_url"]?.ToString() ?? branding?["icon"]?.ToString() ?? string.Empty,
@@ -244,7 +363,92 @@ public sealed class VoidRegistryService
             RepositoryUrl = node["repository_url"]?.ToString() ?? string.Empty,
             DownloadCount = node["download_count"]?.GetValue<long?>() ?? 0,
             LatestVersion = latest?["version"]?.ToString() ?? latest?["version_number"]?.ToString() ?? string.Empty,
-            ReleaseChannel = latest?["channel"]?.ToString() ?? node["release_channel"]?.ToString() ?? string.Empty
+            ReleaseChannel = latest?["channel"]?.ToString() ?? latest?["release_channel"]?.ToString() ?? node["release_channel"]?.ToString() ?? string.Empty,
+            LatestPublishedAtUtc = latest?["published_at"]?.GetValue<DateTimeOffset?>(),
+            Status = node["status"]?.ToString() ?? string.Empty,
+            Visibility = node["visibility"]?.ToString() ?? string.Empty,
+            ViewerRole = permissions?["role"]?.ToString() ?? node["viewer_role"]?.ToString() ?? string.Empty,
+            CanView = permissions?["canView"]?.GetValue<bool?>() ?? permissions?["can_view"]?.GetValue<bool?>() ?? false,
+            CanEditMetadata = permissions?["canEditMetadata"]?.GetValue<bool?>() ?? permissions?["can_edit_metadata"]?.GetValue<bool?>() ?? false,
+            CanPublish = permissions?["canPublish"]?.GetValue<bool?>() ?? permissions?["can_publish"]?.GetValue<bool?>() ?? false,
+            CanManageCollaborators = permissions?["canManageCollaborators"]?.GetValue<bool?>() ?? permissions?["can_manage_collaborators"]?.GetValue<bool?>() ?? false,
+            CanArchive = permissions?["canArchive"]?.GetValue<bool?>() ?? permissions?["can_archive"]?.GetValue<bool?>() ?? false
+        };
+    }
+
+    private static VoidRegistryCollaboratorBundle ParseCollaboratorBundle(string body)
+    {
+        var root = string.IsNullOrWhiteSpace(body) ? null : JsonNode.Parse(body);
+        var rows = root?["data"]?.AsArray() ?? new JsonArray();
+
+        return new VoidRegistryCollaboratorBundle
+        {
+            Owner = ParseCollaboratorEntry(root?["owner"], true),
+            Data = rows
+                .Select(node => ParseCollaboratorEntry(node, false))
+                .Where(entry => entry != null)
+                .Cast<VoidRegistryCollaboratorEntry>()
+                .ToList(),
+            Permissions = ParseCollaboratorPermissions(root?["permissions"])
+        };
+    }
+
+    private static VoidRegistryCollaboratorEntry? ParseCollaboratorEntry(JsonNode? node, bool isOwner)
+    {
+        if (node == null)
+        {
+            return null;
+        }
+
+        return new VoidRegistryCollaboratorEntry
+        {
+            AccountId = node["account_id"]?.GetValue<int?>() ?? 0,
+            Role = node["role"]?.ToString() ?? (isOwner ? "owner" : string.Empty),
+            AddedAt = node["added_at"]?.ToString() ?? string.Empty,
+            DisplayName = node["display_name"]?.ToString() ?? string.Empty,
+            AvatarUrl = node["avatar_url"]?.ToString() ?? string.Empty,
+            IsOwner = isOwner || string.Equals(node["role"]?.ToString(), "owner", StringComparison.OrdinalIgnoreCase)
+        };
+    }
+
+    private static VoidRegistryCollaboratorPermissions ParseCollaboratorPermissions(JsonNode? node)
+    {
+        return new VoidRegistryCollaboratorPermissions
+        {
+            Role = node?["role"]?.ToString() ?? string.Empty,
+            CanView = node?["canView"]?.GetValue<bool?>() ?? false,
+            CanEditMetadata = node?["canEditMetadata"]?.GetValue<bool?>() ?? false,
+            CanPublish = node?["canPublish"]?.GetValue<bool?>() ?? false,
+            CanManageCollaborators = node?["canManageCollaborators"]?.GetValue<bool?>() ?? false,
+            CanArchive = node?["canArchive"]?.GetValue<bool?>() ?? false
+        };
+    }
+
+    private static IReadOnlyList<VoidRegistryAccountSearchEntry> ParseAccountSearchResults(string body)
+    {
+        var root = string.IsNullOrWhiteSpace(body) ? null : JsonNode.Parse(body);
+        var rows = root as JsonArray ?? root?["data"]?.AsArray() ?? new JsonArray();
+
+        return rows
+            .Select(node => ParseAccountSearchEntry(node))
+            .Where(entry => entry != null)
+            .Cast<VoidRegistryAccountSearchEntry>()
+            .ToList();
+    }
+
+    private static VoidRegistryAccountSearchEntry? ParseAccountSearchEntry(JsonNode? node)
+    {
+        if (node == null)
+        {
+            return null;
+        }
+
+        return new VoidRegistryAccountSearchEntry
+        {
+            AccountId = node["account_id"]?.GetValue<int?>() ?? 0,
+            DisplayName = node["display_name"]?.ToString() ?? string.Empty,
+            AvatarUrl = node["avatar_url"]?.ToString() ?? string.Empty,
+            DiscordUsername = node["discord_username"]?.ToString() ?? string.Empty
         };
     }
 }

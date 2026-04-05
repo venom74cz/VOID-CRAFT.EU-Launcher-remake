@@ -1,0 +1,319 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:model="using:VoidCraftLauncher.Models"
+             xmlns:vm="using:VoidCraftLauncher.ViewModels"
+             x:Class="VoidCraftLauncher.Controls.IdentityView"
+             x:Name="IdentityRoot"
+             x:DataType="vm:MainViewModel">
+
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="24" Spacing="18">
+            <Border Background="{DynamicResource BgShellBrush}"
+                    BorderBrush="{DynamicResource StrokeSoftBrush}"
+                    BorderThickness="1"
+                    CornerRadius="{DynamicResource RadiusCard}"
+                    Padding="28">
+                <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto" RowSpacing="18" ColumnSpacing="18">
+                    <StackPanel Grid.Row="0" Grid.Column="0" Spacing="10">
+                        <TextBlock Text="VOID ID přehled" FontSize="30" FontWeight="ExtraBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <TextBlock Text="Přehled účtu, propojených služeb, aktivních relací a projektových oprávnění pro VOID-CRAFT.EU."
+                                   FontSize="13"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   TextWrapping="Wrap"/>
+                        <TextBlock Text="{Binding VoidIdDisplayName}" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource PrimaryBBrush}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="0" Grid.Column="1" Spacing="10" HorizontalAlignment="Right">
+                        <Button Content="Přihlásit přes VOID ID"
+                                Command="{Binding LoginVoidIdCommand}"
+                                IsVisible="{Binding !HasVoidIdSession}"
+                                IsEnabled="{Binding !IsVoidIdLoginInProgress}"
+                                Classes="primary"
+                                Padding="18,10"
+                                HorizontalAlignment="Right"/>
+                        <Button Content="Odhlásit VOID ID"
+                                Command="{Binding LogoutVoidIdCommand}"
+                                IsVisible="{Binding HasVoidIdSession}"
+                                Classes="ghost"
+                                Padding="18,10"
+                                HorizontalAlignment="Right"/>
+                        <Button Content="Otevřít znovu v prohlížeči"
+                                Command="{Binding OpenUrlCommand}"
+                                CommandParameter="{Binding VoidIdVerificationUrl}"
+                                IsVisible="{Binding HasVoidIdLoginUrl}"
+                                Classes="secondary"
+                                Padding="18,10"
+                                HorizontalAlignment="Right"/>
+                    </StackPanel>
+
+                    <WrapPanel Grid.Row="1" Grid.ColumnSpan="2" Orientation="Horizontal" ItemWidth="210" MinHeight="44">
+                        <Border Background="{DynamicResource BgPanelBrush}" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" CornerRadius="12" Padding="14,10" Margin="0,0,12,12">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Role" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextMutedBrush}"/>
+                                <TextBlock Text="{Binding VoidIdRoleLabel}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Background="{DynamicResource BgPanelBrush}" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" CornerRadius="12" Padding="14,10" Margin="0,0,12,12">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Minecraft" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextMutedBrush}"/>
+                                <TextBlock Text="{Binding VoidIdMinecraftLabel}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Background="{DynamicResource BgPanelBrush}" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" CornerRadius="12" Padding="14,10" Margin="0,0,12,12">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Relace" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextMutedBrush}"/>
+                                <TextBlock Text="{Binding VoidIdSessionSummary}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Background="{DynamicResource BgPanelBrush}" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" CornerRadius="12" Padding="14,10" Margin="0,0,12,12">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Projekty" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextMutedBrush}"/>
+                                <TextBlock Text="{Binding VoidIdMembershipSummary}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+                    </WrapPanel>
+
+                    <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Spacing="8">
+                        <TextBlock Text="{Binding VoidIdLoginStatus}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                        <TextBlock Text="{Binding VoidIdControlPlaneStatus}" FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <WrapPanel Orientation="Horizontal" ItemWidth="355" MinHeight="240">
+                <Border Background="{DynamicResource BgShellBrush}"
+                        BorderBrush="{DynamicResource StrokeSoftBrush}"
+                        BorderThickness="1"
+                        CornerRadius="{DynamicResource RadiusCard}"
+                        Padding="22"
+                        Margin="0,0,18,18"
+                        Width="355">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="Microsoft účet" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <TextBlock Text="{Binding MicrosoftLauncherAccountName}" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryBBrush}" TextWrapping="Wrap"/>
+                        <TextBlock Text="{Binding MicrosoftLauncherAccountDetail}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                        <TextBlock Text="{Binding MicrosoftLauncherSyncLabel}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                        <Button Content="Přihlásit Microsoft"
+                                Command="{Binding LoginMicrosoftCommand}"
+                                IsVisible="{Binding CanLoginMicrosoftFromIdentity}"
+                                Classes="secondary"
+                                Padding="16,9"
+                                HorizontalAlignment="Left"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Background="{DynamicResource BgShellBrush}"
+                        BorderBrush="{DynamicResource StrokeSoftBrush}"
+                        BorderThickness="1"
+                        CornerRadius="{DynamicResource RadiusCard}"
+                        Padding="22"
+                        Margin="0,0,18,18"
+                        Width="355">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="Discord účet" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <TextBlock Text="{Binding VoidIdDiscordAccountName}" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryBBrush}" TextWrapping="Wrap"/>
+                        <TextBlock Text="{Binding VoidIdDiscordAccountDetail}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                        <TextBlock Text="{Binding VoidIdLastLoginLabel}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                        <Button Content="{Binding VoidIdProfileEntryLabel}"
+                                Command="{Binding OpenUrlCommand}"
+                                CommandParameter="{Binding VoidIdProfileEntryUrl}"
+                                Classes="secondary"
+                                Padding="16,9"
+                                HorizontalAlignment="Left"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Background="{DynamicResource BgShellBrush}"
+                        BorderBrush="{DynamicResource StrokeSoftBrush}"
+                        BorderThickness="1"
+                        CornerRadius="{DynamicResource RadiusCard}"
+                        Padding="22"
+                        Margin="0,0,0,18"
+                        Width="355">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="GitHub účet" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <TextBlock Text="{Binding VoidIdGitHubAccountName}" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryBBrush}" TextWrapping="Wrap"/>
+                        <TextBlock Text="{Binding VoidIdGitHubAccountDetail}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                        <TextBlock Text="{Binding VoidIdGitHubProviderStatus}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+
+                        <WrapPanel Orientation="Horizontal" ItemWidth="150" MinHeight="40">
+                            <Button Content="Přihlásit GitHub"
+                                    Command="{Binding LoginGitHubCommand}"
+                                    IsVisible="{Binding !HasCreatorGitHubSession}"
+                                    IsEnabled="{Binding CanCreatorGitHubLogin}"
+                                    Classes="primary"
+                                    Padding="14,8"
+                                    Margin="0,0,10,10"/>
+                            <Button Content="Napojit na VOID ID"
+                                    Command="{Binding LinkCreatorGitHubToVoidIdCommand}"
+                                    IsVisible="{Binding CanLinkCreatorGitHubToVoidId}"
+                                    Classes="secondary"
+                                    Padding="14,8"
+                                    Margin="0,0,10,10"/>
+                                <Button Content="Odpojit GitHub"
+                                    Command="{Binding UnlinkCreatorGitHubFromVoidIdCommand}"
+                                    IsVisible="{Binding CanUnlinkCreatorGitHubFromVoidId}"
+                                    Classes="ghost"
+                                    Padding="14,8"
+                                    Margin="0,0,10,10"/>
+                                <Button Content="Odhlásit GitHub"
+                                    Command="{Binding LogoutGitHubCommand}"
+                                    IsVisible="{Binding HasCreatorGitHubSession}"
+                                    Classes="ghost"
+                                    Padding="14,8"
+                                    Margin="0,0,10,10"/>
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
+            </WrapPanel>
+
+            <Border Background="{DynamicResource BgShellBrush}"
+                    BorderBrush="{DynamicResource StrokeSoftBrush}"
+                    BorderThickness="1"
+                    CornerRadius="{DynamicResource RadiusCard}"
+                    Padding="22">
+                <StackPanel Spacing="12">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Zabezpečení a relace" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                            <TextBlock Text="{Binding VoidIdSecuritySummary}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <Button Grid.Column="1"
+                                Content="{Binding VoidIdControlPlaneRefreshLabel}"
+                                Command="{Binding RefreshVoidIdControlPlaneCommand}"
+                                IsEnabled="{Binding CanRefreshVoidIdControlPlane}"
+                                Classes="secondary"
+                                Padding="16,9"
+                                HorizontalAlignment="Right"/>
+                    </Grid>
+
+                    <TextBlock Text="{Binding VoidIdSessionSummary}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+
+                    <Border Background="{DynamicResource BgPanelBrush}" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" CornerRadius="14" Padding="16" IsVisible="{Binding !HasVoidIdActiveSessions}">
+                        <TextBlock Text="Po prvním obnovení tu uvidíš všechny aktivní relace a můžeš je jednotlivě odpojit." FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                    </Border>
+
+                    <ItemsControl ItemsSource="{Binding VoidIdActiveSessions}" IsVisible="{Binding HasVoidIdActiveSessions}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="model:VoidIdRefreshSessionInfo">
+                                <Border Background="{DynamicResource BgPanelBrush}" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" CornerRadius="14" Padding="16" Margin="0,0,0,12">
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                                        <StackPanel Spacing="6">
+                                            <WrapPanel Orientation="Horizontal">
+                                                <TextBlock Text="{Binding DeviceSummary}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,10,6"/>
+                                                <Border Background="{DynamicResource PrimaryBBrush}" CornerRadius="999" Padding="10,4" Margin="0,0,0,6" IsVisible="{Binding IsCurrent}">
+                                                    <TextBlock Text="Aktuální relace launcheru" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                                                </Border>
+                                            </WrapPanel>
+                                            <TextBlock Text="{Binding ActivitySummary}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding ExpirySummary}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding IpAddress, StringFormat='IP {0}'}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                        </StackPanel>
+
+                                        <Button Grid.Column="1"
+                                                Content="Odpojit relaci"
+                                            Command="{Binding #IdentityRoot.DataContext.RevokeVoidIdSessionCommand}"
+                                                CommandParameter="{Binding Id}"
+                                                Classes="ghost"
+                                                Padding="14,8"
+                                                VerticalAlignment="Top"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <Border Background="{DynamicResource BgShellBrush}"
+                    BorderBrush="{DynamicResource StrokeSoftBrush}"
+                    BorderThickness="1"
+                    CornerRadius="{DynamicResource RadiusCard}"
+                    Padding="22">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Projektová oprávnění" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <TextBlock Text="{Binding VoidIdMembershipSummary}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+
+                    <Border Background="{DynamicResource BgPanelBrush}" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" CornerRadius="14" Padding="16" IsVisible="{Binding !HasVoidIdMembershipProjects}">
+                        <TextBlock Text="Jakmile je pod tvým VOID ID vlastněný nebo sdílený projekt, objeví se tady role, publish oprávnění a stav projektu." FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                    </Border>
+
+                    <ItemsControl ItemsSource="{Binding VoidIdMembershipProjects}" IsVisible="{Binding HasVoidIdMembershipProjects}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal" ItemWidth="350"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="model:VoidRegistryProjectSummary">
+                                <Border Background="{DynamicResource BgPanelBrush}" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" CornerRadius="14" Padding="16" Margin="0,0,14,14" Width="340">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                                        <TextBlock Text="{Binding MembershipRoleLabel}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryBBrush}"/>
+                                        <TextBlock Text="{Binding PermissionSummary}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                        <TextBlock Text="{Binding StateSummary}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                        <TextBlock Text="{Binding LatestVersion, StringFormat='Poslední verze {0}'}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" IsVisible="{Binding HasLatestVersion}"/>
+                                        <TextBlock Text="{Binding Summary}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" MaxHeight="48"/>
+
+                                        <Button Content="Otevřít Creator Studio"
+                                            Command="{Binding #IdentityRoot.DataContext.GoToStreamingToolsCommand}"
+                                                Classes="secondary"
+                                                Padding="14,8"
+                                                HorizontalAlignment="Left"
+                                                IsVisible="{Binding CanPublish}"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <Border Background="{DynamicResource BgShellBrush}"
+                    BorderBrush="{DynamicResource StrokeSoftBrush}"
+                    BorderThickness="1"
+                    CornerRadius="{DynamicResource RadiusCard}"
+                    Padding="22">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Rychlé akce" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <TextBlock Text="Na jednom místě tu vidíš Microsoft účet, VOID ID, GitHub a rychlé odkazy na webové části účtu."
+                               FontSize="12"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               TextWrapping="Wrap"/>
+
+                    <WrapPanel Orientation="Horizontal" ItemWidth="180" MinHeight="40">
+                        <Button Content="Webový profil"
+                                Command="{Binding OpenUrlCommand}"
+                                CommandParameter="https://void-craft.eu/profil"
+                                Classes="secondary"
+                                Padding="18,10"
+                                Margin="0,0,10,10"/>
+                        <Button Content="Admin panel"
+                                Command="{Binding OpenUrlCommand}"
+                                CommandParameter="https://void-craft.eu/admin"
+                                Classes="secondary"
+                                Padding="18,10"
+                                Margin="0,0,10,10"
+                            IsVisible="{Binding CanAccessVoidIdAdminSurface}"/>
+                        <Button Content="Creator Studio"
+                                Command="{Binding GoToStreamingToolsCommand}"
+                                Classes="secondary"
+                                Padding="18,10"
+                                Margin="0,0,10,10"/>
+                        <Button Content="Katalog modpacků"
+                                Command="{Binding OpenUrlCommand}"
+                                CommandParameter="https://void-craft.eu/modpacky"
+                                Classes="secondary"
+                                Padding="18,10"
+                                Margin="0,0,10,10"/>
+                        <Button Content="Procházet v launcheru"
+                                Command="{Binding GoToBrowserCommand}"
+                                Classes="secondary"
+                                Padding="18,10"
+                                Margin="0,0,10,10"/>
+                    </WrapPanel>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

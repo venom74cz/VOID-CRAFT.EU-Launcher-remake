@@ -1,6 +1,25 @@
 # Changelog
 
-## Unreleased - 2026-04-04
+## Unreleased - 2026-04-05
+
+## 3.1.10 - 2026-04-05
+
+### Launcher shell + VOID ID control plane
+
+#### Home / shell
+- Levy rail uz neni icon-only sidebar. Expanduje se na hover/focus, ukazuje nazvy sekci a drzi jasne rozdeleni `Core`, `Play & Community` a `Workflow`.
+- `Dashboard` byl prestaveny na command-center home s dalsim krokem, server pulse, VOID ID vrstvou a rychlymi moduly misto puvodni vyplnove plochy.
+
+#### VOID ID
+- Launcher ma dedikovanou `VOID ID` surface pro linked accounts, aktivni sessions, GitHub provider state a registry membership prehled.
+- Identity vrstva v launcheru uz rozlisuje skutecnou DB admin roli, Discord team access a capability-based admin surface bez zploštění bezpecnostni semantiky.
+
+#### Registry / projekty
+- `Discover` nově počítá i s `VOID Registry` jako třetím zdrojem vedle CurseForge a Modrinthu, včetně install/update flow přes registry manifest.
+- `Creator Studio` umí po přihlášení přes VOID ID načíst role projektu a spravovat spolupracovníky přímo nad registry projektem.
+
+#### Stabilita
+- Nav rail a dashboard XAML byly dotazene do build-clean stavu; `dotnet build TESTLAUNCHER3.sln` po opravach znovu prochazi.
 
 ### Creator Studio - UX Redesign (kompletni implementace blueprintu)
 
@@ -24,6 +43,9 @@
 - Historie commitu (short hash, message, author, time ago).
 - Branch list + git init pro workspace bez repo.
 - Pull/Push akce s toast feedback.
+
+#### Release metadata
+- Srovnana release verze na `3.1.10` v launcher projektu, installeru, fallback `User-Agent` hodnotach a aktualni dokumentaci.
 
 ## 3.1.9 - 2026-04-05
 

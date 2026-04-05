@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -89,8 +90,18 @@ public sealed class VoidIdAuthService
 
     public async Task<VoidIdOAuthLoginAttempt> StartOAuthLoginAsync(CancellationToken cancellationToken = default)
     {
+        var pkce = CreatePkcePair();
         using var request = new HttpRequestMessage(HttpMethod.Post, $"{BaseApiUrl}/api/auth/launcher/start");
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        request.Content = new StringContent(
+            JsonSerializer.Serialize(new
+            {
+                code_challenge = pkce.CodeChallenge,
+                code_challenge_method = "S256",
+                code_verifier = pkce.CodeVerifier
+            }),
+            Encoding.UTF8,
+            "application/json");
 
         using var response = await _httpClient.SendAsync(request, cancellationToken);
         var body = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -215,6 +226,136 @@ public sealed class VoidIdAuthService
         return await GetProfileAsync(accessToken);
     }
 
+    public async Task<Dictionary<string, VoidIdProviderState>> GetProvidersAsync(string accessToken, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            return new Dictionary<string, VoidIdProviderState>(StringComparer.OrdinalIgnoreCase);
+        }
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"{BaseApiUrl}/api/me/providers");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+        using var response = await _httpClient.SendAsync(request, cancellationToken);
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException(ParseApiError(body, "VOID ID providers fetch selhal."));
+        }
+
+        return ParseProvidersResponse(body);
+    }
+
+    public async Task<IReadOnlyList<VoidIdRefreshSessionInfo>> GetSessionsAsync(string accessToken, string? refreshToken = null, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            return Array.Empty<VoidIdRefreshSessionInfo>();
+        }
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"{BaseApiUrl}/api/me/sessions");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+        using var response = await _httpClient.SendAsync(request, cancellationToken);
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException(ParseApiError(body, "VOID ID sessions fetch selhal."));
+        }
+
+        return ParseSessionsResponse(body, GetRefreshSessionId(refreshToken));
+    }
+
+    public async Task<Dictionary<string, VoidIdProviderState>> LinkGitHubProviderAsync(string accessToken, string gitHubAccessToken, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            throw new InvalidOperationException("VOID ID access token chybi.");
+        }
+
+        if (string.IsNullOrWhiteSpace(gitHubAccessToken))
+        {
+            throw new InvalidOperationException("GitHub access token chybi.");
+        }
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"{BaseApiUrl}/api/me/providers/github/link")
+        {
+            Content = new StringContent(
+                JsonSerializer.Serialize(new { access_token = gitHubAccessToken }),
+                Encoding.UTF8,
+                "application/json")
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+        using var response = await _httpClient.SendAsync(request, cancellationToken);
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException(ParseApiError(body, "GitHub provider link selhal."));
+        }
+
+        return ParseProvidersResponse(body);
+    }
+
+    public async Task<Dictionary<string, VoidIdProviderState>> UnlinkProviderAsync(string accessToken, string provider, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            throw new InvalidOperationException("VOID ID access token chybi.");
+        }
+
+        if (string.IsNullOrWhiteSpace(provider))
+        {
+            throw new InvalidOperationException("Provider chybi.");
+        }
+
+        using var request = new HttpRequestMessage(HttpMethod.Delete, $"{BaseApiUrl}/api/me/providers/{Uri.EscapeDataString(provider.Trim().ToLowerInvariant())}");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+        using var response = await _httpClient.SendAsync(request, cancellationToken);
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException(ParseApiError(body, "Provider unlink selhal."));
+        }
+
+        return ParseProvidersResponse(body);
+    }
+
+    public async Task RevokeSessionAsync(string accessToken, string sessionId, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            throw new InvalidOperationException("VOID ID access token chybi.");
+        }
+
+        if (string.IsNullOrWhiteSpace(sessionId))
+        {
+            throw new InvalidOperationException("Session id chybi.");
+        }
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"{BaseApiUrl}/api/me/sessions/revoke")
+        {
+            Content = new StringContent(
+                JsonSerializer.Serialize(new { sessionId }),
+                Encoding.UTF8,
+                "application/json")
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+        using var response = await _httpClient.SendAsync(request, cancellationToken);
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException(ParseApiError(body, "VOID ID revoke session selhal."));
+        }
+    }
+
     public async Task LogoutAsync(string? accessToken = null)
     {
         try
@@ -249,6 +390,23 @@ public sealed class VoidIdAuthService
     {
         _secureStorage.RemoveMany(AccessTokenKey, RefreshTokenKey, ProfileKey, AccessTokenExpiresAtKey);
         return Task.CompletedTask;
+    }
+
+    public static string? GetRefreshSessionId(string? refreshToken)
+    {
+        if (string.IsNullOrWhiteSpace(refreshToken))
+        {
+            return null;
+        }
+
+        var separatorIndex = refreshToken.IndexOf('.');
+        if (separatorIndex <= 0)
+        {
+            return null;
+        }
+
+        var candidate = refreshToken[..separatorIndex];
+        return Guid.TryParse(candidate, out _) ? candidate : null;
     }
 
     private async Task<VoidIdSession> PollOAuthLoginAsync(VoidIdOAuthLoginAttempt loginAttempt, Action<string>? statusCallback, CancellationToken cancellationToken)
@@ -367,12 +525,183 @@ public sealed class VoidIdAuthService
             Role = profileNode["role"]?.ToString() ?? "player",
             DiscordId = profileNode["discord_id"]?.ToString() ?? profileNode["discordId"]?.ToString() ?? profileNode["discord"]?["id"]?.ToString() ?? string.Empty,
             MinecraftUuid = profileNode["minecraft_uuid"]?.ToString() ?? profileNode["minecraftUuid"]?.ToString() ?? profileNode["minecraftLink"]?["uuid"]?.ToString() ?? string.Empty,
-            MinecraftName = profileNode["minecraft_name"]?.ToString() ?? profileNode["minecraftName"]?.ToString() ?? profileNode["minecraftLink"]?["username"]?.ToString() ?? string.Empty
+            MinecraftName = profileNode["minecraft_name"]?.ToString() ?? profileNode["minecraftName"]?.ToString() ?? profileNode["minecraftLink"]?["username"]?.ToString() ?? string.Empty,
+            LastLoginAtUtc = ParseDateTimeOffset(profileNode["last_login_at"] ?? profileNode["lastLoginAt"]),
+            Providers = ParseProviders(profileNode["providers"]),
+            Security = ParseSecurityState(profileNode["security"]),
+            Access = ParseAccessState(profileNode["access"])
         };
 
         return string.IsNullOrWhiteSpace(profile.DisplayName) && string.IsNullOrWhiteSpace(profile.VoidId)
             ? null
             : profile;
+    }
+
+    private static VoidIdSecurityState ParseSecurityState(JsonNode? securityNode)
+    {
+        if (securityNode == null)
+        {
+            return new VoidIdSecurityState();
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<VoidIdSecurityState>(securityNode.ToJsonString(), JsonOptions)
+                ?? new VoidIdSecurityState();
+        }
+        catch
+        {
+            return new VoidIdSecurityState();
+        }
+    }
+
+    private static VoidIdAccessState ParseAccessState(JsonNode? accessNode)
+    {
+        if (accessNode == null)
+        {
+            return new VoidIdAccessState();
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<VoidIdAccessState>(accessNode.ToJsonString(), JsonOptions)
+                ?? new VoidIdAccessState();
+        }
+        catch
+        {
+            return new VoidIdAccessState();
+        }
+    }
+
+    private static Dictionary<string, VoidIdProviderState> ParseProviders(JsonNode? providersNode)
+    {
+        var providers = new Dictionary<string, VoidIdProviderState>(StringComparer.OrdinalIgnoreCase);
+        if (providersNode is not JsonObject providerObject)
+        {
+            return providers;
+        }
+
+        foreach (var pair in providerObject)
+        {
+            if (pair.Value == null)
+            {
+                continue;
+            }
+
+            try
+            {
+                var provider = JsonSerializer.Deserialize<VoidIdProviderState>(pair.Value.ToJsonString(), JsonOptions) ?? new VoidIdProviderState();
+                if (string.IsNullOrWhiteSpace(provider.Provider))
+                {
+                    provider.Provider = pair.Key;
+                }
+
+                providers[pair.Key] = provider;
+            }
+            catch
+            {
+            }
+        }
+
+        return providers;
+    }
+
+    private static Dictionary<string, VoidIdProviderState> ParseProvidersResponse(string body)
+    {
+        var node = JsonNode.Parse(body);
+        return ParseProviders(node?["providers"] ?? node?["user"]?["providers"]);
+    }
+
+    private static IReadOnlyList<VoidIdRefreshSessionInfo> ParseSessionsResponse(string body, string? currentSessionId)
+    {
+        var root = JsonNode.Parse(body);
+        var sessionsNode = root?["sessions"] ?? root?["data"];
+        if (sessionsNode is not JsonArray sessionArray)
+        {
+            return Array.Empty<VoidIdRefreshSessionInfo>();
+        }
+
+        var sessions = new List<VoidIdRefreshSessionInfo>(sessionArray.Count);
+        foreach (var sessionNode in sessionArray)
+        {
+            if (sessionNode == null)
+            {
+                continue;
+            }
+
+            try
+            {
+                var session = JsonSerializer.Deserialize<VoidIdRefreshSessionInfo>(sessionNode.ToJsonString(), JsonOptions);
+                if (session == null)
+                {
+                    continue;
+                }
+
+                if (!string.IsNullOrWhiteSpace(currentSessionId) && string.Equals(session.Id, currentSessionId, StringComparison.OrdinalIgnoreCase))
+                {
+                    session.IsCurrent = true;
+                }
+
+                sessions.Add(session);
+            }
+            catch
+            {
+            }
+        }
+
+        return sessions;
+    }
+
+    private static DateTimeOffset? ParseDateTimeOffset(JsonNode? node)
+    {
+        if (node == null)
+        {
+            return null;
+        }
+
+        if (node is JsonValue valueNode)
+        {
+            try
+            {
+                if (valueNode.TryGetValue<DateTimeOffset>(out var dateTimeOffset))
+                {
+                    return dateTimeOffset;
+                }
+            }
+            catch
+            {
+            }
+
+            try
+            {
+                if (DateTimeOffset.TryParse(valueNode.ToString(), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var parsed))
+                {
+                    return parsed;
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        return null;
+    }
+
+    private static (string CodeVerifier, string CodeChallenge) CreatePkcePair()
+    {
+        var verifierBytes = RandomNumberGenerator.GetBytes(64);
+        var codeVerifier = Base64UrlEncode(verifierBytes);
+        var challengeBytes = SHA256.HashData(Encoding.ASCII.GetBytes(codeVerifier));
+        var codeChallenge = Base64UrlEncode(challengeBytes);
+        return (codeVerifier, codeChallenge);
+    }
+
+    private static string Base64UrlEncode(byte[] input)
+    {
+        return Convert.ToBase64String(input)
+            .TrimEnd('=')
+            .Replace('+', '-')
+            .Replace('/', '_');
     }
 
     private static string ParseApiError(string? body, string fallback)

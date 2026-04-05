@@ -154,6 +154,13 @@ public partial class MainViewModel
             CreatorGitHubLoginUrl = string.Empty;
         }
 
+        VoidIdGitHubProviderStatus = BuildGitHubProviderStatus();
+        NotifyVoidIdStateChanged();
+        if (HasVoidIdSession)
+        {
+            _ = RefreshVoidIdControlPlaneAsync(showToastOnSuccess: false);
+        }
+
         NotifyCreatorGitHubStateChanged();
     }
 

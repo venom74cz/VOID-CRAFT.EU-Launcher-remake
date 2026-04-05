@@ -20,7 +20,7 @@
                                     Source="{Binding PlayerSkinUrl, FallbackValue='https://crafatar.com/avatars/MHF_Steve?size=40&amp;overlay'}"/>
                             </Border>
                             <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="12,0,0,0">
-                                <TextBlock Text="{Binding UserSession.Username, FallbackValue='Guest'}" FontWeight="Bold" FontSize="14"
+                                <TextBlock Text="{Binding UserSession.Username, FallbackValue='Host'}" FontWeight="Bold" FontSize="14"
                                            Foreground="{DynamicResource TextPrimaryBrush}" TextTrimming="CharacterEllipsis"/>
                                 <TextBlock Text="Minecraft účet" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" IsVisible="{Binding IsLoggedIn}"/>
                                 <TextBlock Text="Nepřihlášen" FontSize="10" Foreground="{DynamicResource DangerBrush}" IsVisible="{Binding !IsLoggedIn}"/>
@@ -181,7 +181,7 @@
                                 HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Cursor="Hand">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <TextBlock Text="{StaticResource IconOpen}" FontSize="13" VerticalAlignment="Center"/>
-                                <TextBlock Text="Void-Craft Web" FontSize="12" VerticalAlignment="Center"/>
+                                <TextBlock Text="VOID-CRAFT.EU" FontSize="12" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
                         <Button Command="{Binding OpenUrlCommand}" CommandParameter="https://discord.gg/cFvCaC2KDh"

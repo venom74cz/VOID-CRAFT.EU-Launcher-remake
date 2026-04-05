@@ -81,7 +81,7 @@
                                         <Border Background="#10141D" CornerRadius="10" Height="112" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" ClipToBounds="True" IsVisible="{Binding !IsInlineEditing}">
                                             <Grid>
                                                 <asyncImage:AdvancedImage Source="{Binding ContentValue}" Stretch="UniformToFill" IsVisible="{Binding HasContentValue}"/>
-                                                <TextBlock Text="Image placeholder" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasContentValue}"/>
+                                                <TextBlock Text="Obrázek zatím není nastavený" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasContentValue}"/>
                                             </Grid>
                                         </Border>
                                         <TextBox Text="{Binding ContentValue, UpdateSourceTrigger=PropertyChanged}" IsVisible="{Binding IsInlineEditing}" Background="#10141D" BorderBrush="{DynamicResource PrimaryBBrush}" BorderThickness="1" CornerRadius="8" Padding="10,8" Watermark="Cesta k obrazku" KeyDown="OnInlineEditorKeyDown"/>

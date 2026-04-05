@@ -469,6 +469,7 @@ public partial class MainViewModel
         OnPropertyChanged(nameof(CreatorPublishActionLabel));
         OnPropertyChanged(nameof(CreatorGitHubRepositoryLabel));
         OnPropertyChanged(nameof(CreatorPublishReadinessLabel));
+        NotifyCreatorCollaboratorStateChanged();
     }
 
     private bool TryResolveCreatorRepository(CreatorManifest manifest, out GitHubRepositoryReference repository)

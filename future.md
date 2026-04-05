@@ -1103,14 +1103,14 @@ Prakticky zapis pak muze vypadat takhle:
 > - **O Projektu** dropdown: O VOID-CRAFT, Nas tym, Kontakt
 > - **Novinky** standalone link
 > - **Komunita** dropdown: Prehled, Discord, FAQ a Podpora, Pravidla
-> - **Dashboard** (WIP)
+> - **Dashboard**
 > - Standalone stranky mimo menu: Hytale (Hytale.tsx), Voidium (Voidium.tsx)
 >
 > **Nova struktura menu**
 > - **Projekt** — slouci O Projektu + Novinky + Komunita do jednoho dropdown: O VOID-CRAFT, Nas tym, Kontakt, Novinky/Updaty, Komunita, Discord, FAQ a Podpora, Pravidla.
 > - **VOID-BOX** — beze zmeny: Prehled serveru, Jak se pripojit, Modpack Info, Galerie, Kronika.
 > - **Launcher** — NOVY dropdown: odkaz na novou stranku launcheru na webu (viz W2).
-> - **Ostatni** — mene caste veci: Hytale, Voidium, Dashboard (WIP), budouci projekty.
+> - **Ostatni** — mene caste veci: Hytale, Voidium, Dashboard, budouci projekty.
 >
 > **Proc to dava smysl**
 > - Aktualni menu ma 4 dropdown + standalone linky — pro noveho navstevnika neprehledne.

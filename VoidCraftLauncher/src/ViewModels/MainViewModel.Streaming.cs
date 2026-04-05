@@ -244,6 +244,7 @@ public partial class MainViewModel
     {
         NotifyStreamingToolsStateChanged();
         NotifySkinStudioStateChanged();
+        NotifyVoidIdStateChanged();
         _ = LoadSkinHistoryAsync(true);
         _ = LoadAchievementSnapshotAsync();
     }

@@ -1904,6 +1904,112 @@
                                             </StackPanel>
                                         </StackPanel>
                                     </Border>
+
+                                    <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="12" Padding="14" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                                        <StackPanel Spacing="12">
+                                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                                <StackPanel Spacing="4">
+                                                    <TextBlock Text="Collaboratoři registry projektu" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                                    <TextBlock Text="{Binding CreatorCollaboratorProjectLabel}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                                </StackPanel>
+                                                <Border Grid.Column="1" Background="{DynamicResource BgPanelBrush}" CornerRadius="999" Padding="10,4">
+                                                    <TextBlock Text="{Binding CreatorCollaboratorAccessLabel}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource PrimaryBBrush}"/>
+                                                </Border>
+                                            </Grid>
+
+                                            <TextBlock Text="{Binding CreatorCollaboratorStatus}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+
+                                            <WrapPanel Orientation="Horizontal" ItemWidth="180" MinHeight="40">
+                                                <Button Command="{Binding RefreshCreatorCollaboratorsCommand}" Classes="secondary" Padding="12,8" IsEnabled="{Binding CanRefreshCreatorCollaborators}">
+                                                    <TextBlock Text="{Binding CreatorCollaboratorActionLabel}" FontSize="11"/>
+                                                </Button>
+                                            </WrapPanel>
+
+                                            <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="10" Padding="12" IsVisible="{Binding CreatorCollaboratorsCanManage}">
+                                                <StackPanel Spacing="10">
+                                                    <TextBlock Text="Přidat nový účet" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                                    <Grid ColumnDefinitions="*,10,132,10,Auto" ColumnSpacing="0">
+                                                        <TextBox Text="{Binding CreatorCollaboratorSearchQuery}" Watermark="Hledat podle display name, Discordu nebo ID"/>
+                                                        <ComboBox Grid.Column="2" SelectedItem="{Binding CreatorNewCollaboratorRole}" HorizontalAlignment="Stretch">
+                                                            <x:String>viewer</x:String>
+                                                            <x:String>editor</x:String>
+                                                            <x:String>maintainer</x:String>
+                                                        </ComboBox>
+                                                        <Button Grid.Column="4" Command="{Binding SearchCreatorCollaboratorAccountsCommand}" Classes="primary" Padding="12,8" IsEnabled="{Binding CanSearchCreatorCollaborators}">
+                                                            <TextBlock Text="{Binding CreatorCollaboratorSearchActionLabel}" FontSize="11"/>
+                                                        </Button>
+                                                    </Grid>
+
+                                                    <controls:EmptyState IsVisible="{Binding !HasCreatorCollaboratorSearchResults}" Icon="{StaticResource IconSearch}" Title="Žádní kandidáti" Subtitle="Zadej aspoň 2 znaky a launcher najde VOID ID účty mimo aktuální collaborator list."/>
+
+                                                    <ItemsControl ItemsSource="{Binding CreatorRegistryCollaboratorSearchResults}" IsVisible="{Binding HasCreatorCollaboratorSearchResults}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate x:CompileBindings="False">
+                                                                <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="10" Padding="12" Margin="0,0,0,8" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                                                                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                                                                        <Border Width="40" Height="40" CornerRadius="10" ClipToBounds="True" Background="{DynamicResource BgPanelBrush}">
+                                                                            <asyncImage:AdvancedImage Source="{Binding AvatarUrl}" Stretch="UniformToFill"/>
+                                                                        </Border>
+                                                                        <StackPanel Grid.Column="1" Spacing="3" VerticalAlignment="Center">
+                                                                            <TextBlock Text="{Binding DisplayName}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                                                            <TextBlock Text="{Binding DiscordUsername, StringFormat='Discord: {0}'}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                                                        </StackPanel>
+                                                                        <Button Grid.Column="2" Command="{Binding $parent[ItemsControl].((vm:MainViewModel)DataContext).AddCreatorCollaboratorCommand}" CommandParameter="{Binding}" Classes="secondary" Padding="12,8">
+                                                                            <TextBlock Text="Přidat" FontSize="11"/>
+                                                                        </Button>
+                                                                    </Grid>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <controls:EmptyState IsVisible="{Binding !HasCreatorRegistryCollaborators}" Icon="{StaticResource IconInfo}" Title="Žádní collaboratoři" Subtitle="Owner je implicitní. Další access role se načítají z VOID Registry až po prvním refreshi."/>
+
+                                            <ItemsControl ItemsSource="{Binding CreatorRegistryCollaborators}" IsVisible="{Binding HasCreatorRegistryCollaborators}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:CompileBindings="False">
+                                                        <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="10" Padding="12" Margin="0,0,0,8" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                                                            <Grid ColumnDefinitions="Auto,*,150,Auto,Auto" ColumnSpacing="12">
+                                                                <Border Width="44" Height="44" CornerRadius="12" ClipToBounds="True" Background="{DynamicResource BgElevatedBrush}">
+                                                                    <asyncImage:AdvancedImage Source="{Binding AvatarUrl}" Stretch="UniformToFill"/>
+                                                                </Border>
+
+                                                                <StackPanel Grid.Column="1" Spacing="3" VerticalAlignment="Center">
+                                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                                        <TextBlock Text="{Binding DisplayName}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                                                        <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="999" Padding="8,3">
+                                                                            <TextBlock Text="{Binding Role}" FontSize="9" Foreground="{DynamicResource PrimaryBBrush}"/>
+                                                                        </Border>
+                                                                    </StackPanel>
+                                                                    <TextBlock Text="{Binding AddedAt, StringFormat='Přidán: {0}'}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" IsVisible="{Binding !IsOwner}"/>
+                                                                    <TextBlock Text="Owner projektu" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" IsVisible="{Binding IsOwner}"/>
+                                                                </StackPanel>
+
+                                                                <ComboBox Grid.Column="2" SelectedItem="{Binding Role}" HorizontalAlignment="Stretch" IsEnabled="{Binding !$parent[ItemsControl].((vm:MainViewModel)DataContext).IsCreatorCollaboratorMutationRunning}">
+                                                                    <ComboBox.IsVisible>
+                                                                        <Binding Path="!IsOwner"/>
+                                                                    </ComboBox.IsVisible>
+                                                                    <x:String>viewer</x:String>
+                                                                    <x:String>editor</x:String>
+                                                                    <x:String>maintainer</x:String>
+                                                                </ComboBox>
+
+                                                                <Button Grid.Column="3" Command="{Binding $parent[ItemsControl].((vm:MainViewModel)DataContext).UpdateCreatorCollaboratorCommand}" CommandParameter="{Binding}" Classes="secondary" Padding="12,8" IsVisible="{Binding !IsOwner}">
+                                                                    <TextBlock Text="Uložit" FontSize="11"/>
+                                                                </Button>
+
+                                                                <Button Grid.Column="4" Command="{Binding $parent[ItemsControl].((vm:MainViewModel)DataContext).RemoveCreatorCollaboratorCommand}" CommandParameter="{Binding}" Classes="secondary" Padding="12,8" IsVisible="{Binding !IsOwner}">
+                                                                    <TextBlock Text="Odebrat" FontSize="11"/>
+                                                                </Button>
+                                                            </Grid>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Border>
                                 </StackPanel>
                             </Border>
                         </Grid>

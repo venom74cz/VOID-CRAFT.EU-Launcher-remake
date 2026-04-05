@@ -32,7 +32,7 @@
     <!-- ║  MODRINTH-STYLE 3-COLUMN LAYOUT                            ║ -->
     <!-- ║  Left Icon Sidebar (64) | Main Content (*) | Right Panel   ║ -->
     <!-- ╚══════════════════════════════════════════════════════════════╝ -->
-    <Grid x:Name="RootLayout" ColumnDefinitions="64,*,280">
+    <Grid x:Name="RootLayout" ColumnDefinitions="Auto,*,280">
 
         <!-- ╔══════════════════════════════════════════════════╗ -->
         <!-- ║          NAV RAIL (extracted UserControl)        ║ -->
@@ -59,6 +59,9 @@
 
                 <!-- ══════════ VIEW 2: DISCOVER ══════════ -->
                 <controls:DiscoverView Classes="view-panel" IsVisible="{Binding IsDiscoverView}"/>
+
+                <!-- ══════════ VIEW 2A: VOID ID ══════════ -->
+                <controls:IdentityView Classes="view-panel" IsVisible="{Binding IsIdentityView}"/>
 
                 <!-- ══════════ VIEW 3: INSTANCE WORKSPACE ══════════ -->
                 <controls:InstanceWorkspaceView Classes="view-panel" IsVisible="{Binding IsInstanceDetailView}"/>

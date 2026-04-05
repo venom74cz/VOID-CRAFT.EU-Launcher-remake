@@ -144,6 +144,7 @@ public partial class MainViewModel
     partial void OnCurrentModpackCreatorManifestChanged(CreatorManifest? value)
     {
         RefreshCurrentWorkspaceHeroState();
+        QueueRefreshCreatorCollaborators("Projektový kontext se změnil, collaborator list se obnovuje.");
         OnPropertyChanged(nameof(HasCurrentWorkspaceCreatorMetadata));
         OnPropertyChanged(nameof(HasCurrentWorkspaceDescription));
         OnPropertyChanged(nameof(HasCurrentWorkspaceFullDescription));
@@ -169,6 +170,7 @@ public partial class MainViewModel
         OnPropertyChanged(nameof(HasCurrentWorkspaceHeroPreview));
         OnPropertyChanged(nameof(CanCreatorGitGenerateVoidpack));
         NotifyCreatorGitHubStateChanged();
+        NotifyCreatorCollaboratorStateChanged();
     }
 
     partial void OnCreatorWorkspaceContextChanged(CreatorWorkspaceContext value)
@@ -1012,7 +1014,9 @@ public partial class MainViewModel
 
     private static bool ShouldAutoRefreshCreatorSourceMetadata(ModpackInfo modpack)
     {
-        var hasRemoteIdentity = modpack.ProjectId > 0 || !string.IsNullOrWhiteSpace(modpack.ModrinthId);
+        var hasRemoteIdentity = modpack.ProjectId > 0 ||
+            !string.IsNullOrWhiteSpace(modpack.ModrinthId) ||
+            !string.IsNullOrWhiteSpace(modpack.VoidRegistrySlug);
         if (!hasRemoteIdentity)
         {
             return false;

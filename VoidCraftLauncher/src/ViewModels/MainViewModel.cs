@@ -29,6 +29,7 @@ public enum MainViewType
     Dashboard,
     Library,
     Discover,
+    Identity,
     Settings,
     InstanceDetail,
     SkinStudio,
@@ -168,9 +169,13 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     private MainViewType _currentMainView = MainViewType.Dashboard;
 
+    [ObservableProperty]
+    private bool _isNavRailExpanded;
+
     public bool IsDashboardView => CurrentMainView == MainViewType.Dashboard;
     public bool IsLibraryView => CurrentMainView == MainViewType.Library;
     public bool IsDiscoverView => CurrentMainView == MainViewType.Discover;
+    public bool IsIdentityView => CurrentMainView == MainViewType.Identity;
     public bool IsSettingsView => CurrentMainView == MainViewType.Settings;
     public bool IsInstanceDetailView => CurrentMainView == MainViewType.InstanceDetail;
     public bool IsSkinStudioView => CurrentMainView == MainViewType.SkinStudio;
@@ -181,12 +186,29 @@ public partial class MainViewModel : ViewModelBase
     public bool IsFutureView => CurrentMainView == MainViewType.Future;
     public bool IsThemeSwitcherView => CurrentMainView == MainViewType.ThemeSwitcher;
     public bool IsLocalizationView => CurrentMainView == MainViewType.Localization;
+    public double NavRailWidth => IsNavRailExpanded ? 228 : 76;
+
+    partial void OnIsNavRailExpandedChanged(bool value)
+    {
+        OnPropertyChanged(nameof(NavRailWidth));
+    }
+
+    public void SetNavRailExpanded(bool value)
+    {
+        if (IsNavRailExpanded == value)
+        {
+            return;
+        }
+
+        IsNavRailExpanded = value;
+    }
 
     partial void OnCurrentMainViewChanged(MainViewType value)
     {
         OnPropertyChanged(nameof(IsDashboardView));
         OnPropertyChanged(nameof(IsLibraryView));
         OnPropertyChanged(nameof(IsDiscoverView));
+        OnPropertyChanged(nameof(IsIdentityView));
         OnPropertyChanged(nameof(IsSettingsView));
         OnPropertyChanged(nameof(IsInstanceDetailView));
         OnPropertyChanged(nameof(IsSkinStudioView));
@@ -217,6 +239,11 @@ public partial class MainViewModel : ViewModelBase
             _ = RefreshCreatorWorkbenchAsync();
         }
 
+        if (value == MainViewType.Identity)
+        {
+            _ = RefreshVoidIdControlPlaneAsync(showToastOnSuccess: false);
+        }
+
         if (value == MainViewType.Future)
         {
             _ = LoadFutureRoadmapAsync();
@@ -230,6 +257,7 @@ public partial class MainViewModel : ViewModelBase
         MainViewType.Dashboard => L("Shell.Title.Dashboard"),
         MainViewType.Library => L("Shell.Title.Library"),
         MainViewType.Discover => LF("Shell.Title.Discover", BrowserSource),
+        MainViewType.Identity => "VOID ID",
         MainViewType.Settings => L("Shell.Title.Settings"),
         MainViewType.InstanceDetail => CurrentModpack?.Name ?? L("Shell.Title.InstanceDetailFallback"),
         MainViewType.SkinStudio => L("Shell.Title.SkinStudio"),
@@ -242,6 +270,9 @@ public partial class MainViewModel : ViewModelBase
         MainViewType.Localization => L("Shell.Title.Localization"),
         _ => L("Shell.Title.Default")
     };
+
+    [RelayCommand]
+    private void GoToIdentity() => NavigateToView(MainViewType.Identity);
 
     [RelayCommand]
     private void GoToSkinStudio() => NavigateToView(MainViewType.SkinStudio);
@@ -923,6 +954,7 @@ public partial class MainViewModel : ViewModelBase
             MainViewType.Dashboard => "Na dashboardu",
             MainViewType.Library => "Prohlíží si knihovnu",
             MainViewType.Discover => $"Hledá nové modpacky ({BrowserSource})",
+            MainViewType.Identity => "Spravuje VOID ID a GitHub propojení",
             MainViewType.Settings => "Upravuje nastavení",
             MainViewType.InstanceDetail => $"Detail: {CurrentModpack?.Name}",
             MainViewType.Future => "Prohlíží si future roadmapu",

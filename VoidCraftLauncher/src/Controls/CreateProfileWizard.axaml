@@ -76,7 +76,7 @@
                                     IsVisible="{Binding IsCreateProfileRuntimeStep}">
                                 <StackPanel Spacing="4">
                                     <TextBlock Text="02" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource PrimaryBBrush}"/>
-                                    <TextBlock Text="Runtime" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                    <TextBlock Text="Verze a Java" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                 </StackPanel>
                             </Border>
                             <Border Grid.Column="1" Background="{DynamicResource BgPanelBrush}" CornerRadius="14" Padding="14,12"
@@ -84,7 +84,7 @@
                                     IsVisible="{Binding !IsCreateProfileRuntimeStep}">
                                 <StackPanel Spacing="4">
                                     <TextBlock Text="02" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMutedBrush}"/>
-                                    <TextBlock Text="Runtime" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                    <TextBlock Text="Verze a Java" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}"/>
                                 </StackPanel>
                             </Border>
 
@@ -112,7 +112,7 @@
                     <StackPanel Spacing="20" Margin="28,24">
                         <StackPanel Spacing="16" IsVisible="{Binding IsCreateProfileIdentityStep}">
                             <StackPanel Spacing="6">
-                                <TextBlock Text="Bootstrap workspace" FontWeight="SemiBold" FontSize="13"
+                                <TextBlock Text="Základ profilu" FontWeight="SemiBold" FontSize="13"
                                            Foreground="{DynamicResource TextSecondaryBrush}"/>
                                 <ComboBox ItemsSource="{Binding CreateProfileBootstrapOptions}"
                                           SelectedItem="{Binding SelectedCreateProfileBootstrapOption}"
@@ -132,7 +132,7 @@
                                                Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
 
                                     <StackPanel Spacing="8" IsVisible="{Binding IsCreateProfileTemplateBootstrap}">
-                                        <TextBlock Text="Template preset" FontSize="12" FontWeight="SemiBold"
+                                        <TextBlock Text="Šablona" FontSize="12" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextPrimaryBrush}"/>
                                         <ComboBox ItemsSource="{Binding CreateProfileTemplateOptions}"
                                                   SelectedItem="{Binding SelectedCreateProfileTemplateOption}"
@@ -158,7 +158,7 @@
                                     </StackPanel>
 
                                     <StackPanel Spacing="8" IsVisible="{Binding IsCreateProfileCloneGitBootstrap}">
-                                        <TextBlock Text="Git remote" FontSize="12" FontWeight="SemiBold"
+                                        <TextBlock Text="Git repozitář" FontSize="12" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextPrimaryBrush}"/>
                                         <TextBox Text="{Binding NewProfileBootstrapGitUrl}" Watermark="https://github.com/owner/repo.git nebo git@github.com:owner/repo.git"/>
                                         <TextBox Text="{Binding NewProfileBootstrapGitBranch}" Watermark="main"/>
@@ -166,7 +166,7 @@
 
                                     <StackPanel Spacing="8" IsVisible="{Binding IsCreateProfileRestoreSnapshotBootstrap}">
                                         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                                            <TextBlock Text="Snapshot source" FontSize="12" FontWeight="SemiBold"
+                                            <TextBlock Text="Zdroj snapshotu" FontSize="12" FontWeight="SemiBold"
                                                        Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center"/>
                                             <Button Grid.Column="1" Content="↻ Obnovit" Command="{Binding RefreshCreateProfileBootstrapSnapshotsCommand}"
                                                     Classes="secondary" FontSize="12" Padding="12,8"/>
@@ -181,7 +181,7 @@
                                                 </DataTemplate>
                                             </ComboBox.ItemTemplate>
                                         </ComboBox>
-                                        <TextBlock Text="Launcher tu nabízí snapshoty z existujících instancí a creator backup workspace." FontSize="11"
+                                        <TextBlock Text="Tady najdeš snapshoty z existujících instancí a zálohy z Creator Studia." FontSize="11"
                                                    Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"
                                                    IsVisible="{Binding !HasCreateProfileSnapshotOptions}"/>
                                     </StackPanel>
@@ -208,7 +208,7 @@
                             </Grid>
 
                             <StackPanel Spacing="6">
-                                <TextBlock Text="Krátké summary" FontWeight="SemiBold" FontSize="13"
+                                <TextBlock Text="Krátký popis" FontWeight="SemiBold" FontSize="13"
                                            Foreground="{DynamicResource TextSecondaryBrush}"/>
                                 <TextBox Text="{Binding NewProfileSummary}" AcceptsReturn="True" TextWrapping="Wrap"
                                          MinHeight="86" Watermark="Jedna až dvě věty, které popíšou směr packu, mood a první release cíl."/>
@@ -305,7 +305,7 @@
                                                    HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
                                     <StackPanel Grid.Column="1" Spacing="4">
-                                        <TextBlock Text="Stav runtime výběru" FontSize="12" FontWeight="SemiBold"
+                                        <TextBlock Text="Stav výběru verze a Javy" FontSize="12" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextPrimaryBrush}"/>
                                         <TextBlock Text="{Binding CreateProfileRuntimeStatus}" FontSize="11"
                                                    Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
@@ -327,12 +327,12 @@
                                         <StackPanel Spacing="3">
                                             <TextBlock Text="Finální konfigurace" FontSize="16" FontWeight="Bold"
                                                        Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                            <TextBlock Text="Instance se po vytvoření otevře v detail view a připraví se pro správu modů."
+                                            <TextBlock Text="Instance se po vytvoření otevře v detailu a připraví se pro správu modů."
                                                        FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
                                         </StackPanel>
                                         <Border Grid.Column="1" Background="{DynamicResource SuccessBrush}" CornerRadius="999"
                                                 Padding="10,5" VerticalAlignment="Top">
-                                            <TextBlock Text="Ready" FontSize="10" FontWeight="SemiBold"
+                                            <TextBlock Text="Připraveno" FontSize="10" FontWeight="SemiBold"
                                                        Foreground="{DynamicResource BgCanvasBrush}"/>
                                         </Border>
                                     </Grid>
@@ -347,7 +347,7 @@
                                         </Border>
                                         <Border Grid.Column="1" Background="{DynamicResource BgPanelBrush}" CornerRadius="12" Padding="14">
                                             <StackPanel Spacing="4">
-                                                <TextBlock Text="Runtime" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                                <TextBlock Text="Verze a Java" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
                                                 <TextBlock Text="{Binding CreateProfileRuntimeSummary}" FontSize="14" FontWeight="Bold"
                                                            Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
                                             </StackPanel>

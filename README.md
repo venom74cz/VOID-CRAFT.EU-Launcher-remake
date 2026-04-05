@@ -3,7 +3,7 @@
 Oficialni vlastni Minecraft launcher pro komunitu **VOID-CRAFT**. Postaveny na
 .NET 9 (C#) a Avalonia UI.
 
-Aktualni release: **3.1.9**
+Aktualni release: **3.1.10**
 
 ![VOID-CRAFT Logo](https://void-craft.eu/logo.png)
 

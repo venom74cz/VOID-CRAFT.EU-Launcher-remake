@@ -838,13 +838,13 @@
                                             <TextBlock Text="Servery navázané na modpack" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="16"/>
                                             <TextBlock Text="Spusť správnou instanci a připoj se na vybraný server jedním kliknutím." FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
                                         </StackPanel>
-                                        <Button Grid.Column="1" Content="Server Hub" Command="{Binding GoToServerHubCommand}" Classes="secondary" FontSize="12" Padding="12,8"/>
+                                        <Button Grid.Column="1" Content="Servery" Command="{Binding GoToServerHubCommand}" Classes="secondary" FontSize="12" Padding="12,8"/>
                                     </Grid>
 
                                     <controls:EmptyState IsVisible="{Binding !HasCurrentModpackLinkedServers}"
                                                          Icon="{StaticResource IconServerHub}"
                                                          Title="K tomuto modpacku zatím není navázaný server"
-                                                         Subtitle="V Server Hubu můžeš přidat vlastní server nebo upravit existující vazby, aby Quick Connect spouštěl správnou instanci."/>
+                                                         Subtitle="V přehledu serverů můžeš přidat vlastní server nebo upravit existující vazby, aby rychlé připojení spouštělo správnou instanci."/>
 
                                     <ItemsControl ItemsSource="{Binding CurrentModpackLinkedServers}" IsVisible="{Binding HasCurrentModpackLinkedServers}">
                                         <ItemsControl.ItemTemplate>

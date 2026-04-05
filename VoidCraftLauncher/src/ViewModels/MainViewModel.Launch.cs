@@ -308,6 +308,12 @@ public partial class MainViewModel
             return;
         }
 
+        if (!string.IsNullOrWhiteSpace(modpack.VoidRegistrySlug))
+        {
+            await EnsureLatestVoidRegistryModpackInstalledAsync(modpack, modpackDir, modsDir);
+            return;
+        }
+
         if (!string.IsNullOrWhiteSpace(modpack.ModrinthId))
         {
             await EnsureLatestModrinthModpackInstalledAsync(modpack, modpackDir, modsDir);
@@ -455,6 +461,99 @@ public partial class MainViewModel
             LaunchStatus = "Instaluji aktualizované soubory...";
             _lastManifestInfo = await _modpackInstaller.InstallOrUpdateAsync(tempPath, modpackDir, targetVersion: latestVersionName);
             SyncInstalledVersionState(modpack, latestVersion);
+            SaveModpacks();
+        }
+        finally
+        {
+            if (File.Exists(tempPath))
+            {
+                File.Delete(tempPath);
+            }
+        }
+    }
+
+    private async Task EnsureLatestVoidRegistryModpackInstalledAsync(ModpackInfo modpack, string modpackDir, string modsDir)
+    {
+        var slug = modpack.VoidRegistrySlug;
+        if (string.IsNullOrWhiteSpace(slug))
+        {
+            _lastManifestInfo = ModpackInstaller.LoadManifestInfo(modpackDir) ?? new ModpackManifestInfo();
+            return;
+        }
+
+        var installedManifest = ModpackInstaller.LoadManifestInfo(modpackDir);
+        var currentVersionName = FirstNonEmpty(installedManifest?.Version, modpack.CurrentVersion?.Name);
+        var hasInstalledContent = HasInstalledModpackContent(modpackDir, modsDir);
+
+        if (hasInstalledContent && !string.IsNullOrWhiteSpace(currentVersionName))
+        {
+            var updateCheck = await _voidRegistryService.GetUpdateCheckAsync(slug, currentVersionName);
+            var latestInfo = updateCheck?.Latest;
+            if (latestInfo != null)
+            {
+                var latestVersion = new ModpackVersion
+                {
+                    Name = string.IsNullOrWhiteSpace(latestInfo.Version) ? currentVersionName : latestInfo.Version,
+                    FileId = !string.IsNullOrWhiteSpace(latestInfo.VersionId) ? latestInfo.VersionId : latestInfo.Version,
+                    ReleaseDate = latestInfo.PublishedAtUtc?.ToString("O") ?? string.Empty
+                };
+
+                modpack.Versions = new ObservableCollection<ModpackVersion>(new[] { latestVersion });
+
+                if (!updateCheck!.UpdateAvailable)
+                {
+                    LaunchStatus = $"Máte nejnovější verzi ({currentVersionName}).";
+                    modpack.CurrentVersion = new ModpackVersion
+                    {
+                        Name = currentVersionName,
+                        FileId = string.IsNullOrWhiteSpace(modpack.CurrentVersion?.FileId) ? latestVersion.FileId : modpack.CurrentVersion.FileId,
+                        ReleaseDate = latestVersion.ReleaseDate
+                    };
+                    _lastManifestInfo = installedManifest ?? new ModpackManifestInfo();
+                    return;
+                }
+            }
+        }
+
+        var manifest = await _voidRegistryService.GetInstallManifestAsync(slug);
+        if (manifest == null || string.IsNullOrWhiteSpace(manifest.FileUrl))
+        {
+            throw new InvalidOperationException("VOID Registry nevrátil validní install manifest.");
+        }
+
+        var targetVersionName = string.IsNullOrWhiteSpace(manifest.Version) ? "Latest" : manifest.Version;
+        var targetVersionId = string.IsNullOrWhiteSpace(manifest.VersionId) ? targetVersionName : manifest.VersionId;
+        var latestManifestVersion = new ModpackVersion
+        {
+            Name = targetVersionName,
+            FileId = targetVersionId
+        };
+
+        modpack.Versions = new ObservableCollection<ModpackVersion>(new[] { latestManifestVersion });
+
+        if (hasInstalledContent &&
+            !string.IsNullOrWhiteSpace(currentVersionName) &&
+            string.Equals(currentVersionName, targetVersionName, StringComparison.OrdinalIgnoreCase))
+        {
+            LaunchStatus = $"Máte nejnovější verzi ({targetVersionName}).";
+            SyncInstalledVersionState(modpack, latestManifestVersion);
+            _lastManifestInfo = installedManifest ?? new ModpackManifestInfo();
+            return;
+        }
+
+        var fileName = Path.GetFileName(string.IsNullOrWhiteSpace(manifest.FileName)
+            ? $"{slug}-{targetVersionName}.voidpack"
+            : manifest.FileName);
+        var tempPath = Path.Combine(Path.GetTempPath(), fileName);
+
+        try
+        {
+            LaunchStatus = $"Stahuji aktualizaci {targetVersionName}...";
+            await DownloadPackageArchiveAsync(new[] { manifest.FileUrl }, tempPath, targetVersionName);
+
+            LaunchStatus = "Instaluji aktualizované soubory...";
+            _lastManifestInfo = await _modpackInstaller.InstallOrUpdateAsync(tempPath, modpackDir, targetVersion: targetVersionName);
+            SyncInstalledVersionState(modpack, latestManifestVersion);
             SaveModpacks();
         }
         finally

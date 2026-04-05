@@ -80,7 +80,7 @@ public sealed class ServiceLocator
     {
         // Shared HttpClient (pooled, long-lived)
         var httpClient = new HttpClient();
-        var launcherVersion = typeof(ServiceLocator).Assembly.GetName().Version?.ToString(4) ?? "3.1.9";
+        var launcherVersion = typeof(ServiceLocator).Assembly.GetName().Version?.ToString(4) ?? "3.1.10";
         httpClient.DefaultRequestHeaders.Add("User-Agent", $"VoidCraftLauncher/{launcherVersion}");
         Register(httpClient);
 

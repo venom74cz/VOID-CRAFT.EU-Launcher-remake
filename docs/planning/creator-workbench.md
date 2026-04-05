@@ -45,14 +45,18 @@ Relevantni zdrojove body:
 
 Tohle dnes chybi a je potreba dodat:
 
-- [ ] metadata a branding vrstva pri bootstrapu instance
-- [ ] structured editory misto plain text-only flow
 - [ ] notes/wiki + quest/progression canvas
-- [ ] GitHub auth, create repo, private clone, sync parity ala GitHub Desktop a plny GitHub desk
+- [ ] GitHub auth, create repo, private clone, sync parity ala GitHub Desktop a plny GitHub remote desk
 - [ ] CurseForge/Modrinth kompatibilni packaging a release validace
-- [ ] VOID ID launcher + backend identity vrstva pro ucty, projekty, role a release registraci
+- [ ] plny VOID ID control plane pro linked accounts, projektove membershipy, role a release registraci napric celym launcherem
 - [ ] AI-native editace nad celym workbenchem pres `Copilot SDK`
 - [ ] release board, QA gate, playtest kanaly a rollback flow
+
+Reality-check `2026-04-05`:
+
+- launcher uz ma realny `VoidIdAuthService`, browser handoff login pres backend, secure session restore a refresh pred registry publish
+- launcher uz zapisuje GitHub release metadata do `VOID Registry` a drzi `registry_project_id` v `creator_manifest.json`
+- porad chybi linked accounts, projektove membershipy, tester role a sirsi VOID ID product surface mimo creator/release flow
 
 ## Delivery Strategy
 
@@ -78,12 +82,12 @@ V1 Creator Workbenche je hotovy, kdyz plati vsechno:
 - autor umi pres AI nechat vysvetlit i upravit libovolny workbench obsah
 - autor umi z launcheru dokoncit playtest, changelog, release gate a publish pripravu
 
-## Dnesni P0 Priority (2026-04-04)
+## Dnesni P0 Priority (2026-04-05)
 
 Pokud pokracujeme z aktualniho realneho stavu, dalsi kriticke bloky uz nejsou "nice to have", ale nutny zaklad pro dalsi Creator workflow:
 
 - `GitHub login + remote desk`: prihlaseni, create repo, private clone, fetch/pull/push/sync, publish branch a auth diagnostika tak, aby Creator realne fungoval jako lehci GitHub Desktop pro modpack workspace.
-- `VOID ID`: bezpecna jednotna identita pro launcher + backend + web, role, projekty, release registrace a propojeni `Microsoft` / `Discord` / `GitHub` bez dalsiho rustu ad-hoc tokenu.
+- `VOID ID`: dodelat z aktualni auth foundation plny linked-account a project-membership control plane pro launcher + backend + web bez dalsiho rustu ad-hoc tokenu.
 - `Copilot SDK`: nativni AI host s jasnym scope pickerem, streaming chatem, patch preview, explicitnim apply flow a audit trailem misto volneho chatu bez guardrailu.
 
 ## UX Shell a Information Architecture
@@ -419,10 +423,10 @@ Task list:
 - [ ] Pridat rate limiting, IP/device heuristiky, brute-force ochranu, revoke-all-sessions a admin audit trail.
 - [ ] Oddelit secrets od repa, zavest rotaci klicu a pripravenost na self-host / domenove presuny bez vazby na jeden hostname.
 
-Aktualni technicka realita `2026-04-04`:
+Aktualni technicka realita `2026-04-05`:
 
 - backend dnes bezi jako `Express + MySQL` monolit a vedle verejnych endpointu uz ma i privilegovane flow chranene ENV tokeny; `VOID ID` ma tohle sjednotit, ne pridat dalsi paralelni auth vrstvu
-- launcher dnes umi `Microsoft auth` pro hru, ale nema jednotnou identitu pro platformu, projekty, tester pristupy ani GitHub/Discord linking
+- launcher uz ma `VoidIdAuthService`, browser-based login pres `/api/auth/launcher/start` + `/api/auth/launcher/poll`, secure storage restore a refresh pred registry publish; chybi ale linked accounts, membership control plane a siroke produktove pouziti napric launcherem
 
 Bezpecnostni guardraily:
 
@@ -571,10 +575,10 @@ Creator Workbench lze oznacit za hotovy az kdyz:
 
 ## Kratky Start Plan
 
-Pokud se ma zacit hned dalsim praktickym slicem po aktualnim stavu `2026-04-04`, doporucuju:
+Pokud se ma zacit hned dalsim praktickym slicem po aktualnim stavu `2026-04-05`, doporucuju:
 
 1. dodelat Fazi 5 do podoby `GitHub login + create repo + private clone + sync CTA` ala GitHub Desktop
-2. paralelne postavit Fazi `7A` jako `VOID ID` auth foundation v backendu a launcher `PKCE` login shell
+2. paralelne dodelat Fazi `7A` z dnesni auth foundation do linked-account, membership a project control plane vrstvy
 3. rozbehnout Fazi 8 jako `Copilot Host` POC: chat, diagnostics, diff explain a patch preview bez auto-apply
 4. navazat audit trail, undo a snapshot recovery pro AI + release apply flow
 5. teprve potom dodelat plny release gate, rollback a pokrocile Notes/Canvas workflow

@@ -279,7 +279,7 @@ public partial class MainViewModel
             await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
             {
                 modpacks = InstalledModpacks
-                    .Where(m => m != null && m.ProjectId > 0)
+                    .Where(m => m != null && (m.ProjectId > 0 || !string.IsNullOrWhiteSpace(m.VoidRegistrySlug)))
                     .ToList();
             });
 
@@ -287,6 +287,45 @@ public partial class MainViewModel
             {
                 try
                 {
+                    if (!string.IsNullOrWhiteSpace(modpack.VoidRegistrySlug))
+                    {
+                        var registryInstalledManifest = ModpackInstaller.LoadManifestInfo(_launcherService.GetModpackPath(modpack.Name));
+                        var currentVersionName = FirstNonEmpty(registryInstalledManifest?.Version, modpack.CurrentVersion?.Name);
+                        if (string.IsNullOrWhiteSpace(currentVersionName))
+                        {
+                            continue;
+                        }
+
+                        var updateCheck = await _voidRegistryService.GetUpdateCheckAsync(modpack.VoidRegistrySlug, currentVersionName);
+                        if (updateCheck?.Latest == null)
+                        {
+                            continue;
+                        }
+
+                        var latestVersion = new ModpackVersion
+                        {
+                            Name = string.IsNullOrWhiteSpace(updateCheck.Latest.Version) ? currentVersionName : updateCheck.Latest.Version,
+                            FileId = !string.IsNullOrWhiteSpace(updateCheck.Latest.VersionId) ? updateCheck.Latest.VersionId : updateCheck.Latest.Version,
+                            ReleaseDate = updateCheck.Latest.PublishedAtUtc?.ToString("O") ?? string.Empty
+                        };
+
+                        var registryLatestVersions = new ObservableCollection<ModpackVersion> { latestVersion };
+                        var registryCurrentVersion = new ModpackVersion
+                        {
+                            Name = currentVersionName,
+                            FileId = !string.IsNullOrWhiteSpace(modpack.CurrentVersion?.FileId) ? modpack.CurrentVersion.FileId : latestVersion.FileId,
+                            ReleaseDate = modpack.CurrentVersion?.ReleaseDate ?? latestVersion.ReleaseDate
+                        };
+
+                        await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+                        {
+                            modpack.Versions = registryLatestVersions;
+                            modpack.CurrentVersion = registryCurrentVersion;
+                        });
+
+                        continue;
+                    }
+
                     var filesJson = await _curseForgeApi.GetModpackFilesAsync(modpack.ProjectId);
                     var filesNode = JsonNode.Parse(filesJson);
                     var files = filesNode?["data"]?.AsArray();
@@ -565,7 +604,11 @@ public partial class MainViewModel
 
                 if (string.IsNullOrWhiteSpace(CurrentModpack.Source))
                 {
-                    CurrentModpack.Source = CurrentModpack.ProjectId > 0 ? "CurseForge" : "Modrinth";
+                    CurrentModpack.Source = CurrentModpack.ProjectId > 0
+                        ? "CurseForge"
+                        : !string.IsNullOrWhiteSpace(CurrentModpack.VoidRegistrySlug)
+                            ? "VoidRegistry"
+                            : "Modrinth";
                     metadataChanged = true;
                 }
 
@@ -910,6 +953,7 @@ public partial class MainViewModel
         var existing = InstalledModpacks.FirstOrDefault(candidate =>
             !ReferenceEquals(candidate, modpack) &&
             ((modpack.ProjectId > 0 && candidate.ProjectId == modpack.ProjectId) ||
+             (!string.IsNullOrWhiteSpace(modpack.VoidRegistrySlug) && string.Equals(candidate.VoidRegistrySlug, modpack.VoidRegistrySlug, StringComparison.OrdinalIgnoreCase)) ||
              (!string.IsNullOrWhiteSpace(modpack.ModrinthId) && string.Equals(candidate.ModrinthId, modpack.ModrinthId, StringComparison.OrdinalIgnoreCase)) ||
              ArePackNamesEquivalent(candidate.Name, modpack.Name)));
 
@@ -931,6 +975,16 @@ public partial class MainViewModel
         if (string.IsNullOrWhiteSpace(modpack.ModrinthId))
         {
             modpack.ModrinthId = existing.ModrinthId;
+        }
+
+        if (string.IsNullOrWhiteSpace(modpack.VoidRegistryProjectId))
+        {
+            modpack.VoidRegistryProjectId = existing.VoidRegistryProjectId;
+        }
+
+        if (string.IsNullOrWhiteSpace(modpack.VoidRegistrySlug))
+        {
+            modpack.VoidRegistrySlug = existing.VoidRegistrySlug;
         }
 
         if (string.IsNullOrWhiteSpace(modpack.WebLink))
@@ -1030,6 +1084,11 @@ public partial class MainViewModel
             else if (!string.IsNullOrWhiteSpace(modpack.ModrinthId))
             {
                 modpack.Source = "Modrinth";
+                metadataChanged = true;
+            }
+            else if (!string.IsNullOrWhiteSpace(modpack.VoidRegistrySlug))
+            {
+                modpack.Source = "VoidRegistry";
                 metadataChanged = true;
             }
         }

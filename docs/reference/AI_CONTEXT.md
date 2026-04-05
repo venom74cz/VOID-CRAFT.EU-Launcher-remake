@@ -2,7 +2,7 @@
 
 ## 1) Project Snapshot
 - **Name**: VoidCraft Launcher
-- **Current version**: **3.1.9**
+- **Current version**: **3.1.10**
 - **Stack**: .NET 9 + Avalonia UI 11.3 + CommunityToolkit.Mvvm 8.4
 - **MC Core**: CmlLib.Core 4.0.6
 - **Auth**: Microsoft.Identity.Client (MSAL) + custom Xbox/XSTS/MC token chain
@@ -150,6 +150,7 @@ Documents/.voidcraft/
 ## 8) Release History
 | Version | Changes |
 |---------|---------|
+| 3.1.10 | Launcher shell a VOID ID control plane: expandující nav rail, command-center Dashboard, dedikovaný VOID ID surface, VOID Registry browser/install-update flow a collaborator management v Creator Studiu |
 | 3.1.9 | Creator Studio publish hardening: auth centralizace, spolehlivejsi VOID ID/GitHub session restore, real async git publish flow, auto-publish draft GitHub release a branding export/import do `assets/branding` |
 | 3.1.8.1 | Hotfix pro startup a download archive flow: oprava Avalonia key gesture crashe v Streaming Tools a oprava locku pri presunu docasneho .download souboru |
 | 3.1.8 | Modpack download hardening: fallback download kandidati pro CurseForge i Modrinth, validace existujicich souboru a retry flow pro baliky i jednotlive mody |

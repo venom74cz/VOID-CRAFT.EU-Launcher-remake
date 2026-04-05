@@ -25,6 +25,12 @@ namespace VoidCraftLauncher.Models
         private string _modrinthId = ""; // For Modrinth project IDs (string)
 
         [ObservableProperty]
+        private string _voidRegistryProjectId = "";
+
+        [ObservableProperty]
+        private string _voidRegistrySlug = "";
+
+        [ObservableProperty]
         private string _webLink = ""; // URL to the modpack page
 
         [ObservableProperty]

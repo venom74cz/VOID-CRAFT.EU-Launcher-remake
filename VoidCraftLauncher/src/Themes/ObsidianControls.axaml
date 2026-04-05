@@ -193,6 +193,55 @@
         <Setter Property="BorderThickness" Value="2"/>
     </Style>
 
+    <Style Selector="Button.navRailItem">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+        <Setter Property="Padding" Value="12,10"/>
+        <Setter Property="CornerRadius" Value="14"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="BorderBrush" Value="Transparent"/>
+        <Setter Property="MinHeight" Value="48"/>
+    </Style>
+    <Style Selector="Button.navRailItem:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource BgPanelBrush}"/>
+    </Style>
+    <Style Selector="Button.navRailItem:pointerover">
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource StrokeSoftBrush}"/>
+    </Style>
+    <Style Selector="Button.navRailItem.active">
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource BgPanelBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBBrush}"/>
+    </Style>
+    <Style Selector="Button.navRailItem.active /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource BgPanelBrush}"/>
+    </Style>
+    <Style Selector="Button.navRailItem:focus-visible">
+        <Setter Property="BorderBrush" Value="{DynamicResource PrimaryGlowBrush}"/>
+        <Setter Property="BorderThickness" Value="2"/>
+    </Style>
+
+    <Style Selector="Button.navRailUtility">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
+        <Setter Property="CornerRadius" Value="10"/>
+        <Setter Property="Padding" Value="8,6"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="MinWidth" Value="36"/>
+        <Setter Property="MinHeight" Value="36"/>
+    </Style>
+    <Style Selector="Button.navRailUtility:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource BgPanelBrush}"/>
+    </Style>
+    <Style Selector="Button.navRailUtility:pointerover">
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+    </Style>
+
     <!-- ═══════════════ TEXT INPUTS ═══════════════ -->
     <Style Selector="TextBox">
         <Setter Property="Background" Value="{DynamicResource BgPanelBrush}"/>

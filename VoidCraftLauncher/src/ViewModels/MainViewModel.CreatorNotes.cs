@@ -111,10 +111,10 @@ public partial class MainViewModel
 
     public string CreatorNotesModeLabel => CreatorNotesModeIndex switch
     {
-        0 => "Docs",
+        0 => "Dokumenty",
         1 => "Wiki",
-        2 => "Canvas",
-        _ => "Docs"
+        2 => "Plátno",
+        _ => "Dokumenty"
     };
 
     public bool IsCreatorNotesModeDocs => CreatorNotesModeIndex == 0;
@@ -124,21 +124,21 @@ public partial class MainViewModel
     public bool IsCreatorNotesModeMindMap => false;
 
     public string CreatorNotesDocumentsSummary =>
-        $"{CreatorNoteDocuments.Count} docs • {CreatorWikiDocuments.Count} wiki • {CreatorCanvasGraphs.Count} grafu";
+        $"{CreatorNoteDocuments.Count} dokumentů • {CreatorWikiDocuments.Count} wiki stránek • {CreatorCanvasGraphs.Count} pláten";
 
     public string CreatorNotesPrimaryActionLabel => CreatorNotesModeIndex switch
     {
-        1 => "Nova wiki stranka",
-        2 => "Novy canvas",
-        _ => "Novy dokument"
+        1 => "Nová wiki stránka",
+        2 => "Nové plátno",
+        _ => "Nový dokument"
     };
 
     public string CreatorCanvasInteractionHint =>
-        "Pravy klik prida kartu presne do mista kliknuti. Prostredni tlacitko taha canvas. Tazenim presouvas kartu, dvojklik ji edituje inline a Ctrl + levy klik propoji vybrany node s cilem.";
+        "Pravým kliknutím přidáš kartu přesně do místa kurzoru. Prostředním tlačítkem posouváš plátno, tažením přesouváš kartu, dvojklik zapne rychlou editaci a Ctrl + levý klik propojí vybraný uzel s cílem.";
 
     public string CreatorCanvasExpandLabel => IsCreatorCanvasExpanded
-        ? "Normalni layout"
-        : "Rozsirit canvas";
+        ? "Běžné rozložení"
+        : "Rozšířit plátno";
 
     public GridLength CreatorCanvasSidebarWidth => IsCreatorCanvasExpanded
         ? new GridLength(0)
@@ -153,17 +153,17 @@ public partial class MainViewModel
         : new GridLength(320);
 
     public string CreatorCanvasEmptyTitle => HasSelectedCreatorCanvasGraph
-        ? "Prazdny canvas"
-        : "Vyber nebo vytvor canvas";
+        ? "Prázdné plátno"
+        : "Vyber nebo vytvoř plátno";
 
     public string CreatorCanvasEmptySubtitle => HasSelectedCreatorCanvasGraph
-        ? "Pravy klik do gridu prida text, obrazek, file link nebo web link."
-        : "Vytvor novy canvas nebo vyber existujici graph vlevo.";
+        ? "Pravý klik do plochy přidá text, obrázek, odkaz na soubor nebo webový odkaz."
+        : "Vytvoř nové plátno nebo vlevo vyber existující mapu.";
 
     public string CreatorSelectedNoteLinkSummary => SelectedCreatorNoteDocument?.LinkSummary ?? "Bez wiki odkazu";
 
     public string CreatorSelectedCanvasGraphStatus => SelectedCreatorCanvasGraph == null
-        ? "Vyber graf vlevo."
+        ? "Vlevo vyber plátno."
         : $"{SelectedCreatorCanvasGraph.Summary} • {SelectedCreatorCanvasGraph.RelativePath}";
 
     public string CreatorSelectedCanvasNodeStatus => SelectedCreatorCanvasNode == null

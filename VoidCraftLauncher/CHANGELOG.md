@@ -2,6 +2,19 @@
 
 Všechny důležité změny v projektu jsou dokumentovány v tomto souboru.
 
+## [3.1.10.1] - 2026-04-05
+
+### 🛠️ Creator Studio auth hotfix
+
+### Opraveno
+- **Creator Studio login crash**: collaborator templaty ve `StreamingToolsView` už neodkazují na `MainViewModel` přes křehký `$parent[ItemsControl].((vm:MainViewModel)DataContext)` cast, ale přes pojmenovaný root binding, takže otevření creator plochy po `VOID ID` loginu už nerozbije XAML deferred content.
+- **GitHub session restore threading**: refresh GitHub repozitářů po restore session už přesouvá změny bindovaných kolekcí a stavů na UI thread, takže Creator Studio nespadne při aktivním GitHub účtu.
+- **Dock actions**: toast dismiss command používá stejný root binding pattern, aby se stejná XAML binding chyba nevracela i v overlay prvcích.
+
+### Změněno
+- **Context dock visuals**: community sekce dostala brand-aware ikony pro web, Discord, GitHub a YouTube, kartový styl tlačítek a jemnější spacing mezi sekcemi.
+- **Release metadata**: projekt, installer, fallback `User-Agent` a referenční dokumentace jsou srovnané na verzi `3.1.10.1`.
+
 ## [3.1.10] - 2026-04-05
 
 ### ✨ Shell, VOID ID a registry workflow

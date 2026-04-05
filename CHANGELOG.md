@@ -2,6 +2,22 @@
 
 ## Unreleased - 2026-04-05
 
+## 3.1.10.1 - 2026-04-05
+
+### Creator Studio + auth hotfix
+
+#### Opravy crashu
+- `Creator Studio` uz necrashne po obnoveni nebo novem prihlaseni `VOID ID`, kdyz se po nacteni collaborator sekce buildi deferred `DataTemplate` ve `Streaming Tools`.
+- Problemove command bindingy z item templatu uz nepouzivaji krehky cast na `vm:MainViewModel` pres `$parent[ItemsControl]`, ale stabilni root binding pres pojmenovany control.
+- GitHub repository refresh pri restore session uz marshaluje mutace bindovanych kolekci a stavu na UI thread, takze login restore nevytvari dalsi nestabilitu pri otevrenem Creator Studiu.
+
+#### UI polish
+- `ContextDock` ma jemnejsi spacing mezi sekcemi a rozmanitejsi community linky misto generickych textovych glyfu.
+- Web, Discord, GitHub a YouTube odkazy dostaly brand-aware ikony a kartovy vizual, aby shell nepusobil jednotvarne.
+
+#### Release metadata
+- Srovnana release verze na `3.1.10.1` v launcher projektu, installeru, fallback `User-Agent` hodnotach a referencni dokumentaci.
+
 ## 3.1.10 - 2026-04-05
 
 ### Launcher shell + VOID ID control plane

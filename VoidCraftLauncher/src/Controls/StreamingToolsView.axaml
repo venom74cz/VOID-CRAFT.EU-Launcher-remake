@@ -203,7 +203,7 @@
                                         <ItemsControl ItemsSource="{Binding CreatorQuickLinks}" IsVisible="{Binding HasCreatorQuickLinks}">
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate x:DataType="creatorModels:CreatorQuickLink">
-                                                    <Button Command="{Binding $parent[ItemsControl].((vm:MainViewModel)DataContext).OpenCreatorQuickLinkCommand}"
+                                                    <Button Command="{Binding #StreamingToolsRoot.DataContext.OpenCreatorQuickLinkCommand}"
                                                             CommandParameter="{Binding}"
                                                             Background="{DynamicResource BgElevatedBrush}" CornerRadius="8" Padding="12,8" Margin="0,0,0,6"
                                                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Cursor="Hand">
@@ -1954,7 +1954,7 @@
                                                                             <TextBlock Text="{Binding DisplayName}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                                                             <TextBlock Text="{Binding DiscordUsername, StringFormat='Discord: {0}'}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
                                                                         </StackPanel>
-                                                                        <Button Grid.Column="2" Command="{Binding $parent[ItemsControl].((vm:MainViewModel)DataContext).AddCreatorCollaboratorCommand}" CommandParameter="{Binding}" Classes="secondary" Padding="12,8">
+                                                                        <Button Grid.Column="2" Command="{Binding #StreamingToolsRoot.DataContext.AddCreatorCollaboratorCommand}" CommandParameter="{Binding}" Classes="secondary" Padding="12,8">
                                                                             <TextBlock Text="Přidat" FontSize="11"/>
                                                                         </Button>
                                                                     </Grid>
@@ -1987,7 +1987,7 @@
                                                                     <TextBlock Text="Owner projektu" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" IsVisible="{Binding IsOwner}"/>
                                                                 </StackPanel>
 
-                                                                <ComboBox Grid.Column="2" SelectedItem="{Binding Role}" HorizontalAlignment="Stretch" IsEnabled="{Binding !$parent[ItemsControl].((vm:MainViewModel)DataContext).IsCreatorCollaboratorMutationRunning}">
+                                                                <ComboBox Grid.Column="2" SelectedItem="{Binding Role}" HorizontalAlignment="Stretch" IsEnabled="{Binding !#StreamingToolsRoot.DataContext.IsCreatorCollaboratorMutationRunning}">
                                                                     <ComboBox.IsVisible>
                                                                         <Binding Path="!IsOwner"/>
                                                                     </ComboBox.IsVisible>
@@ -1996,11 +1996,11 @@
                                                                     <x:String>maintainer</x:String>
                                                                 </ComboBox>
 
-                                                                <Button Grid.Column="3" Command="{Binding $parent[ItemsControl].((vm:MainViewModel)DataContext).UpdateCreatorCollaboratorCommand}" CommandParameter="{Binding}" Classes="secondary" Padding="12,8" IsVisible="{Binding !IsOwner}">
+                                                                <Button Grid.Column="3" Command="{Binding #StreamingToolsRoot.DataContext.UpdateCreatorCollaboratorCommand}" CommandParameter="{Binding}" Classes="secondary" Padding="12,8" IsVisible="{Binding !IsOwner}">
                                                                     <TextBlock Text="Uložit" FontSize="11"/>
                                                                 </Button>
 
-                                                                <Button Grid.Column="4" Command="{Binding $parent[ItemsControl].((vm:MainViewModel)DataContext).RemoveCreatorCollaboratorCommand}" CommandParameter="{Binding}" Classes="secondary" Padding="12,8" IsVisible="{Binding !IsOwner}">
+                                                                <Button Grid.Column="4" Command="{Binding #StreamingToolsRoot.DataContext.RemoveCreatorCollaboratorCommand}" CommandParameter="{Binding}" Classes="secondary" Padding="12,8" IsVisible="{Binding !IsOwner}">
                                                                     <TextBlock Text="Odebrat" FontSize="11"/>
                                                                 </Button>
                                                             </Grid>

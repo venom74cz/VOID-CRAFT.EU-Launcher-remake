@@ -490,43 +490,52 @@ public partial class MainViewModel
             return;
         }
 
-        IsCreatorGitHubRepositoriesLoading = true;
+        await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() => IsCreatorGitHubRepositoriesLoading = true);
         try
         {
             var repositories = await _gitHubAuthService.ListAccessibleRepositoriesAsync(accessToken);
             repositories.Sort((left, right) => Nullable.Compare(right.UpdatedAtUtc, left.UpdatedAtUtc));
 
-            ReplaceCollectionItems(CreatorGitHubRepositories, repositories);
-            CreatorGitHubRepositoriesStatus = repositories.Count == 0
-                ? "Účet zatím nemá žádná dostupná repa."
-                : $"Načteno {repositories.Count} GitHub repozitářů.";
-
-            var preferredRepository = !string.IsNullOrWhiteSpace(preferredRepositoryFullName)
-                ? repositories.Find(repo => string.Equals(repo.FullName, preferredRepositoryFullName, StringComparison.OrdinalIgnoreCase))
-                : null;
-
-            if (preferredRepository != null)
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
             {
-                ApplyGitHubRepositoryDraft(preferredRepository);
-            }
+                ReplaceCollectionItems(CreatorGitHubRepositories, repositories);
+                CreatorGitHubRepositoriesStatus = repositories.Count == 0
+                    ? "Účet zatím nemá žádná dostupná repa."
+                    : $"Načteno {repositories.Count} GitHub repozitářů.";
 
-            if (showToastOnSuccess)
-            {
-                ShowToast("GitHub", CreatorGitHubRepositoriesStatus, ToastSeverity.Success, 2400);
-            }
+                var preferredRepository = !string.IsNullOrWhiteSpace(preferredRepositoryFullName)
+                    ? repositories.Find(repo => string.Equals(repo.FullName, preferredRepositoryFullName, StringComparison.OrdinalIgnoreCase))
+                    : null;
+
+                if (preferredRepository != null)
+                {
+                    ApplyGitHubRepositoryDraft(preferredRepository);
+                }
+
+                if (showToastOnSuccess)
+                {
+                    ShowToast("GitHub", CreatorGitHubRepositoriesStatus, ToastSeverity.Success, 2400);
+                }
+            });
         }
         catch (Exception ex)
         {
-            CreatorGitHubRepositoriesStatus = $"Načtení rep selhalo: {ex.Message}";
-            if (showToastOnSuccess)
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
             {
-                ShowToast("GitHub", ex.Message, ToastSeverity.Error, 4200);
-            }
+                CreatorGitHubRepositoriesStatus = $"Načtení rep selhalo: {ex.Message}";
+                if (showToastOnSuccess)
+                {
+                    ShowToast("GitHub", ex.Message, ToastSeverity.Error, 4200);
+                }
+            });
         }
         finally
         {
-            IsCreatorGitHubRepositoriesLoading = false;
-            NotifyCreatorGitHubStateChanged();
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                IsCreatorGitHubRepositoriesLoading = false;
+                NotifyCreatorGitHubStateChanged();
+            });
         }
     }
 

@@ -30,7 +30,7 @@ public class InstanceExportService
     {
         _curseForgeApi = curseForgeApi;
         _modrinthApi = modrinthApi;
-        var launcherVersion = typeof(InstanceExportService).Assembly.GetName().Version?.ToString(4) ?? "3.1.10";
+        var launcherVersion = typeof(InstanceExportService).Assembly.GetName().Version?.ToString(4) ?? "3.1.10.1";
         _httpClient.DefaultRequestHeaders.Add("User-Agent", $"VoidCraftLauncher/{launcherVersion}");
     }
 

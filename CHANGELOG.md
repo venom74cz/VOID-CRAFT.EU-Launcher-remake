@@ -1,6 +1,25 @@
 # Changelog
 
-## Unreleased - 2026-04-05
+## 3.1.11 - 2026-04-06
+
+### Creator release governance + GitHub repair
+
+#### Release governance
+- `Creator Studio` v `Release` tabu nove nacita historii verzi z `VOID Registry`, pending public approvals a projektovy governance stav.
+- Schvaleni public releasu, navrat zpet na internal a `yank` chybne verze jde spoustet primo z launcheru nad registry projektem.
+- Release panel se po zmene workspace a manifestu obnovuje tak, aby drzel stejnou governance realitu jako web.
+
+#### GitHub / creator workflow
+- `Pouzit jako origin` uz umi opravit rozbite lokalni `.git` metadata misto generickeho failu pri napojeni existujiciho GitHub repa.
+- Invalidni `.git` slozka uz se v Creator Studiu netvari jako platny git repository jen kvuli existenci adresare; kontrola probiha skutecnym `git rev-parse` probe.
+- Pri selhani nastavovani `origin` launcher vraci konkretnejsi git detail, aby bylo jasne, co se pokazilo.
+
+#### UX / privacy polish
+- `VOID ID` copy v launcheru uz nemluvi o administratorskych opravnenich a neukazuje profilove CTA, ktere by prozrazovalo admin surface.
+- Dashboard, Identity a nav rail jsou srovnane na bezny webovy profil a projektove workflow misto interni access terminologie.
+
+#### Release metadata
+- Srovnana release verze na `3.1.11` v launcher projektu, installeru, fallback `User-Agent` hodnotach a referencni dokumentaci.
 
 ## 3.1.10.1 - 2026-04-05
 

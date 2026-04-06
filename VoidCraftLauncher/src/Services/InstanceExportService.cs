@@ -19,7 +19,7 @@ public class InstanceExportService
 {
     private const string ManifestEntryName = "voidpack_manifest.json";
     private const string ModlistEntryName = "voidpack_modlist.json";
-    private static readonly string[] DefaultExportCategories = { "saves", "config", "mods", "options.txt", "resourcepacks", "shaderpacks", "assets/branding" };
+    private static readonly string[] DefaultExportCategories = { "saves", "config", "defaultconfigs", "scripts", "kubejs", "mods", "options.txt", "resourcepacks", "shaderpacks", "assets/branding", "docs", "notes", "qa", "quests" };
     private static readonly string[] GitPublishMetadataFiles = { "mods_metadata.json", "voidcraft_manifest.json", "creator_manifest.json" };
 
     private readonly CurseForgeApi _curseForgeApi;
@@ -30,7 +30,7 @@ public class InstanceExportService
     {
         _curseForgeApi = curseForgeApi;
         _modrinthApi = modrinthApi;
-        var launcherVersion = typeof(InstanceExportService).Assembly.GetName().Version?.ToString(4) ?? "3.1.10.1";
+        var launcherVersion = typeof(InstanceExportService).Assembly.GetName().Version?.ToString(4) ?? "3.1.11";
         _httpClient.DefaultRequestHeaders.Add("User-Agent", $"VoidCraftLauncher/{launcherVersion}");
     }
 
@@ -127,12 +127,26 @@ public class InstanceExportService
 
         return normalizedPath.StartsWith("saves/", StringComparison.OrdinalIgnoreCase) ||
                normalizedPath.StartsWith("config/", StringComparison.OrdinalIgnoreCase) ||
+             normalizedPath.StartsWith("defaultconfigs/", StringComparison.OrdinalIgnoreCase) ||
+             normalizedPath.StartsWith("scripts/", StringComparison.OrdinalIgnoreCase) ||
+             normalizedPath.StartsWith("kubejs/", StringComparison.OrdinalIgnoreCase) ||
                normalizedPath.StartsWith("resourcepacks/", StringComparison.OrdinalIgnoreCase) ||
                normalizedPath.StartsWith("shaderpacks/", StringComparison.OrdinalIgnoreCase) ||
+             normalizedPath.StartsWith("docs/", StringComparison.OrdinalIgnoreCase) ||
+             normalizedPath.StartsWith("notes/", StringComparison.OrdinalIgnoreCase) ||
+             normalizedPath.StartsWith("qa/", StringComparison.OrdinalIgnoreCase) ||
+             normalizedPath.StartsWith("quests/", StringComparison.OrdinalIgnoreCase) ||
                string.Equals(normalizedPath, "saves", StringComparison.OrdinalIgnoreCase) ||
                string.Equals(normalizedPath, "config", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(normalizedPath, "defaultconfigs", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(normalizedPath, "scripts", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(normalizedPath, "kubejs", StringComparison.OrdinalIgnoreCase) ||
                string.Equals(normalizedPath, "resourcepacks", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(normalizedPath, "shaderpacks", StringComparison.OrdinalIgnoreCase);
+             string.Equals(normalizedPath, "shaderpacks", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(normalizedPath, "docs", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(normalizedPath, "notes", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(normalizedPath, "qa", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(normalizedPath, "quests", StringComparison.OrdinalIgnoreCase);
     }
 
     public async Task ExportAsync(string instancePath, string instanceName, string outputPath,

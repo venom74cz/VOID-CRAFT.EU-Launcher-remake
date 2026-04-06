@@ -1,8 +1,8 @@
 # VOID-CRAFT Launcher - Aktuální Stav
 
-Snapshot: 2026-04-05
+Snapshot: 2026-04-06
 
-Aktuální release: 3.1.10.1
+Aktuální release: 3.1.11
 
 ## Co je dnes reálně v produktu
 
@@ -33,7 +33,7 @@ Aktualni shell realita navic znamena:
 
 Dnes už je reálné a hotové hlavně toto:
 
-- workflow shell se záložkami `Overview`, `Metadata`, `Mods`, `Files`, `Notes`, `Git`, `Release`
+- workflow shell se záložkami `Overview`, `Identity`, `Mods`, `Files`, `Notes`, `Git`, `Release`
 - bootstrap nové instance přes `Blank`, `Template`, `Import CF`, `Import MR`, `Clone Git`, `Restore Snapshot`
 - `creator_manifest.json` a standardní creator workspace struktura
 - metadata editace přímo v launcheru
@@ -47,6 +47,8 @@ Dnes už je reálné a hotové hlavně toto:
 - `Mods` tab má plný in-tab workflow: vetsi katalog pro hledani a pridavani modu, local `.jar` import, multi-select, bulk add/remove, zapínání/vypínání modů a fallback ze striktně kompatibilniho vyhledani do sirsiho katalogu
 - `.voidpack` export/import drží mody jako textový modlist manifest místo balení `mods/*.jar`; import se je pokouší znovu stáhnout a hlásí ruční follow-up kusy
 - Creator publish flow je ted zjednoduseny na `Vygenerovat .voidpack` + `Nahrat na repo`, publish scope je stejny jako export payload a workflow umi automaticky vytvorit release tag i publikovat draft release
+- `Release` tab nad registry projekty umi nacist historii verzi, pending public approvals a governance akce `public` / `internal` / `yank` primo z launcheru
+- GitHub repo napojeni pres `Pouzit jako origin` umi validovat skutecny repo health check a automaticky opravit rozbita lokalni `.git` metadata
 - `.voidpack` export i GitHub workflow build uz balí `assets/branding`, takze branding assety skonci v archivu, repu/tagu i raw URL pro VOID Registry
 - `Files` tab má realny editor host s režimy `Form`, `Editor`, `Porovnání`, parsery pro běžné config formáty, outline/focus workflow a diff proti snapshotu/exportu/default counterpartu
 - `Files` layout je zjednoduseny na levy seznam souboru, jeden hlavni editor a jeden pomocny panel s navigaci, formem a kontrolou, aby byl citelny i na vetsich workspacech

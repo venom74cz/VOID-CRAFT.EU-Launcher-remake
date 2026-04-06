@@ -2,6 +2,23 @@
 
 Všechny důležité změny v projektu jsou dokumentovány v tomto souboru.
 
+## [3.1.11] - 2026-04-06
+
+### 🚀 Creator release governance + Git repair
+
+### Přidáno
+- **Registry governance v launcheru**: `Creator Studio` teď v `Release` panelu načítá historii verzí z `VOID Registry`, pending public approvals a governance stav aktivního projektu.
+- **Visibility actions**: launcher umí nad registry verzemi přímo spustit akce `public`, `internal` a `yank` bez odskoku na web.
+
+### Změněno
+- **VOID ID wording**: dashboard, identitní plocha i nav rail používají běžný profilový / projektový wording bez admin leaků.
+- **Release metadata**: projekt, installer, fallback `User-Agent` a referenční dokumentace jsou srovnané na verzi `3.1.11`.
+
+### Opraveno
+- **GitHub origin repair**: akce `Použít jako origin` u existujícího GitHub repa už dokáže opravit rozbitý lokální `.git` stav a znovu nastavit `origin`.
+- **Git repository detection**: invalidní `.git` složka už se netváří jako validní repository jen kvůli existenci adresáře.
+- **GitHub error detail**: toast při failu vrací konkrétnější git chybu místo generického hlášení.
+
 ## [3.1.10.1] - 2026-04-05
 
 ### 🛠️ Creator Studio auth hotfix

@@ -1,7 +1,10 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using VoidCraftLauncher.Models;
 using VoidCraftLauncher.Services;
@@ -77,7 +80,7 @@ public partial class MainViewModel
         : "Aktivní relace se načtou po přihlášení do VOID ID.";
 
     public string VoidIdMembershipSummary => HasVoidIdMembershipProjects
-        ? $"Projektová oprávnění: {VoidIdMembershipProjects.Count}"
+        ? $"Projektová oprávnění: {VoidIdMembershipProjects.Count} • launcher synchronizuje collaborator workspaces do knihovny"
         : "Zatím bez projektových oprávnění nebo vlastních projektů.";
 
     public string VoidIdSecuritySummary => CreatorVoidIdSession?.Profile?.Security?.Summary
@@ -89,11 +92,9 @@ public partial class MainViewModel
 
     public bool CanAccessVoidIdAdminSurface => HasVoidIdAdminRole || CreatorVoidIdSession?.Profile?.Access?.CanAccessAdminSurface == true;
 
-    public string VoidIdAccessLevelLabel => HasVoidIdAdminRole
-        ? "Administrátor"
-        : HasVoidIdTeamAccess
-            ? "Týmový přístup z Discordu"
-            : "Standardní profil";
+    public string VoidIdAccessLevelLabel => HasVoidIdSession
+        ? "Přihlášený profil"
+        : "Čeká na login";
 
     public string VoidIdAccessSummary
     {
@@ -101,30 +102,16 @@ public partial class MainViewModel
         {
             if (!HasVoidIdSession)
             {
-                return "Po přihlášení se ukáže, jestli má účet běžný profil, týmový přístup nebo administrátorská oprávnění.";
+                return "Po přihlášení tu uvidíš stav účtu, propojené služby a projektová oprávnění pro launcher workflow.";
             }
 
-            if (HasVoidIdAdminRole)
-            {
-                return "Launcher rozpoznal plná administrátorská oprávnění. Citlivé zásahy na webu mohou dál vyžadovat dodatečné TOTP ověření.";
-            }
-
-            if (HasVoidIdTeamAccess)
-            {
-                return "Launcher rozpoznal týmový přístup z Discordu. Interní část VOID-CRAFT.EU je dostupná i bez změny databázové role účtu.";
-            }
-
-            return "Launcher běží ve standardním profilu. Webový profil, Minecraft propojení a běžná správa účtu zůstávají plně dostupné.";
+            return "VOID ID v launcheru spravuje webový profil, Minecraft propojení, GitHub a synchronizaci projektových workspace oprávnění.";
         }
     }
 
-    public string VoidIdProfileEntryUrl => CanAccessVoidIdAdminSurface
-        ? "https://void-craft.eu/admin"
-        : "https://void-craft.eu/profil";
+    public string VoidIdProfileEntryUrl => "https://void-craft.eu/profil";
 
-    public string VoidIdProfileEntryLabel => CanAccessVoidIdAdminSurface
-        ? "Otevřít interní správu"
-        : "Otevřít webový profil";
+    public string VoidIdProfileEntryLabel => "Otevřít webový profil";
 
     public bool HasMicrosoftLauncherAccount =>
         ActiveAccount?.Type == AccountType.Microsoft &&
@@ -373,6 +360,195 @@ public partial class MainViewModel
         return $"Synchronizace dokončena: {VoidIdActiveSessions.Count} relací, {VoidIdMembershipProjects.Count} projektových oprávnění a GitHub {(IsVoidIdGitHubLinked ? "propojený" : "nepropojený")}.";
     }
 
+    private static bool IsCollaboratorRegistryWorkspace(ModpackInfo? modpack)
+    {
+        return modpack?.IsCollaboratorWorkspace == true && !string.IsNullOrWhiteSpace(modpack.VoidRegistrySlug);
+    }
+
+    private async Task<string?> ResolveVoidRegistryAccessTokenAsync(ModpackInfo? modpack, bool requireFreshSession)
+    {
+        if (!IsCollaboratorRegistryWorkspace(modpack))
+        {
+            return null;
+        }
+
+        if (requireFreshSession)
+        {
+            return await EnsureFreshVoidIdSessionAsync(TimeSpan.FromMinutes(2))
+                ? CreatorVoidIdSession?.AccessToken
+                : null;
+        }
+
+        var accessToken = CreatorVoidIdSession?.AccessToken;
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            return null;
+        }
+
+        var expiresAt = CreatorVoidIdSession?.AccessTokenExpiresAtUtc;
+        return expiresAt.HasValue && expiresAt.Value <= DateTimeOffset.UtcNow.Add(TimeSpan.FromMinutes(1))
+            ? null
+            : accessToken;
+    }
+
+    private static string BuildVoidIdProjectWorkspaceId(VoidRegistryProjectSummary project)
+    {
+        var seed = !string.IsNullOrWhiteSpace(project.Slug)
+            ? project.Slug.Trim()
+            : $"project-{project.ProjectId}";
+        var invalidCharacters = Path.GetInvalidFileNameChars();
+        var safeSeed = new string(seed
+            .Select(ch => invalidCharacters.Contains(ch) ? '-' : ch)
+            .ToArray())
+            .Replace(" ", "-", StringComparison.Ordinal)
+            .Trim('-');
+
+        if (string.IsNullOrWhiteSpace(safeSeed))
+        {
+            safeSeed = "project-workspace";
+        }
+
+        return $"void-registry__{safeSeed}__creator";
+    }
+
+    private static string BuildVoidIdProjectVersionFileId(VoidRegistryProjectSummary project)
+    {
+        return string.IsNullOrWhiteSpace(project.LatestVersion)
+            ? project.ProjectId
+            : project.LatestVersion;
+    }
+
+    private string BuildVoidIdProjectWorkspaceLink(VoidRegistryProjectSummary project)
+    {
+        if (!string.IsNullOrWhiteSpace(project.RepositoryUrl))
+        {
+            return project.RepositoryUrl;
+        }
+
+        return !string.IsNullOrWhiteSpace(project.Slug)
+            ? $"https://void-craft.eu/modpacky/{project.Slug}"
+            : string.Empty;
+    }
+
+    private ModpackInfo UpsertVoidIdProjectWorkspace(VoidRegistryProjectSummary project)
+    {
+        var workspaceId = BuildVoidIdProjectWorkspaceId(project);
+        var latestVersionName = string.IsNullOrWhiteSpace(project.LatestVersion) ? "-" : project.LatestVersion;
+        var latestVersion = new ModpackVersion
+        {
+            Name = latestVersionName,
+            FileId = BuildVoidIdProjectVersionFileId(project)
+        };
+
+        var existing = InstalledModpacks.FirstOrDefault(modpack =>
+            string.Equals(modpack.Name, workspaceId, StringComparison.OrdinalIgnoreCase));
+        if (existing == null)
+        {
+            existing = new ModpackInfo
+            {
+                Name = workspaceId,
+                DisplayName = FirstNonEmpty(project.Name, project.Slug, workspaceId),
+                Source = "VoidRegistry",
+                VoidRegistryProjectId = project.ProjectId,
+                VoidRegistrySlug = project.Slug,
+                WebLink = BuildVoidIdProjectWorkspaceLink(project),
+                LogoUrl = FirstNonEmpty(project.LogoUrl, project.IconUrl, string.Empty),
+                Author = project.Author,
+                Description = project.Summary,
+                CurrentVersion = latestVersion,
+                Versions = new ObservableCollection<ModpackVersion>(new[] { latestVersion }),
+                IsCustomProfile = true,
+                IsCollaboratorWorkspace = true,
+                IsDeletable = true,
+                CustomMcVersion = project.MinecraftVersion,
+                CustomModLoader = project.ModLoader,
+                CustomModLoaderVersion = project.ModLoaderVersion
+            };
+
+            InstalledModpacks.Add(existing);
+            return existing;
+        }
+
+        existing.DisplayName = FirstNonEmpty(project.Name, existing.DisplayName, existing.Name);
+        existing.Source = "VoidRegistry";
+        existing.VoidRegistryProjectId = FirstNonEmpty(project.ProjectId, existing.VoidRegistryProjectId);
+        existing.VoidRegistrySlug = FirstNonEmpty(project.Slug, existing.VoidRegistrySlug);
+        existing.WebLink = FirstNonEmpty(BuildVoidIdProjectWorkspaceLink(project), existing.WebLink);
+        existing.LogoUrl = FirstNonEmpty(project.LogoUrl, project.IconUrl, existing.LogoUrl);
+        existing.Author = FirstNonEmpty(project.Author, existing.Author);
+        existing.Description = FirstNonEmpty(project.Summary, existing.Description);
+        existing.IsCustomProfile = true;
+        existing.IsCollaboratorWorkspace = true;
+        existing.CustomMcVersion = FirstNonEmpty(project.MinecraftVersion, existing.CustomMcVersion);
+        existing.CustomModLoader = FirstNonEmpty(project.ModLoader, existing.CustomModLoader);
+        existing.CustomModLoaderVersion = FirstNonEmpty(project.ModLoaderVersion, existing.CustomModLoaderVersion);
+        existing.Versions = new ObservableCollection<ModpackVersion>(new[] { latestVersion });
+
+        if (existing.CurrentVersion == null || string.IsNullOrWhiteSpace(existing.CurrentVersion.Name) || existing.CurrentVersion.Name == "-")
+        {
+            existing.CurrentVersion = latestVersion;
+        }
+
+        return existing;
+    }
+
+    private void SyncVoidIdMembershipProjectsIntoLibrary(IReadOnlyList<VoidRegistryProjectSummary> projects)
+    {
+        var visibleProjects = (projects ?? Array.Empty<VoidRegistryProjectSummary>())
+            .Where(project => project.CanView && (!string.IsNullOrWhiteSpace(project.Slug) || !string.IsNullOrWhiteSpace(project.ProjectId)))
+            .ToList();
+        if (visibleProjects.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var project in visibleProjects)
+        {
+            UpsertVoidIdProjectWorkspace(project);
+        }
+
+        SaveModpacks();
+    }
+
+    private void SelectCreatorWorkspace(ModpackInfo modpack)
+    {
+        CurrentModpack = modpack;
+        RebuildSkinStudioInstanceOptions();
+        SelectedSkinStudioInstance = SkinStudioInstanceOptions.FirstOrDefault(option =>
+            string.Equals(option.Id, modpack.Name, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private async Task EnsureVoidIdProjectWorkspaceReadyAsync(ModpackInfo modpack)
+    {
+        if (IsLaunching)
+        {
+            throw new InvalidOperationException("Launcher právě připravuje jinou instanci. Dokonči aktuální akci a workspace otevři znovu.");
+        }
+
+        var modpackDir = _launcherService.GetModpackPath(modpack.Name);
+        Directory.CreateDirectory(modpackDir);
+        var modsDir = Path.Combine(modpackDir, "mods");
+
+        IsLaunching = true;
+        TargetModpack = modpack;
+        LaunchProgress = 0;
+        LaunchStatus = $"Připravuji workspace {modpack.DisplayLabel}...";
+
+        try
+        {
+            await EnsureLatestVoidRegistryModpackInstalledAsync(modpack, modpackDir, modsDir);
+            HydrateModpackFromInstalledManifest(modpack);
+            SaveModpacks();
+            LaunchProgress = 100;
+            LaunchStatus = $"Workspace {modpack.DisplayLabel} je připravený pro Creator Studio.";
+        }
+        finally
+        {
+            IsLaunching = false;
+            TargetModpack = null;
+        }
+    }
+
     private void ClearVoidIdControlPlane()
     {
         ReplaceCollectionItems(VoidIdActiveSessions, Array.Empty<VoidIdRefreshSessionInfo>());
@@ -425,6 +601,7 @@ public partial class MainViewModel
 
             ReplaceCollectionItems(VoidIdActiveSessions, sessionsTask.Result);
             ReplaceCollectionItems(VoidIdMembershipProjects, projectsTask.Result);
+            SyncVoidIdMembershipProjectsIntoLibrary(projectsTask.Result);
             VoidIdControlPlaneStatus = BuildVoidIdControlPlaneStatus();
             VoidIdGitHubProviderStatus = BuildGitHubProviderStatus();
             NotifyVoidIdStateChanged();
@@ -525,6 +702,38 @@ public partial class MainViewModel
     private async Task RefreshVoidIdControlPlane()
     {
         await RefreshVoidIdControlPlaneAsync(showToastOnSuccess: true);
+    }
+
+    [RelayCommand]
+    private async Task OpenVoidIdProjectWorkspace(VoidRegistryProjectSummary? project)
+    {
+        if (project == null || !project.CanView)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(project.Slug) && string.IsNullOrWhiteSpace(project.ProjectId))
+        {
+            ShowToast("VOID ID", "Projekt zatím nemá validní launcher identitu pro workspace sync.", ToastSeverity.Warning, 3200);
+            return;
+        }
+
+        var workspace = UpsertVoidIdProjectWorkspace(project);
+
+        try
+        {
+            await EnsureVoidIdProjectWorkspaceReadyAsync(workspace);
+        }
+        catch (Exception ex)
+        {
+            LogService.Error("VOID ID workspace prepare failed", ex);
+            ShowToast("VOID ID", ex.Message, ToastSeverity.Error, 4200);
+            return;
+        }
+
+        SelectCreatorWorkspace(workspace);
+        NavigateToView(MainViewType.StreamingTools, true);
+        ShowToast("Creator Studio", $"Workspace {workspace.DisplayLabel} je připravený.", ToastSeverity.Success, 2800);
     }
 
     [RelayCommand]

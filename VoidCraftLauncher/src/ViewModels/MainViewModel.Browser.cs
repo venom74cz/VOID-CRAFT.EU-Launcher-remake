@@ -413,31 +413,29 @@ public partial class MainViewModel
                         CurrentVersion = versionInfo,
                         CustomMcVersion = item.Source == "VoidRegistry" ? (registryManifest?.MinecraftVersion ?? "") : "",
                         CustomModLoader = item.Source == "VoidRegistry" ? (registryManifest?.ModLoader ?? "") : "",
-                        CustomModLoaderVersion = item.Source == "VoidRegistry" ? (registryManifest?.ModLoaderVersion ?? "") : ""
+                        CustomModLoaderVersion = item.Source == "VoidRegistry" ? (registryManifest?.ModLoaderVersion ?? "") : "",
+                        IsCollaboratorWorkspace = false
                     };
 
-                    var existing = InstalledModpacks.FirstOrDefault(m => 
-                        (CurrentModpack.ProjectId > 0 && m.ProjectId == CurrentModpack.ProjectId) ||
-                        (!string.IsNullOrWhiteSpace(CurrentModpack.VoidRegistrySlug) &&
-                         string.Equals(m.VoidRegistrySlug, CurrentModpack.VoidRegistrySlug, StringComparison.OrdinalIgnoreCase)) ||
-                        m.Name.Equals(CurrentModpack.Name, StringComparison.OrdinalIgnoreCase));
+                    var existing = FindInstalledModpack(CurrentModpack);
 
-                        if (existing != null)
-                        {
-                            var index = InstalledModpacks.IndexOf(existing);
-                            InstalledModpacks[index] = CurrentModpack;
-                        }
-                        else
-                        {
-                            InstalledModpacks.Add(CurrentModpack);
-                        }
-                        SaveModpacks();
+                    if (existing != null)
+                    {
+                        var index = InstalledModpacks.IndexOf(existing);
+                        InstalledModpacks[index] = CurrentModpack;
+                    }
+                    else
+                    {
+                        InstalledModpacks.Add(CurrentModpack);
+                    }
 
-                        IsLaunching = false;
-                        LaunchStatus = "Nainstalováno - Připraveno ke hře";
-                        LaunchProgress = 100;
-                        Greeting = $"Instalace dokončena: {item.Name}";
-                    });
+                    SaveModpacks();
+
+                    IsLaunching = false;
+                    LaunchStatus = "Nainstalováno - Připraveno ke hře";
+                    LaunchProgress = 100;
+                    Greeting = $"Instalace dokončena: {item.Name}";
+                });
                 }
             catch (Exception ex)
             {

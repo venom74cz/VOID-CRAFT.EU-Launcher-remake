@@ -42,6 +42,10 @@ namespace VoidCraftLauncher.Models
         private string _displayName = "";
 
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(LibraryStatusLabel))]
+        private bool _isCollaboratorWorkspace;
+
+        [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(PlayButtonText))]
         [NotifyPropertyChangedFor(nameof(IsUpdateAvailable))]
         [NotifyPropertyChangedFor(nameof(InstalledVersionName))]
@@ -69,6 +73,8 @@ namespace VoidCraftLauncher.Models
         public string ImageUrl => LogoUrl;
 
         public string DisplayLabel => string.IsNullOrWhiteSpace(DisplayName) ? Name : DisplayName;
+
+        public string LibraryStatusLabel => IsCollaboratorWorkspace ? "Creator workspace" : "Připraveno";
 
         [ObservableProperty]
         private string _description = "";

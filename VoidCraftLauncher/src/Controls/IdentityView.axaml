@@ -255,12 +255,23 @@
                                         <TextBlock Text="{Binding LatestVersion, StringFormat='Poslední verze {0}'}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" IsVisible="{Binding HasLatestVersion}"/>
                                         <TextBlock Text="{Binding Summary}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" MaxHeight="48"/>
 
-                                        <Button Content="Otevřít Creator Studio"
-                                            Command="{Binding #IdentityRoot.DataContext.GoToStreamingToolsCommand}"
-                                                Classes="secondary"
-                                                Padding="14,8"
-                                                HorizontalAlignment="Left"
-                                                IsVisible="{Binding CanPublish}"/>
+                                        <WrapPanel Orientation="Horizontal" ItemWidth="150" MinHeight="40">
+                                            <Button Content="Otevřít workspace"
+                                                    Command="{Binding #IdentityRoot.DataContext.OpenVoidIdProjectWorkspaceCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    Classes="secondary"
+                                                    Padding="14,8"
+                                                    Margin="0,0,10,10"
+                                                    HorizontalAlignment="Left"
+                                                    IsVisible="{Binding CanView}"/>
+                                            <Button Content="Otevřít Creator Studio"
+                                                    Command="{Binding #IdentityRoot.DataContext.GoToStreamingToolsCommand}"
+                                                    Classes="secondary"
+                                                    Padding="14,8"
+                                                    Margin="0,0,10,10"
+                                                    HorizontalAlignment="Left"
+                                                    IsVisible="{Binding CanPublish}"/>
+                                        </WrapPanel>
                                     </StackPanel>
                                 </Border>
                             </DataTemplate>
@@ -276,7 +287,7 @@
                     Padding="22">
                 <StackPanel Spacing="12">
                     <TextBlock Text="Rychlé akce" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                    <TextBlock Text="Na jednom místě tu vidíš Microsoft účet, VOID ID, GitHub a rychlé odkazy na webové části účtu."
+                    <TextBlock Text="Na jednom místě tu vidíš Microsoft účet, VOID ID, GitHub a rychlé odkazy na profilové a creator workflow části."
                                FontSize="12"
                                Foreground="{DynamicResource TextSecondaryBrush}"
                                TextWrapping="Wrap"/>
@@ -288,13 +299,6 @@
                                 Classes="secondary"
                                 Padding="18,10"
                                 Margin="0,0,10,10"/>
-                        <Button Content="Admin panel"
-                                Command="{Binding OpenUrlCommand}"
-                                CommandParameter="https://void-craft.eu/admin"
-                                Classes="secondary"
-                                Padding="18,10"
-                                Margin="0,0,10,10"
-                            IsVisible="{Binding CanAccessVoidIdAdminSurface}"/>
                         <Button Content="Creator Studio"
                                 Command="{Binding GoToStreamingToolsCommand}"
                                 Classes="secondary"

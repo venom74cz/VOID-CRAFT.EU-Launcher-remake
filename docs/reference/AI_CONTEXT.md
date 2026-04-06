@@ -2,7 +2,7 @@
 
 ## 1) Project Snapshot
 - **Name**: VoidCraft Launcher
-- **Current version**: **3.1.10.1**
+- **Current version**: **3.1.11**
 - **Stack**: .NET 9 + Avalonia UI 11.3 + CommunityToolkit.Mvvm 8.4
 - **MC Core**: CmlLib.Core 4.0.6
 - **Auth**: Microsoft.Identity.Client (MSAL) + custom Xbox/XSTS/MC token chain
@@ -150,6 +150,7 @@ Documents/.voidcraft/
 ## 8) Release History
 | Version | Changes |
 |---------|---------|
+| 3.1.11 | Creator release governance a GitHub repair: historie verzí a visibility actions nad `VOID Registry`, oprava `Pouzit jako origin` pro rozbitý lokální `.git` stav a odstranění admin-leak wordingů ve `VOID ID` UI |
 | 3.1.10 | Launcher shell a VOID ID control plane: expandující nav rail, command-center Dashboard, dedikovaný VOID ID surface, VOID Registry browser/install-update flow a collaborator management v Creator Studiu |
 | 3.1.9 | Creator Studio publish hardening: auth centralizace, spolehlivejsi VOID ID/GitHub session restore, real async git publish flow, auto-publish draft GitHub release a branding export/import do `assets/branding` |
 | 3.1.8.1 | Hotfix pro startup a download archive flow: oprava Avalonia key gesture crashe v Streaming Tools a oprava locku pri presunu docasneho .download souboru |
@@ -166,4 +167,4 @@ Documents/.voidcraft/
 | 1.2.8 | Linux Device Code-first flow + robust code parsing |
 
 ---
-*Last updated: 2026-04-05*
+*Last updated: 2026-04-06*

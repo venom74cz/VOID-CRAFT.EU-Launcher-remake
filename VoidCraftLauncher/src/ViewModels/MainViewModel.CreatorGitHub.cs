@@ -369,10 +369,10 @@ public partial class MainViewModel
                 throw new InvalidOperationException("Origin remote už existuje a míří jinam. Přepiš ho ručně nebo nejdřív remote odpoj.");
             }
 
-            var remoteSet = await _creatorGitService.SetRemoteOriginAsync(workspacePath, repository.CloneUrl);
-            if (!remoteSet)
+            var remoteSet = await _creatorGitService.SetRemoteOriginDetailedAsync(workspacePath, repository.CloneUrl);
+            if (!remoteSet.Success)
             {
-                throw new InvalidOperationException("Repo bylo vytvořené, ale nepodařilo se nastavit origin remote.");
+                throw new InvalidOperationException(remoteSet.Message);
             }
 
             await PersistGitHubRepositoryMetadataAsync(workspacePath, repository);
@@ -432,10 +432,10 @@ public partial class MainViewModel
 
             await RefreshCreatorGitStatus();
 
-            var remoteSet = await _creatorGitService.SetRemoteOriginAsync(workspacePath, repository.CloneUrl);
-            if (!remoteSet)
+            var remoteSet = await _creatorGitService.SetRemoteOriginDetailedAsync(workspacePath, repository.CloneUrl);
+            if (!remoteSet.Success)
             {
-                throw new InvalidOperationException("Nepodařilo se nastavit origin remote na vybrané GitHub repo.");
+                throw new InvalidOperationException(remoteSet.Message);
             }
 
             ApplyGitHubRepositoryDraft(repository);

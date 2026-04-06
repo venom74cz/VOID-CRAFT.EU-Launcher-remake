@@ -296,7 +296,13 @@ public partial class MainViewModel
                             continue;
                         }
 
-                        var updateCheck = await _voidRegistryService.GetUpdateCheckAsync(modpack.VoidRegistrySlug, currentVersionName);
+                        var accessToken = await ResolveVoidRegistryAccessTokenAsync(modpack, requireFreshSession: false);
+                        if (IsCollaboratorRegistryWorkspace(modpack) && string.IsNullOrWhiteSpace(accessToken))
+                        {
+                            continue;
+                        }
+
+                        var updateCheck = await _voidRegistryService.GetUpdateCheckAsync(modpack.VoidRegistrySlug, currentVersionName, accessToken);
                         if (updateCheck?.Latest == null)
                         {
                             continue;

@@ -13,7 +13,7 @@ namespace VoidCraftLauncher.Services
             _httpClient = new HttpClient();
             _httpClient.BaseAddress = new Uri("https://api.modrinth.com/v2/");
             // Modrinth requires a specific User-Agent format: User-Agent: AppName/Version (Contact)
-            var launcherVersion = typeof(ModrinthApi).Assembly.GetName().Version?.ToString(4) ?? "3.1.10.1";
+            var launcherVersion = typeof(ModrinthApi).Assembly.GetName().Version?.ToString(4) ?? "3.1.11";
             _httpClient.DefaultRequestHeaders.Add("User-Agent", $"VoidCraftLauncher/{launcherVersion} (admin@void-craft.eu)");
         }
 

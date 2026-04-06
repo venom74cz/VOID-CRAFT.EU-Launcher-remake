@@ -106,7 +106,7 @@
                                                 </Border>
 
                                                 <StackPanel Grid.Row="1" Margin="12,10,12,12" Spacing="4" VerticalAlignment="Top">
-                                                    <TextBlock Text="{Binding Name}" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="13"
+                                                    <TextBlock Text="{Binding DisplayLabel}" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="13"
                                                                TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis" LineHeight="17"/>
                                                     <TextBlock Text="{Binding VersionTransitionText}" Foreground="{DynamicResource TextMutedBrush}" FontSize="10"
                                                                TextTrimming="CharacterEllipsis" MaxLines="1"/>
@@ -116,7 +116,7 @@
                                                         </Border.Background>
                                                         <StackPanel Orientation="Horizontal" Spacing="4">
                                                             <Border Width="5" Height="5" CornerRadius="2.5" Background="{DynamicResource PrimaryBBrush}" VerticalAlignment="Center"/>
-                                                            <TextBlock Text="Připraveno" FontSize="9" Foreground="{DynamicResource PrimaryBBrush}" FontWeight="SemiBold"/>
+                                                            <TextBlock Text="{Binding LibraryStatusLabel}" FontSize="9" Foreground="{DynamicResource PrimaryBBrush}" FontWeight="SemiBold"/>
                                                         </StackPanel>
                                                     </Border>
                                                 </StackPanel>

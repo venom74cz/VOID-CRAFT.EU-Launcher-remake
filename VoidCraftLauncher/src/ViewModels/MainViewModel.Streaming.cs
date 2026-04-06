@@ -168,7 +168,7 @@ public partial class MainViewModel
         : _discordRpcService.CurrentState;
 
     public string StreamingSessionHeadline => IsGameRunning
-        ? $"Ve hře: {RunningModpack?.Name ?? "Minecraft"}"
+        ? $"Ve hře: {RunningModpack?.DisplayLabel ?? RunningModpack?.Name ?? "Minecraft"}"
         : IsLaunching
             ? "Launcher připravuje herní session"
             : "Creator workflow je připraven";

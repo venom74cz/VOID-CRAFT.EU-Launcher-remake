@@ -866,7 +866,7 @@ public partial class MainViewModel
             // Store auto-connect info for post-launch injection
             _pendingAutoConnect = server.AutoConnect ? server : null;
 
-            ShowToast("Quick Connect", $"Spouštím {CurrentModpack.Name} a připravuji připojení na {server.Address}.", ToastSeverity.Info, 2500);
+            ShowToast("Quick Connect", $"Spouštím {CurrentModpack.DisplayLabel} a připravuji připojení na {server.Address}.", ToastSeverity.Info, 2500);
 
             // Launch
             await PlayModpack();
@@ -1046,13 +1046,19 @@ public partial class MainViewModel
             return;
         }
 
-        var defaultName = $"{CurrentModpack.Name}_{DateTime.Now:yyyyMMdd_HHmm}.voidpack";
+        var exportBaseName = string.Join("_", CurrentModpack.DisplayLabel.Split(Path.GetInvalidFileNameChars())).Trim();
+        if (string.IsNullOrWhiteSpace(exportBaseName))
+        {
+            exportBaseName = CurrentModpack.Name;
+        }
+
+        var defaultName = $"{exportBaseName}_{DateTime.Now:yyyyMMdd_HHmm}.voidpack";
         var desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
         var outputPath = Path.Combine(desktopPath, defaultName);
 
         IsExporting = true;
         ExportProgress = 0;
-        ShowToast("Export", "Exportuji instanci " + CurrentModpack.Name + "...", ToastSeverity.Info);
+        ShowToast("Export", "Exportuji instanci " + CurrentModpack.DisplayLabel + "...", ToastSeverity.Info);
 
         try
         {

@@ -184,7 +184,7 @@ public partial class MainViewModel
             var optionsPath = Path.Combine(modpackPath, "options.txt");
             File.WriteAllText(optionsPath, content);
 
-            Greeting = $"Preset '{SelectedOptionsPresetName}' načten do modpacku {CurrentModpack.Name}.";
+            Greeting = $"Preset '{SelectedOptionsPresetName}' načten do modpacku {CurrentModpack.DisplayLabel}.";
         }
         catch (Exception ex)
         {

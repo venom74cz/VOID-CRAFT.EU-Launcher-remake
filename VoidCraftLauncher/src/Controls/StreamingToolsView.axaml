@@ -1854,7 +1854,7 @@
                                     <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="12" Padding="14" BorderBrush="{DynamicResource PrimaryBBrush}" BorderThickness="1">
                                         <StackPanel Spacing="10">
                                             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                                                <TextBlock Text="Publish do VOID Launcher listu" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                                <TextBlock Text="Publish do VOID Registry" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                                 <Border Grid.Column="1" Background="{DynamicResource BgPanelBrush}" CornerRadius="999" Padding="10,4">
                                                     <TextBlock Text="GitHub + Registry" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource PrimaryBBrush}"/>
                                                 </Border>
@@ -1902,6 +1902,122 @@
                                                     <TextBlock Text="Otevřít .voidpack asset" FontSize="11"/>
                                                 </Button>
                                             </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="12" Padding="14" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                                        <StackPanel Spacing="12">
+                                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                                <StackPanel Spacing="4">
+                                                    <TextBlock Text="Release governance" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                                    <TextBlock Text="{Binding CreatorRegistryReleaseProjectLabel}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                                </StackPanel>
+                                                <Border Grid.Column="1" Background="{DynamicResource BgPanelBrush}" CornerRadius="999" Padding="10,4">
+                                                    <TextBlock Text="{Binding CreatorRegistryReleaseAccessLabel}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource PrimaryBBrush}"/>
+                                                </Border>
+                                            </Grid>
+
+                                            <TextBlock Text="{Binding CreatorRegistryReleaseStatus}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+
+                                            <Border Background="#1B150D" BorderBrush="#33FFB347" BorderThickness="1" CornerRadius="10" Padding="12" IsVisible="{Binding HasCreatorPendingPublicReleases}">
+                                                <TextBlock Text="{Binding CreatorPendingPublicReleaseCount, StringFormat='{}Čeká na veřejné schválení: {0} release'}" FontSize="11" Foreground="#FFD18A" TextWrapping="Wrap"/>
+                                            </Border>
+
+                                            <WrapPanel Orientation="Horizontal" ItemWidth="180" MinHeight="40">
+                                                <Button Command="{Binding RefreshCreatorRegistryReleaseHistoryCommand}" Classes="secondary" Padding="12,8" IsEnabled="{Binding CanRefreshCreatorRegistryReleaseHistory}">
+                                                    <TextBlock Text="{Binding CreatorRegistryReleaseActionLabel}" FontSize="11"/>
+                                                </Button>
+                                            </WrapPanel>
+
+                                            <Border Background="#1B150D" BorderBrush="#33FFB347" BorderThickness="1" CornerRadius="10" Padding="12" IsVisible="{Binding ShowCreatorRegistryReleaseReadonlyWarning}">
+                                                <TextBlock Text="Veřejné schválení a stažení release z katalogu může dělat jen owner nebo maintainer projektu." FontSize="11" Foreground="#FFD18A" TextWrapping="Wrap"/>
+                                            </Border>
+
+                                            <controls:EmptyState IsVisible="{Binding !HasCreatorRegistryVersionHistory}" Icon="{StaticResource IconInfo}" Title="Žádná release historie" Subtitle="Interní i veřejné verze se načtou z VOID Registry po prvním refreshi nebo po publishi."/>
+
+                                            <ItemsControl ItemsSource="{Binding CreatorRegistryVersions}" IsVisible="{Binding HasCreatorRegistryVersionHistory}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:CompileBindings="False">
+                                                        <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="10" Padding="12" Margin="0,0,0,8" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
+                                                            <StackPanel Spacing="10">
+                                                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                                                    <StackPanel Spacing="4">
+                                                                        <WrapPanel Orientation="Horizontal" ItemHeight="28">
+                                                                            <TextBlock Text="{Binding VersionNumber}" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,8,0"/>
+                                                                            <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="999" Padding="8,3" Margin="0,0,8,0">
+                                                                                <TextBlock Text="{Binding ChannelLabel}" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource PrimaryBBrush}"/>
+                                                                            </Border>
+                                                                            <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="999" Padding="8,3" Margin="0,0,8,0">
+                                                                                <TextBlock Text="{Binding VisibilityLabel}" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                                                            </Border>
+                                                                            <Border Background="#211117" BorderBrush="#33FF4B6B" BorderThickness="1" CornerRadius="999" Padding="8,3" IsVisible="{Binding IsYanked}">
+                                                                                <TextBlock Text="Yanked" FontSize="9" FontWeight="Bold" Foreground="#FFD7DF"/>
+                                                                            </Border>
+                                                                        </WrapPanel>
+                                                                        <TextBlock Text="{Binding PublishedAtLabel, StringFormat='{}Publikováno: {0}'}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                                                    </StackPanel>
+
+                                                                    <WrapPanel Grid.Column="1" Orientation="Horizontal" ItemHeight="34">
+                                                                        <Button Command="{Binding #StreamingToolsRoot.DataContext.OpenUrlCommand}" CommandParameter="{Binding DownloadUrl}" Classes="secondary" Padding="12,8" Margin="0,0,8,0" IsVisible="{Binding HasDownloadUrl}">
+                                                                            <TextBlock Text="Artefakt" FontSize="11"/>
+                                                                        </Button>
+                                                                        <Button Command="{Binding #StreamingToolsRoot.DataContext.OpenUrlCommand}" CommandParameter="{Binding ReleasePageUrl}" Classes="secondary" Padding="12,8" Margin="0,0,8,0" IsVisible="{Binding HasReleasePageUrl}">
+                                                                            <TextBlock Text="Release page" FontSize="11"/>
+                                                                        </Button>
+                                                                        <Button Command="{Binding #StreamingToolsRoot.DataContext.ToggleCreatorRegistryVersionVisibilityCommand}" CommandParameter="{Binding}" Classes="primary" Padding="12,8" Margin="0,0,8,0" IsVisible="{Binding CanApprovePublic}" IsEnabled="{Binding #StreamingToolsRoot.DataContext.CanManageCreatorRegistryReleases}">
+                                                                            <TextBlock Text="{Binding VisibilityActionLabel}" FontSize="11"/>
+                                                                        </Button>
+                                                                        <Button Command="{Binding #StreamingToolsRoot.DataContext.ToggleCreatorRegistryVersionVisibilityCommand}" CommandParameter="{Binding}" Classes="secondary" Padding="12,8" Margin="0,0,8,0" IsVisible="{Binding CanReturnInternal}" IsEnabled="{Binding #StreamingToolsRoot.DataContext.CanManageCreatorRegistryReleases}">
+                                                                            <TextBlock Text="{Binding VisibilityActionLabel}" FontSize="11"/>
+                                                                        </Button>
+                                                                        <Button Command="{Binding #StreamingToolsRoot.DataContext.YankCreatorRegistryVersionCommand}" CommandParameter="{Binding}" Classes="secondary" Padding="12,8" IsVisible="{Binding CanYank}" IsEnabled="{Binding #StreamingToolsRoot.DataContext.CanManageCreatorRegistryReleases}">
+                                                                            <TextBlock Text="Stáhnout z katalogu" FontSize="11"/>
+                                                                        </Button>
+                                                                    </WrapPanel>
+                                                                </Grid>
+
+                                                                <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="8">
+                                                                    <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="8" Padding="10">
+                                                                        <StackPanel Spacing="3">
+                                                                            <TextBlock Text="Soubor" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                                                            <TextBlock Text="{Binding FileName}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                                                                        </StackPanel>
+                                                                    </Border>
+                                                                    <Border Grid.Column="1" Background="{DynamicResource BgElevatedBrush}" CornerRadius="8" Padding="10">
+                                                                        <StackPanel Spacing="3">
+                                                                            <TextBlock Text="Velikost" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                                                            <TextBlock Text="{Binding FileSizeLabel}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                                                        </StackPanel>
+                                                                    </Border>
+                                                                    <Border Grid.Column="2" Background="{DynamicResource BgElevatedBrush}" CornerRadius="8" Padding="10">
+                                                                        <StackPanel Spacing="3">
+                                                                            <TextBlock Text="Loader" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                                                            <TextBlock Text="{Binding ModLoader}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                                                        </StackPanel>
+                                                                    </Border>
+                                                                    <Border Grid.Column="3" Background="{DynamicResource BgElevatedBrush}" CornerRadius="8" Padding="10">
+                                                                        <StackPanel Spacing="3">
+                                                                            <TextBlock Text="Počet módů" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                                                            <TextBlock Text="{Binding ModCount}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                                                        </StackPanel>
+                                                                    </Border>
+                                                                </Grid>
+
+                                                                <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="8" Padding="10">
+                                                                    <TextBlock Text="{Binding PublicApprovalLabel}" FontSize="11" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                                                                </Border>
+
+                                                                <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="8" Padding="10" IsVisible="{Binding HasChangelog}">
+                                                                    <StackPanel Spacing="4">
+                                                                        <TextBlock Text="Changelog" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                                                        <TextBlock Text="{Binding Changelog}" FontSize="11" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                                                                    </StackPanel>
+                                                                </Border>
+                                                            </StackPanel>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
                                         </StackPanel>
                                     </Border>
 

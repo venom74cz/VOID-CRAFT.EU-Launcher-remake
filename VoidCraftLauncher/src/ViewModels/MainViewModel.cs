@@ -259,7 +259,7 @@ public partial class MainViewModel : ViewModelBase
         MainViewType.Discover => LF("Shell.Title.Discover", BrowserSource),
         MainViewType.Identity => "VOID ID",
         MainViewType.Settings => L("Shell.Title.Settings"),
-        MainViewType.InstanceDetail => CurrentModpack?.Name ?? L("Shell.Title.InstanceDetailFallback"),
+        MainViewType.InstanceDetail => CurrentModpack?.DisplayLabel ?? L("Shell.Title.InstanceDetailFallback"),
         MainViewType.SkinStudio => L("Shell.Title.SkinStudio"),
         MainViewType.Achievements => L("Shell.Title.Achievements"),
         MainViewType.ServerHub => L("Shell.Title.ServerHub"),
@@ -848,6 +848,19 @@ public partial class MainViewModel : ViewModelBase
         });
     }
 
+    private ModpackInfo? FindInstalledModpack(ModpackInfo candidate)
+    {
+        return InstalledModpacks.FirstOrDefault(existing =>
+            string.Equals(existing.Name, candidate.Name, StringComparison.OrdinalIgnoreCase) ||
+            (candidate.ProjectId > 0 && existing.ProjectId == candidate.ProjectId && existing.IsCollaboratorWorkspace == candidate.IsCollaboratorWorkspace) ||
+            (!string.IsNullOrWhiteSpace(candidate.VoidRegistrySlug) &&
+             string.Equals(existing.VoidRegistrySlug, candidate.VoidRegistrySlug, StringComparison.OrdinalIgnoreCase) &&
+             existing.IsCollaboratorWorkspace == candidate.IsCollaboratorWorkspace) ||
+            (!string.IsNullOrWhiteSpace(candidate.ModrinthId) &&
+             string.Equals(existing.ModrinthId, candidate.ModrinthId, StringComparison.OrdinalIgnoreCase) &&
+             existing.IsCollaboratorWorkspace == candidate.IsCollaboratorWorkspace));
+    }
+
     private void OnCurrentModpackScreenshotsChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         OnPropertyChanged(nameof(HasCurrentModpackScreenshots));
@@ -956,7 +969,7 @@ public partial class MainViewModel : ViewModelBase
             MainViewType.Discover => $"Hledá nové modpacky ({BrowserSource})",
             MainViewType.Identity => "Spravuje VOID ID a GitHub propojení",
             MainViewType.Settings => "Upravuje nastavení",
-            MainViewType.InstanceDetail => $"Detail: {CurrentModpack?.Name}",
+            MainViewType.InstanceDetail => $"Detail: {CurrentModpack?.DisplayLabel ?? CurrentModpack?.Name}",
             MainViewType.Future => "Prohlíží si future roadmapu",
             _ => "V hlavní nabídce"
         };

@@ -38,7 +38,7 @@ public partial class MainViewModel
             var modsDir = Path.Combine(modpackDir, "mods");
 
             // INSTALL / UPDATE
-            if (CurrentModpack.IsCustomProfile)
+            if (CurrentModpack.IsCustomProfile && string.IsNullOrWhiteSpace(CurrentModpack.VoidRegistrySlug))
             {
                 LaunchStatus = "Vlastní profil – přeskočena kontrola aktualizací.";
             }
@@ -53,7 +53,7 @@ public partial class MainViewModel
                 catch (Exception ex)
                 {
                     var hasInstalledContent = HasInstalledModpackContent(modpackDir, modsDir);
-                    LogService.Error($"[PlayModpack] Auto-update check failed for {CurrentModpack.Name}", ex);
+                    LogService.Error($"[PlayModpack] Auto-update check failed for {CurrentModpack.DisplayLabel}", ex);
 
                     if (!hasInstalledContent)
                     {
@@ -226,7 +226,7 @@ public partial class MainViewModel
             IsLaunching = false;
             IsGameRunning = true;
             RunningModpack = TargetModpack ?? CurrentModpack;
-            _discordRpcService.SetPlayingState(RunningModpack?.Name ?? "Minecraft");
+            _discordRpcService.SetPlayingState(RunningModpack?.DisplayLabel ?? RunningModpack?.Name ?? "Minecraft");
             LaunchProgress = 100;
 
             // Uložit do nedávných instancí
@@ -246,7 +246,8 @@ public partial class MainViewModel
             App.MinimizeToTray();
             
             // Wait for game to exit in background
-            var launchedModpackName = RunningModpack?.Name ?? "Minecraft";
+            var launchedModpackName = RunningModpack?.DisplayLabel ?? RunningModpack?.Name ?? "Minecraft";
+            var launchedModpackId = RunningModpack?.Name ?? "Minecraft";
             var gameStartTime = DateTime.UtcNow;
             _ = Task.Run(async () => 
             {
@@ -269,7 +270,7 @@ public partial class MainViewModel
                         string? logPath = null;
                         try
                         {
-                            var logDir = Path.Combine(_launcherService.GetModpackPath(launchedModpackName), "logs");
+                            var logDir = Path.Combine(_launcherService.GetModpackPath(launchedModpackId), "logs");
                             logPath = Path.Combine(logDir, "latest.log");
                             if (File.Exists(logPath))
                             {
@@ -484,10 +485,23 @@ public partial class MainViewModel
         var installedManifest = ModpackInstaller.LoadManifestInfo(modpackDir);
         var currentVersionName = FirstNonEmpty(installedManifest?.Version, modpack.CurrentVersion?.Name);
         var hasInstalledContent = HasInstalledModpackContent(modpackDir, modsDir);
+        var accessToken = await ResolveVoidRegistryAccessTokenAsync(modpack, requireFreshSession: true);
+
+        if (IsCollaboratorRegistryWorkspace(modpack) && string.IsNullOrWhiteSpace(accessToken))
+        {
+            if (hasInstalledContent)
+            {
+                LaunchStatus = $"VOID ID session není aktivní, používám lokální workspace {modpack.DisplayLabel}.";
+                _lastManifestInfo = installedManifest ?? new ModpackManifestInfo();
+                return;
+            }
+
+            throw new InvalidOperationException("Collaborator workspace vyžaduje aktivní VOID ID session, aby šel stáhnout interní release.");
+        }
 
         if (hasInstalledContent && !string.IsNullOrWhiteSpace(currentVersionName))
         {
-            var updateCheck = await _voidRegistryService.GetUpdateCheckAsync(slug, currentVersionName);
+            var updateCheck = await _voidRegistryService.GetUpdateCheckAsync(slug, currentVersionName, accessToken);
             var latestInfo = updateCheck?.Latest;
             if (latestInfo != null)
             {
@@ -515,7 +529,7 @@ public partial class MainViewModel
             }
         }
 
-        var manifest = await _voidRegistryService.GetInstallManifestAsync(slug);
+        var manifest = await _voidRegistryService.GetInstallManifestAsync(slug, accessToken);
         if (manifest == null || string.IsNullOrWhiteSpace(manifest.FileUrl))
         {
             throw new InvalidOperationException("VOID Registry nevrátil validní install manifest.");

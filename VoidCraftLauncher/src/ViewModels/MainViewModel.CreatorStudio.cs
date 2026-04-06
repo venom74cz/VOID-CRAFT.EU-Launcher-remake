@@ -145,6 +145,7 @@ public partial class MainViewModel
     {
         RefreshCurrentWorkspaceHeroState();
         QueueRefreshCreatorCollaborators("Projektový kontext se změnil, collaborator list se obnovuje.");
+        QueueRefreshCreatorReleaseGovernance("Projektový kontext se změnil, release governance se obnovuje.");
         OnPropertyChanged(nameof(HasCurrentWorkspaceCreatorMetadata));
         OnPropertyChanged(nameof(HasCurrentWorkspaceDescription));
         OnPropertyChanged(nameof(HasCurrentWorkspaceFullDescription));

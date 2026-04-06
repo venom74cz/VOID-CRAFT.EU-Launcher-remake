@@ -85,7 +85,7 @@
                             <TextBlock Text="{StaticResource IconUser}" FontSize="18" Width="22" HorizontalAlignment="Center" Foreground="{DynamicResource PrimaryBBrush}"/>
                             <StackPanel IsVisible="{Binding IsNavRailExpanded}" Spacing="1">
                                 <TextBlock Text="VOID ID" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                <TextBlock Text="Webový profil, GitHub a týmový přístup" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                <TextBlock Text="Webový profil, GitHub a projektové workflow" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
                             </StackPanel>
                         </StackPanel>
                     </Button>

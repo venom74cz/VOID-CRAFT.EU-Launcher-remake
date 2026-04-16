@@ -292,6 +292,8 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     private void GoToFuture() => NavigateToView(MainViewType.Future);
 
+
+
     [RelayCommand]
     private void GoToThemeSwitcher() => NavigateToView(MainViewType.ThemeSwitcher);
 
@@ -300,6 +302,53 @@ public partial class MainViewModel : ViewModelBase
 
     [RelayCommand]
     private void GoBack() => _navigationService.GoBack();
+
+    // ===== UPDATE PROMPT =====
+
+    [ObservableProperty]
+    private bool _isUpdatePromptVisible = false;
+
+    [ObservableProperty]
+    private string _updatePromptModpackName = "";
+
+    [ObservableProperty]
+    private string _updatePromptTargetVersionName = "";
+
+    [ObservableProperty]
+    private string _updatePromptChangelog = "";
+
+    private TaskCompletionSource<string>? _updatePromptTcs;
+
+    public Task<string> ShowUpdatePromptAsync(string modpackName, string targetVersion, string changelog)
+    {
+        UpdatePromptModpackName = modpackName;
+        UpdatePromptTargetVersionName = targetVersion;
+        UpdatePromptChangelog = changelog;
+        IsUpdatePromptVisible = true;
+        _updatePromptTcs = new TaskCompletionSource<string>();
+        return _updatePromptTcs.Task;
+    }
+
+    [RelayCommand]
+    private void ConfirmUpdatePrompt()
+    {
+        IsUpdatePromptVisible = false;
+        _updatePromptTcs?.TrySetResult("Confirm");
+    }
+
+    [RelayCommand]
+    private void ConfirmUpdatePromptWithBackup()
+    {
+        IsUpdatePromptVisible = false;
+        _updatePromptTcs?.TrySetResult("ConfirmBackup");
+    }
+
+    [RelayCommand]
+    private void SkipUpdatePrompt()
+    {
+        IsUpdatePromptVisible = false;
+        _updatePromptTcs?.TrySetResult("Skip");
+    }
 
     // ===== BACKUP PROMPT =====
 
@@ -814,7 +863,29 @@ public partial class MainViewModel : ViewModelBase
 
     private void OnInstalledModpacksCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
+        if (e.OldItems != null)
+        {
+            foreach (ModpackInfo item in e.OldItems)
+            {
+                item.PropertyChanged -= OnModpackItemPropertyChanged;
+            }
+        }
+        if (e.NewItems != null)
+        {
+            foreach (ModpackInfo item in e.NewItems)
+            {
+                item.PropertyChanged += OnModpackItemPropertyChanged;
+            }
+        }
         HandleInstalledModpacksChanged();
+    }
+
+    private void OnModpackItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(ModpackInfo.TargetVersion))
+        {
+            SaveModpacks();
+        }
     }
 
     private void HandleInstalledModpacksChanged()

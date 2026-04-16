@@ -64,7 +64,6 @@
                                 <TextBlock Text="{Binding CreatorLastActivityLabel}" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
                             </StackPanel>
                         </Border>
-                        <TextBlock Text="Vetsi multi-file apply flow ma predem vytvorit snapshot a zachovat preview + diff jako bezpecny default." FontSize="10" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" LineHeight="15"/>
                     </StackPanel>
                 </Border>
 

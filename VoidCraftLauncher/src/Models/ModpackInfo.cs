@@ -9,8 +9,23 @@ namespace VoidCraftLauncher.Models
         public string Name { get; set; } = "";
         public string FileId { get; set; } = "";
         public string ReleaseDate { get; set; } = "";
+
+        /// <summary>Sentinel FileId marking "always track latest"</summary>
+        public const string LatestFileId = "__latest__";
+
+        public bool IsLatestSentinel => FileId == LatestFileId;
+
+        public static ModpackVersion CreateLatest() => new() { Name = "⭐ Latest", FileId = LatestFileId };
         
         public override string ToString() => Name;
+
+        public override bool Equals(object? obj)
+        {
+            if (obj is not ModpackVersion other) return false;
+            return string.Equals(FileId, other.FileId, System.StringComparison.OrdinalIgnoreCase);
+        }
+
+        public override int GetHashCode() => FileId?.GetHashCode() ?? 0;
     }
 
     public partial class ModpackInfo : ObservableObject
@@ -49,7 +64,7 @@ namespace VoidCraftLauncher.Models
         [NotifyPropertyChangedFor(nameof(PlayButtonText))]
         [NotifyPropertyChangedFor(nameof(IsUpdateAvailable))]
         [NotifyPropertyChangedFor(nameof(InstalledVersionName))]
-        [NotifyPropertyChangedFor(nameof(LatestVersionName))]
+        [NotifyPropertyChangedFor(nameof(TargetVersionName))]
         [NotifyPropertyChangedFor(nameof(VersionTransitionText))]
         [NotifyPropertyChangedFor(nameof(PlayButtonBackground))]
         private ModpackVersion _currentVersion = new ModpackVersion { Name = "-" };
@@ -58,10 +73,18 @@ namespace VoidCraftLauncher.Models
         [NotifyPropertyChangedFor(nameof(PlayButtonText))]
         [NotifyPropertyChangedFor(nameof(IsUpdateAvailable))]
         [NotifyPropertyChangedFor(nameof(InstalledVersionName))]
-        [NotifyPropertyChangedFor(nameof(LatestVersionName))]
+        [NotifyPropertyChangedFor(nameof(TargetVersionName))]
         [NotifyPropertyChangedFor(nameof(VersionTransitionText))]
         [NotifyPropertyChangedFor(nameof(PlayButtonBackground))]
         private ObservableCollection<ModpackVersion> _versions = new();
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(PlayButtonText))]
+        [NotifyPropertyChangedFor(nameof(IsUpdateAvailable))]
+        [NotifyPropertyChangedFor(nameof(TargetVersionName))]
+        [NotifyPropertyChangedFor(nameof(VersionTransitionText))]
+        [NotifyPropertyChangedFor(nameof(PlayButtonBackground))]
+        private ModpackVersion _targetVersion;
 
         [ObservableProperty]
         private string _author = "";
@@ -115,31 +138,46 @@ namespace VoidCraftLauncher.Models
 
         public string InstalledVersionName => CurrentVersion?.Name ?? "-";
 
-        public string LatestVersionName => Versions?.FirstOrDefault()?.Name ?? "-";
+        /// <summary>True when user selected ⭐ Latest (or has no explicit selection)</summary>
+        public bool IsTrackingLatest =>
+            TargetVersion == null || TargetVersion.IsLatestSentinel;
+
+        /// <summary>The actual version we would install — resolves Latest to first real version</summary>
+        public ModpackVersion? ResolvedTargetVersion =>
+            IsTrackingLatest
+                ? Versions?.FirstOrDefault(v => !v.IsLatestSentinel)
+                : TargetVersion;
+
+        public string TargetVersionName => ResolvedTargetVersion?.Name ?? "-";
 
         public string VersionTransitionText => IsUpdateAvailable
-            ? $"{InstalledVersionName} → {LatestVersionName}"
+            ? $"{InstalledVersionName} → {TargetVersionName}"
             : InstalledVersionName;
 
-        private bool HasDifferentLatestFileId()
+        private bool HasDifferentTargetFileId()
         {
-            var latest = Versions?.FirstOrDefault();
-            if (latest == null || CurrentVersion == null)
+            var target = ResolvedTargetVersion;
+            if (target == null || CurrentVersion == null || CurrentVersion.Name == "-")
             {
                 return false;
             }
 
-            if (!string.IsNullOrWhiteSpace(latest.FileId) && !string.IsNullOrWhiteSpace(CurrentVersion.FileId))
+            if (!string.IsNullOrWhiteSpace(target.FileId) && !string.IsNullOrWhiteSpace(CurrentVersion.FileId))
             {
-                return !string.Equals(latest.FileId, CurrentVersion.FileId, System.StringComparison.OrdinalIgnoreCase);
+                return !string.Equals(target.FileId, CurrentVersion.FileId, System.StringComparison.OrdinalIgnoreCase);
             }
 
-            return latest.Name != CurrentVersion.Name;
+            return target.Name != CurrentVersion.Name;
         }
         
+        /// <summary>
+        /// Update is available ONLY when tracking latest and installed differs from newest.
+        /// Pinned version never triggers update prompt.
+        /// </summary>
         public bool IsUpdateAvailable => 
-            Versions != null && Versions.Count > 0 && 
+            IsTrackingLatest &&
+            Versions != null && Versions.Count > 1 && 
             CurrentVersion != null && CurrentVersion.Name != "-" && 
-            HasDifferentLatestFileId();
+            HasDifferentTargetFileId();
     }
 }

@@ -1674,7 +1674,7 @@
                                     <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
                                         <StackPanel Spacing="4">
                                             <TextBlock Text="Publish obsah" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                            <TextBlock Text="Stejný scope jako export do .voidpack. Bez ručního stage seznamu a bez přehrabování tisíců souborů." FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                            <TextBlock Text="Při publikaci obsahu není třeba ručně vybírat soubory. Vše je zjednodušeno pro rychlý export." FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
                                         </StackPanel>
                                         <Button Grid.Column="1" Command="{Binding CreatorExportVoidpackCommand}" Classes="secondary" Padding="12,8" FontSize="11" VerticalAlignment="Top" IsEnabled="{Binding CanCreatorGitGenerateVoidpack}">
                                             <TextBlock Text="Vygenerovat .voidpack"/>
@@ -2134,7 +2134,7 @@
                         <Border Classes="card">
                             <StackPanel Spacing="12">
                                 <TextBlock Text="Release notes / Changelog" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                <TextBlock Text="Pis changelog pro aktualni verzi. Text se pouzije pri exportu i jako release note." FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                <TextBlock Text="Napiš changelog pro aktuální verzi. Tento text se použije při exportu k vytvoření release notes." FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
                                 <TextBox Text="{Binding CreatorReleaseChangelogContent, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="200" FontFamily="Consolas, Cascadia Mono, monospace" Watermark="## v0.1.0&#x0a;- Prvni release..."/>
                             </StackPanel>
                         </Border>

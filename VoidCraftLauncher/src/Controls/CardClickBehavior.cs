@@ -65,6 +65,7 @@ public static class CardClickBehavior
         while (source != null && source != control)
         {
             if (source is Button) return;
+            if (source is ComboBox) return;
             if (!string.IsNullOrEmpty(ignoreClass) && source.Classes.Contains(ignoreClass)) return;
             source = source.GetVisualParent() as Control;
         }

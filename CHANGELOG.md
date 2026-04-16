@@ -1,5 +1,34 @@
 # Changelog
 
+## 3.2.0 - 2026-04-16
+
+### Selektivní verze & Update Prompt
+
+#### Správa verzí
+- Zavedena podpora pro výběr konkrétní verze modpacku přímo v knihovně přes nové dropdown menu.
+- Přidán režim **`⭐ Latest`**, který automaticky sleduje nejnovější dostupné verze a upozorňuje na ně.
+- Výběr verze je okamžitě perzistentní a ukládá se do konfigurace modpacku při každé změně.
+- Pinned mode: Pokud je vybrána specifická verze, launcher ji při startu tiše nainstaluje (pokud chybí) a neobtěžuje uživatele dotazy na aktualizace.
+
+#### Interaktivní aktualizace
+- Přidán modul **`UpdatePromptSheet`** ve stylu M3, který se zobrazí před spuštěním hry, pokud je v režimu `⭐ Latest` dostupná nová verze.
+- Prompt umožňuje prohlížet **Changelog** (seznam změn) stažený přímo z platformy (CurseForge, Modrinth, VOID Registry).
+- Tři možnosti volby: `Aktualizovat a HRÁT`, `Zálohovat a aktualizovat` (vyvolá Backup Prompt) nebo `Ne, spustit stávající verzi`.
+
+#### Integrace a API
+- Přidána implementace pro transformaci HTML changelogů z CurseForge API do čitelného textu.
+- Rozšířena `ModpackInfo` logika o odlišení `IsTrackingLatest`, `ResolvedTargetVersion` a podmíněného `IsUpdateAvailable`.
+- Opravena detekce aktualizací pro hybridní zdroje (VOID Registry).
+
+#### UI & Fixy
+- Opraven kritický bug (event bubbling), kdy kliknutí na šipku výběru verze v kartě instance otevřelo detail modpacku.
+- Vylepšen vizuál karet v knihovně a zajištěna plynulejší interakce s překryvnými vrstvami.
+- Synchronizace `⭐ Latest` sentinelu při načítání dat i offline cold-startu.
+
+#### Release metadata
+- Srovnána release verze na `3.2.0` v launcher projektu, installeru a meta informacích.
+
+
 ## 3.1.11 - 2026-04-06
 
 ### Creator release governance + GitHub repair

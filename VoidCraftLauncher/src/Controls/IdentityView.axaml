@@ -167,8 +167,8 @@
                 </Border>
             </WrapPanel>
 
-            <Border Background="{DynamicResource BgShellBrush}"
-                    BorderBrush="{DynamicResource StrokeSoftBrush}"
+            <Border Background="{DynamicResource BgPanelBrush}"
+                    BorderBrush="{DynamicResource AccentTealBrush}"
                     BorderThickness="1"
                     CornerRadius="{DynamicResource RadiusCard}"
                     Padding="22">
@@ -225,8 +225,8 @@
                 </StackPanel>
             </Border>
 
-            <Border Background="{DynamicResource BgShellBrush}"
-                    BorderBrush="{DynamicResource StrokeSoftBrush}"
+            <Border Background="{DynamicResource BgElevatedBrush}"
+                    BorderBrush="{DynamicResource PrimaryBBrush}"
                     BorderThickness="1"
                     CornerRadius="{DynamicResource RadiusCard}"
                     Padding="22">

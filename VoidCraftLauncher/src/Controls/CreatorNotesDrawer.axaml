@@ -44,7 +44,6 @@
                                 <TextBlock Text="Aktivni handoff" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                 <TextBlock Text="{Binding CreatorDockSubtitle}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
                                 <TextBlock Text="{Binding CreatorLastActivityLabel}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
-                                <TextBlock Text="Snapshot-before-apply guard zustava aktivni i pri praci v draweru." FontSize="10" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" LineHeight="15"/>
                             </StackPanel>
                         </Border>
 

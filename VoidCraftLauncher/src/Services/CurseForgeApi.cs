@@ -45,6 +45,20 @@ namespace VoidCraftLauncher.Services
             return await response.Content.ReadAsStringAsync();
         }
 
+        public async Task<string> GetModFileChangelogAsync(int modId, int fileId)
+        {
+            var response = await _httpClient.GetAsync($"v1/mods/{modId}/files/{fileId}/changelog");
+            
+            if (!response.IsSuccessStatusCode)
+            {
+                 return "";
+            }
+
+            var json = await response.Content.ReadAsStringAsync();
+            var node = System.Text.Json.Nodes.JsonNode.Parse(json);
+            return node?["data"]?.ToString() ?? "";
+        }
+
         public async Task<string> GetModpackBySlugAsync(string slug)
         {
             var response = await _httpClient.GetAsync($"v1/mods/search?gameId=432&classId=4471&slug={slug}");

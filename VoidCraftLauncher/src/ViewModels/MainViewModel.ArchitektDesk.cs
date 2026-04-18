@@ -351,13 +351,6 @@ public partial class MainViewModel
             sb.AppendLine($"- Název: {(CreatorWorkspaceContext.WorkspaceLabel?.Length > 100 ? CreatorWorkspaceContext.WorkspaceLabel[..100] : CreatorWorkspaceContext.WorkspaceLabel)}");
             sb.AppendLine($"- MC: {CreatorWorkspaceContext.MinecraftVersion}");
             
-            if (IsArchitektAgentMode)
-            {
-                string git = CreatorWorkspaceContext.GitStatusLabel ?? "";
-                if (!string.IsNullOrWhiteSpace(git))
-                    sb.AppendLine($"- Git: {(git.Length > 150 ? git[..150] : git)}");
-            }
-
             sb.AppendLine();
         }
 

@@ -205,7 +205,13 @@ public sealed class ArchitektDeskService
                 }
             }
 
-            LogService.Log($"ARCHITEKT: Iteration done. TextLen={assistantTextBuilder.Length}, Tools={functionNameBuilder.Count}");
+            var rawText = assistantTextBuilder.ToString();
+            LogService.Log($"ARCHITEKT: Iteration done. TextLen={rawText.Length}, Tools={functionNameBuilder.Count}");
+            if (rawText.Length > 0)
+            {
+                var preview = rawText.Length > 200 ? rawText.Substring(0, 200) : rawText;
+                LogService.Log($"ARCHITEKT: Response preview: {preview.Replace("\n", "\\n")}");
+            }
 
             if (requiresAnotherRun)
             {

@@ -366,12 +366,12 @@ public partial class MainViewModel
             sb.AppendLine($"## Aktivní soubor: {SelectedCreatorWorkbenchFile?.RelativePath}");
             sb.AppendLine("```");
             var content = CreatorWorkbenchContent;
-            int maxFileChars = SelectedArchitektProfile?.MaxContextChars ?? 8000;
+            int maxFileChars = (int)(SelectedArchitektProfile?.MaxContextChars ?? 8000);
             sb.AppendLine(content.Length > maxFileChars
                 ? content.Substring(0, maxFileChars) + "\n... (oříznuto)"
                 : content);
             sb.AppendLine("```");
-            LogService.Log($"ARCHITEKT: Prompt built with file {SelectedCreatorWorkbenchFile?.RelativePath} (Safe-limit 600 chars)");
+            LogService.Log($"ARCHITEKT: Prompt built with file {SelectedCreatorWorkbenchFile?.RelativePath} (limit {maxFileChars} chars, actual {content.Length} chars)");
         }
         else if (!IsArchitektAgentMode && HasSelectedCreatorWorkbenchFile)
         {

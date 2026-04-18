@@ -259,7 +259,7 @@ public sealed class ArchitektDeskService
                         else if (tCall.FunctionName == "ReadWorkspaceFile")
                         {
                             var relPath = argsDoc.RootElement.TryGetProperty("relativePath", out var pObj) ? pObj.GetString() ?? "" : "";
-                            int maxChars = profile?.MaxContextChars ?? 8000;
+                            int maxChars = (int)(profile?.MaxContextChars ?? 8000);
                             result = global::VoidCraftLauncher.Agent.ArchitektAgentTools.ReadWorkspaceFile(relPath, currentWorkspacePath, maxChars);
                         }
                         else if (tCall.FunctionName == "WriteWorkspaceFile")

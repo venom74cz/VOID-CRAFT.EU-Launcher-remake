@@ -33,8 +33,21 @@ public sealed class AiProfile : INotifyPropertyChanged
     [JsonPropertyName("customSystemPrompt")]
     public string CustomSystemPrompt { get; set; } = string.Empty;
 
+    private double _maxContextChars = 8000;
     [JsonPropertyName("maxContextChars")]
-    public int MaxContextChars { get; set; } = 8000;
+    public double MaxContextChars
+    {
+        get => _maxContextChars;
+        set
+        {
+            var rounded = Math.Round(value);
+            if (Math.Abs(_maxContextChars - rounded) > 0.1)
+            {
+                _maxContextChars = rounded;
+                OnPropertyChanged();
+            }
+        }
+    }
 
     [JsonPropertyName("isCurlMode")]
     public bool IsCurlMode

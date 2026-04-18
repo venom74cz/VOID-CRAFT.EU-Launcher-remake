@@ -79,6 +79,15 @@ public sealed class ArchitektDeskService
             new AiProfile
             {
                 Id = Guid.NewGuid().ToString(),
+                Name = "OpenCode.ai",
+                BaseUrl = "https://opencode.ai/api/v1",
+                ApiKey = "",
+                ModelName = "default",
+                IsDefault = false
+            },
+            new AiProfile
+            {
+                Id = Guid.NewGuid().ToString(),
                 Name = "Lokální Sít (Ollama / LM Studio)",
                 BaseUrl = "http://localhost:11434/v1",
                 ApiKey = "dummy-key",

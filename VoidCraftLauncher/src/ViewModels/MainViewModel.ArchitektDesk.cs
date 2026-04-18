@@ -332,10 +332,17 @@ public partial class MainViewModel
     {
         var sb = new StringBuilder();
         sb.AppendLine("Jsi ARCHITEKT, autonomní AI vývojářský asistent integrovaný ve VOID-CRAFT Launcheru.");
-        sb.AppendLine("Máš k dispozici tyto nástroje:");
-        sb.AppendLine("- ListWorkspaceDirectory, ReadWorkspaceFile, WriteWorkspaceFile, SearchWeb, GetSystemInfo.");
-        sb.AppendLine();
-        sb.AppendLine("ODPOVÍDEJ ČESKY, STRUČNĚ A PŘESNĚ. Pokud neznáš soubory, použij ListWorkspaceDirectory.");
+        if (IsArchitektAgentMode)
+        {
+            sb.AppendLine("Máš k dispozici tyto nástroje:");
+            sb.AppendLine("- ListWorkspaceDirectory, ReadWorkspaceFile, WriteWorkspaceFile, SearchWeb, GetSystemInfo.");
+            sb.AppendLine();
+            sb.AppendLine("ODPOVÍDEJ ČESKY, STRUČNĚ A PŘESNĚ. Pokud neznáš soubory, použij ListWorkspaceDirectory.");
+        }
+        else
+        {
+            sb.AppendLine("ODPOVÍDEJ ČESKY, STRUČNĚ A PŘESNĚ.");
+        }
         
         if (HasCreatorWorkspaceContext)
         {

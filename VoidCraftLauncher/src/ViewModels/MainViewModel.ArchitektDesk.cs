@@ -343,6 +343,13 @@ public partial class MainViewModel
         {
             sb.AppendLine("ODPOVÍDEJ ČESKY, STRUČNĚ A PŘESNĚ.");
         }
+
+        if (SelectedArchitektProfile != null && !string.IsNullOrWhiteSpace(SelectedArchitektProfile.CustomSystemPrompt))
+        {
+            sb.AppendLine();
+            sb.AppendLine("## Specifické instrukce pro tento profil:");
+            sb.AppendLine(SelectedArchitektProfile.CustomSystemPrompt);
+        }
         
         if (HasCreatorWorkspaceContext)
         {

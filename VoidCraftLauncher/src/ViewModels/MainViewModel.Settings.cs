@@ -73,7 +73,12 @@ public partial class MainViewModel
         {
             foreach (var profile in ArchitektProfiles)
             {
-                global::VoidCraftLauncher.Services.AiProfileCurlParser.ParseAndUpdateProfile(profile);
+                if (profile.IsCurlMode)
+                {
+                    global::VoidCraftLauncher.Services.AiProfileCurlParser.ParseAndUpdateProfile(profile);
+                    // Po úspěšném importu to můžeme hodit zpět do klasického módu pro vizuální ověření
+                    profile.IsCurlMode = false;
+                }
             }
 
             _architektDeskService.SaveProfiles(ArchitektProfiles.ToList());

@@ -176,16 +176,49 @@
                                                 <TextBox Text="{Binding SelectedArchitektProfile.Name, Mode=TwoWay}" FontSize="12"/>
                                             </StackPanel>
 
-                                            <StackPanel Spacing="4">
+                                            <StackPanel Spacing="6" Margin="0,4,0,12">
+                                                <TextBlock Text="Způsob konfigurace" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                                <Grid ColumnDefinitions="*,*">
+                                                    <RadioButton Grid.Column="0" Content="Klasické API Params" IsChecked="{Binding !SelectedArchitektProfile.IsCurlMode, Mode=TwoWay}" GroupName="ConfigModeGroup" FontSize="11"/>
+                                                    <RadioButton Grid.Column="1" Content="Import ze schránky (cURL)" IsChecked="{Binding SelectedArchitektProfile.IsCurlMode, Mode=TwoWay}" GroupName="ConfigModeGroup" FontSize="11"/>
+                                                </Grid>
+                                            </StackPanel>
+
+                                            <!-- MANUAL MODE -->
+                                            <StackPanel Spacing="10" IsVisible="{Binding !SelectedArchitektProfile.IsCurlMode}">
+                                                <StackPanel Spacing="4">
+                                                    <TextBlock Text="Base URL" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                                    <TextBox Text="{Binding SelectedArchitektProfile.BaseUrl, Mode=TwoWay}" Watermark="Např. https://api.openai.com/v1" FontSize="12"/>
+                                                </StackPanel>
+                                                <StackPanel Spacing="4">
+                                                    <TextBlock Text="API Klíč" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                                    <TextBox Text="{Binding SelectedArchitektProfile.ApiKey, Mode=TwoWay}" PasswordChar="•" Watermark="Váš tajný token" FontSize="12"/>
+                                                </StackPanel>
+                                                <StackPanel Spacing="4">
+                                                    <TextBlock Text="Cílový model" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                                    <TextBox Text="{Binding SelectedArchitektProfile.ModelName, Mode=TwoWay}" Watermark="Např. gpt-4o" FontSize="12"/>
+                                                </StackPanel>
+                                            </StackPanel>
+
+                                            <!-- CURL MODE -->
+                                            <StackPanel Spacing="4" IsVisible="{Binding SelectedArchitektProfile.IsCurlMode}">
                                                 <TextBlock Text="Zkopírovaný cURL příkaz" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
                                                 <TextBox Text="{Binding SelectedArchitektProfile.RawCurlCommand, Mode=TwoWay}"
-                                                         AcceptsReturn="True" TextWrapping="Wrap" MinHeight="100" MaxHeight="250"
+                                                         AcceptsReturn="True" TextWrapping="Wrap" MinHeight="100" MaxHeight="140"
                                                          Watermark="curl https://... -H 'Autorization: Bearer ...' -d '{...}'" FontSize="11" FontFamily="Consolas"/>
-                                                <TextBlock Text="Zkopíruj cURL rovnou ze stránek Gemini, Groq, OpenAI nebo Ollama. Automaticky sjednotíme spojení pro Agenta." 
+                                                <TextBlock Text="Zkopíruj cURL rovnou ze stránek Gemini, Groq, OpenAI nebo Ollama. Hodnoty se načtou po uložení." 
                                                            FontSize="10" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,4,0,0"/>
                                             </StackPanel>
 
-                                            <CheckBox Content="Výchozí připojení pro Architekt" IsChecked="{Binding SelectedArchitektProfile.IsDefault, Mode=TwoWay}"/>
+                                            <!-- CUSTOM CONTEXT -->
+                                            <StackPanel Spacing="4" Margin="0,8,0,0">
+                                                <TextBlock Text="Vlastní systémový prompt (Kontext profilu)" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                                <TextBox Text="{Binding SelectedArchitektProfile.CustomSystemPrompt, Mode=TwoWay}"
+                                                         AcceptsReturn="True" TextWrapping="Wrap" MinHeight="60" MaxHeight="100"
+                                                         Watermark="Speciální instrukce jen pro tento model" FontSize="11"/>
+                                            </StackPanel>
+
+                                            <CheckBox Content="Výchozí připojení pro Architekt" IsChecked="{Binding SelectedArchitektProfile.IsDefault, Mode=TwoWay}" Margin="0,8,0,0"/>
                                         </StackPanel>
                                     </Grid>
                                 </StackPanel>

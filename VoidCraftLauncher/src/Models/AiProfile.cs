@@ -25,4 +25,10 @@ public sealed class AiProfile
 
     [JsonPropertyName("rawCurlCommand")]
     public string RawCurlCommand { get; set; } = string.Empty;
+
+    [JsonPropertyName("customSystemPrompt")]
+    public string CustomSystemPrompt { get; set; } = string.Empty;
+
+    [JsonPropertyName("isCurlMode")]
+    public bool IsCurlMode { get; set; } = false;
 }

@@ -14,60 +14,51 @@
                 <StackPanel Spacing="0">
 
                     <!-- Main header -->
-                    <Border Padding="18,18,18,14" BorderBrush="{DynamicResource BgInteractiveBrush}" BorderThickness="0,0,0,1">
-                        <StackPanel Spacing="12">
+                    <Border Padding="16,12" BorderBrush="{DynamicResource BgInteractiveBrush}" BorderThickness="0,0,0,1">
+                        <StackPanel Spacing="10">
+                            <!-- Top row: Identity and Modes -->
                             <Grid ColumnDefinitions="*,Auto">
-                                <StackPanel Spacing="3">
-                                    <StackPanel Orientation="Horizontal" Spacing="6">
-                                        <TextBlock Text="ARCHITEKT ✦" IsVisible="{Binding IsArchitektAgentMode}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource PrimaryBBrush}" LetterSpacing="0.5"/>
-                                        <TextBlock Text="ARCHITEKT 💬" IsVisible="{Binding !IsArchitektAgentMode}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMutedBrush}" LetterSpacing="0.5"/>
-                                    </StackPanel>
-                                    <TextBlock Text="{Binding CreatorDockHeadline}" FontSize="18" FontWeight="ExtraBold" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
-                                    <TextBlock Text="{Binding CreatorDockSubtitle}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                    <!-- Simple badge -->
+                                    <Border Background="{DynamicResource PrimarySubtleBrush}" Padding="6,2" CornerRadius="4" VerticalAlignment="Center">
+                                        <TextBlock Text="✦ ARCHITEKT" FontSize="10" FontWeight="ExtraBold" Foreground="{DynamicResource PrimaryBBrush}" LetterSpacing="0.5"/>
+                                    </Border>
+                                    <TextBlock Text="{Binding CreatorDockHeadline}" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="180"/>
                                 </StackPanel>
 
-                                <ToggleSwitch Grid.Column="1" IsChecked="{Binding IsArchitektAgentMode, Mode=TwoWay}"
-                                              OnContent="Agent" OffContent="Chat"
-                                              FontSize="10" FontWeight="Bold" VerticalAlignment="Top"/>
+                                <!-- Agent Toggle & Profile -->
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12">
+                                    <ToggleSwitch IsChecked="{Binding IsArchitektAgentMode, Mode=TwoWay}"
+                                                  OnContent="Agent" OffContent="Chat"
+                                                  FontSize="10" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    
+                                    <ComboBox ItemsSource="{Binding ArchitektProfiles}" 
+                                              SelectedItem="{Binding SelectedArchitektProfile, Mode=TwoWay}" 
+                                              Width="140" MinHeight="28" Padding="10,4" FontSize="11" VerticalAlignment="Center" IsVisible="{Binding HasSelectedArchitektProfile}">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Name}" FontWeight="Medium"/>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                </StackPanel>
                             </Grid>
 
-                            <!-- Status tiles -->
-                            <WrapPanel Orientation="Horizontal" ItemWidth="118" ItemHeight="48">
-                                <Border Background="{DynamicResource BgInteractiveBrush}" CornerRadius="10" Padding="10,8" Margin="0,0,8,8">
-                                    <StackPanel Spacing="2">
-                                        <TextBlock Text="Manifest" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
-                                        <TextBlock Text="{Binding CreatorManifestStatus}" FontSize="10" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
-                                    </StackPanel>
-                                </Border>
-                                <Border Background="{DynamicResource BgInteractiveBrush}" CornerRadius="10" Padding="10,8" Margin="0,0,8,8">
-                                    <StackPanel Spacing="2">
-                                        <TextBlock Text="Git" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
-                                        <TextBlock Text="{Binding CreatorGitStatusSummary}" FontSize="10" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
-                                    </StackPanel>
-                                </Border>
-                                <Border Background="{DynamicResource BgInteractiveBrush}" CornerRadius="10" Padding="10,8" Margin="0,0,8,8">
-                                    <StackPanel Spacing="2">
-                                        <TextBlock Text="Release" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
-                                        <TextBlock Text="{Binding CreatorReleaseStatusSummary}" FontSize="10" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
-                                    </StackPanel>
-                                </Border>
+                            <!-- Actions Row - Horizontal, subtle -->
+                            <WrapPanel Orientation="Horizontal">
+                                <Button Command="{Binding OpenCreatorNotesDrawerCommand}" Classes="ghost" FontSize="10" Padding="8,4" Margin="0,0,4,4">
+                                    <TextBlock Text="📓 Otevřít Poznámky"/>
+                                </Button>
+                                <Button Command="{Binding OpenStreamingWorkspaceCommand}" Classes="ghost" FontSize="10" Padding="8,4" Margin="0,0,4,4">
+                                    <TextBlock Text="📁 Kód Workspace"/>
+                                </Button>
+                                <Button Command="{Binding CopyCreatorSessionSummaryCommand}" Classes="ghost" FontSize="10" Padding="8,4" Margin="0,0,4,4">
+                                    <TextBlock Text="📋 Kopírovat Session"/>
+                                </Button>
+                                <Button Command="{Binding UseDefaultContextDockCommand}" Classes="ghost" FontSize="10" Padding="8,4" Margin="0,0,4,4">
+                                    <TextBlock Text="✕ Zavřít Architekta"/>
+                                </Button>
                             </WrapPanel>
-
-                            <!-- Quick actions -->
-                            <StackPanel Spacing="6">
-                                <Button Command="{Binding OpenCreatorNotesDrawerCommand}" Classes="primary" FontSize="11" Padding="0,8" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
-                                    <TextBlock Text="Otevrit Notes Drawer"/>
-                                </Button>
-                                <Button Command="{Binding OpenStreamingWorkspaceCommand}" Classes="secondary" FontSize="11" Padding="0,8" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
-                                    <TextBlock Text="Otevrit workspace"/>
-                                </Button>
-                                <Button Command="{Binding CopyCreatorSessionSummaryCommand}" Classes="secondary" FontSize="11" Padding="0,8" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
-                                    <TextBlock Text="Kopirovat session summary"/>
-                                </Button>
-                                <Button Command="{Binding UseDefaultContextDockCommand}" Classes="ghost" FontSize="11" Padding="0,6" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
-                                    <TextBlock Text="Prepnout na standardni dock"/>
-                                </Button>
-                            </StackPanel>
                         </StackPanel>
                     </Border>
 
@@ -80,22 +71,6 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- Active AI Scope selector -->
-                    <Border Padding="14,12" BorderBrush="{DynamicResource BgInteractiveBrush}" BorderThickness="0,0,0,1"
-                            IsVisible="{Binding HasSelectedArchitektProfile}">
-                        <StackPanel Spacing="6">
-                            <TextBlock Text="Aktivní AI Profil" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextMutedBrush}" LetterSpacing="0.5"/>
-                            <ComboBox ItemsSource="{Binding ArchitektProfiles}" 
-                                      SelectedItem="{Binding SelectedArchitektProfile, Mode=TwoWay}" 
-                                      HorizontalAlignment="Stretch">
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding Name}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
-                        </StackPanel>
-                    </Border>
 
                     <!-- Active workspace context -->
                     <Border Padding="14,12" BorderBrush="{DynamicResource BgInteractiveBrush}" BorderThickness="0,0,0,1"

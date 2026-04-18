@@ -366,8 +366,7 @@ public partial class MainViewModel
             sb.AppendLine($"## Aktivní soubor: {SelectedCreatorWorkbenchFile?.RelativePath}");
             sb.AppendLine("```");
             var content = CreatorWorkbenchContent;
-            // Zvýšeno na 8000 znaků pro moderní modely (využijí kód lépe)
-            const int maxFileChars = 8000;
+            int maxFileChars = SelectedArchitektProfile?.MaxContextChars ?? 8000;
             sb.AppendLine(content.Length > maxFileChars
                 ? content.Substring(0, maxFileChars) + "\n... (oříznuto)"
                 : content);

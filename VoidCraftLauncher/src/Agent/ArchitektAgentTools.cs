@@ -12,7 +12,7 @@ public static class ArchitektAgentTools
 {
     private static readonly HttpClient _httpClient = new();
 
-    public static string ReadWorkspaceFile(string relativePath, string modpackPath)
+    public static string ReadWorkspaceFile(string relativePath, string modpackPath, int maxContextChars = 8000)
     {
         try
         {
@@ -20,8 +20,7 @@ public static class ArchitektAgentTools
             if (!File.Exists(absolutePath)) return "Chyba: Soubor neexistuje.";
             
             var content = File.ReadAllText(absolutePath);
-            // ULTRA-LIMIT: 1000 znaků. Groq Free Tier má limit 8k tokenů TOTAL (Input+Output).
-            if (content.Length > 1000) return content.Substring(0, 1000) + "\n...[oříznuto]";
+            if (content.Length > maxContextChars) return content.Substring(0, maxContextChars) + "\n...[oříznuto]";
             return content;
         }
         catch (Exception ex)
@@ -47,8 +46,7 @@ public static class ArchitektAgentTools
             var totalCount = allDirs.Length + allFiles.Length;
             
             int count = 0;
-            // Sníženo pro stabilitu na Groqu
-            const int maxItems = 20;
+            const int maxItems = 100;
 
             foreach (var dir in allDirs)
             {

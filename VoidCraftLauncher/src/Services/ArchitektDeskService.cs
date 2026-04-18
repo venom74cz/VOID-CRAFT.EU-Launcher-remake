@@ -259,7 +259,8 @@ public sealed class ArchitektDeskService
                         else if (tCall.FunctionName == "ReadWorkspaceFile")
                         {
                             var relPath = argsDoc.RootElement.TryGetProperty("relativePath", out var pObj) ? pObj.GetString() ?? "" : "";
-                            result = global::VoidCraftLauncher.Agent.ArchitektAgentTools.ReadWorkspaceFile(relPath, currentWorkspacePath);
+                            int maxChars = profile?.MaxContextChars ?? 8000;
+                            result = global::VoidCraftLauncher.Agent.ArchitektAgentTools.ReadWorkspaceFile(relPath, currentWorkspacePath, maxChars);
                         }
                         else if (tCall.FunctionName == "WriteWorkspaceFile")
                         {
@@ -281,6 +282,10 @@ public sealed class ArchitektDeskService
                     LogService.Log($"ARCHITEKT: Tool {tCall.FunctionName} result len: {result?.Length ?? 0}");
                     messages.Add(new global::OpenAI.Chat.ToolChatMessage(tCall.Id, result ?? "Neznámá chyba"));
                 }
+
+                // POJISTKA PRO OSS MODELY (OPENROUTER/LM STUDIO):
+                // Modely občas ztratí po provedení funkce kontext a přestanou generovat. Tohle je na sílu donutí dokončit odpověď.
+                messages.Add(new global::OpenAI.Chat.UserChatMessage("Získal jsi výstupy nástrojů. Nyní je prosím zanalyzuj a sepiš finální textovou odpověď pro uživatele (pokud už nemáš v plánu volat žádný další nástroj)."));
             }
         }
         

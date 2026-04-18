@@ -29,7 +29,84 @@ public partial class MainViewModel
     [ObservableProperty]
     private string? _selectedOptionsPresetName;
 
+    // ===== SETTINGS VIEW NAVIGATION =====
+
+    [ObservableProperty]
+    private string _settingsActiveTab = "Performance"; // "Performance" | "Architekt"
+
+    [RelayCommand]
+    private void SwitchSettingsTab(string tabName)
+    {
+        SettingsActiveTab = tabName;
+    }
+
+    // ===== CREATOR AI (ARCHITEKT) PROFILES =====
+
+    public ObservableCollection<AiProfile> ArchitektProfiles { get; } = new();
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSelectedArchitektProfile))]
+    [NotifyPropertyChangedFor(nameof(CanSendArchitektMessage))]
+    [NotifyPropertyChangedFor(nameof(ArchitektPlaceholderText))]
+    private AiProfile? _selectedArchitektProfile;
+
+    public bool HasSelectedArchitektProfile => SelectedArchitektProfile != null;
+
+    private void LoadArchitektProfiles()
+    {
+        ArchitektProfiles.Clear();
+        foreach (var profile in _architektDeskService.GetProfiles())
+        {
+            ArchitektProfiles.Add(profile);
+            if (profile.IsDefault)
+                SelectedArchitektProfile = profile;
+        }
+
+        if (SelectedArchitektProfile == null && ArchitektProfiles.Count > 0)
+            SelectedArchitektProfile = ArchitektProfiles[0];
+    }
+
+    [RelayCommand]
+    private void SaveArchitektProfiles()
+    {
+        try
+        {
+            foreach (var profile in ArchitektProfiles)
+            {
+                global::VoidCraftLauncher.Services.AiProfileCurlParser.ParseAndUpdateProfile(profile);
+            }
+
+            _architektDeskService.SaveProfiles(ArchitektProfiles.ToList());
+            
+            ShowToast("ARCHITEKT uložen", "Profily umělé inteligence byly uloženy.", ToastSeverity.Success, 3000);
+        }
+        catch (Exception ex)
+        {
+            ShowToast("Uložení selhalo", ex.Message, ToastSeverity.Error, 4000);
+            LogService.Error("Failed to save Architekt Profiles", ex);
+        }
+    }
+
+    [RelayCommand]
+    private void AddArchitektProfile()
+    {
+        var newProfile = new AiProfile();
+        ArchitektProfiles.Add(newProfile);
+        SelectedArchitektProfile = newProfile;
+    }
+
+    [RelayCommand]
+    private void DeleteSelectedArchitektProfile()
+    {
+        if (SelectedArchitektProfile == null) return;
+        
+        ArchitektProfiles.Remove(SelectedArchitektProfile);
+        SelectedArchitektProfile = ArchitektProfiles.FirstOrDefault();
+        SaveArchitektProfiles();
+    }
+
     // ===== SETTINGS COMMANDS =====
+
 
     [RelayCommand]
     public void SaveSettings()

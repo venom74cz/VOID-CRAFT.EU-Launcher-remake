@@ -32,7 +32,12 @@
     <!-- ║  MODRINTH-STYLE 3-COLUMN LAYOUT                            ║ -->
     <!-- ║  Left Icon Sidebar (64) | Main Content (*) | Right Panel   ║ -->
     <!-- ╚══════════════════════════════════════════════════════════════╝ -->
-    <Grid x:Name="RootLayout" ColumnDefinitions="Auto,*,280">
+    <LayoutTransformControl>
+        <LayoutTransformControl.LayoutTransform>
+            <ScaleTransform ScaleX="{Binding Config.GlobalUiScale}" ScaleY="{Binding Config.GlobalUiScale}" />
+        </LayoutTransformControl.LayoutTransform>
+
+        <Grid x:Name="RootLayout" ColumnDefinitions="Auto,*,Auto,280">
 
         <!-- ╔══════════════════════════════════════════════════╗ -->
         <!-- ║          NAV RAIL (extracted UserControl)        ║ -->
@@ -100,16 +105,20 @@
         <!-- ╔══════════════════════════════════════════════════╗ -->
         <!-- ║      CONTEXT DOCK (extracted UserControl)        ║ -->
         <!-- ╚══════════════════════════════════════════════════╝ -->
-        <Grid x:Name="RightDockHost" Grid.Column="2">
+        <GridSplitter Grid.Column="2" Width="6" Background="Transparent" ResizeDirection="Columns" 
+                      IsVisible="{Binding IsRightDockHostVisible}" 
+                      ZIndex="10"/>
+
+        <Grid x:Name="RightDockHost" Grid.Column="3" MinWidth="240" MaxWidth="1000" IsVisible="{Binding IsRightDockHostVisible}">
             <controls:ContextDock x:Name="ContextDockPanel" IsVisible="{Binding IsStandardContextDockVisible}"/>
-            <controls:CreatorCopilotDesk IsVisible="{Binding IsCreatorCopilotDeskVisible}"/>
+            <controls:CreatorArchitektDesk IsVisible="{Binding IsCreatorArchitektDeskVisible}"/>
         </Grid>
 
 
         <!-- ╔══════════════════════════════════════════════════╗ -->
         <!-- ║               LOGIN MODAL                        ║ -->
         <!-- ╚══════════════════════════════════════════════════╝ -->
-        <Grid Grid.ColumnSpan="3" IsVisible="{Binding IsLoginModalVisible}">
+        <Grid Grid.ColumnSpan="4" IsVisible="{Binding IsLoginModalVisible}">
             <Border Background="{DynamicResource BgCanvasBrush}" Opacity="0.82" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
                 <Border Classes="overlay-panel" Background="{DynamicResource BgShellBrush}" CornerRadius="{DynamicResource RadiusCard}"
                     BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1"
@@ -182,32 +191,33 @@
                 </Grid>
             </Border>
         </Grid>
-        <controls:CreateProfileWizard Grid.ColumnSpan="3"/>
+        <controls:CreateProfileWizard Grid.ColumnSpan="4"/>
 
 
         <!-- ╔══════════════════════════════════════════════════╗ -->
         <!-- ║          BACKUP PROMPT SHEET (M3)                ║ -->
         <!-- ╚══════════════════════════════════════════════════╝ -->
-        <controls:BackupPromptSheet Grid.ColumnSpan="3"/>
+        <controls:BackupPromptSheet Grid.ColumnSpan="4"/>
 
         <!-- ╔══════════════════════════════════════════════════╗ -->
         <!-- ║          UPDATE PROMPT SHEET (M3)                ║ -->
         <!-- ╚══════════════════════════════════════════════════╝ -->
-        <controls:UpdatePromptSheet Grid.ColumnSpan="3"/>
+        <controls:UpdatePromptSheet Grid.ColumnSpan="4"/>
 
 
         <!-- ╔══════════════════════════════════════════════════╗ -->
         <!-- ║          CRASH DIAGNOSTICS DRAWER (M3)           ║ -->
         <!-- ╚══════════════════════════════════════════════════╝ -->
-        <controls:CrashDrawer Grid.ColumnSpan="3"/>
+        <controls:CrashDrawer Grid.ColumnSpan="4"/>
 
-        <controls:CreatorNotesDrawer Grid.ColumnSpan="3"/>
+        <controls:CreatorNotesDrawer Grid.ColumnSpan="4"/>
 
 
         <!-- ╔══════════════════════════════════════════════════╗ -->
         <!-- ║          TOAST HOST (M3)                         ║ -->
         <!-- ╚══════════════════════════════════════════════════╝ -->
-        <controls:ToastHost Grid.ColumnSpan="3"/>
+        <controls:ToastHost Grid.ColumnSpan="4"/>
 
     </Grid>
+    </LayoutTransformControl>
 </Window>

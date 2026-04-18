@@ -1,0 +1,237 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:VoidCraftLauncher.ViewModels"
+             xmlns:models="using:VoidCraftLauncher.Models"
+             xmlns:md="https://github.com/whistyun/Markdown.Avalonia"
+             x:Class="VoidCraftLauncher.Controls.CreatorArchitektDesk"
+             x:DataType="vm:MainViewModel">
+
+    <Border Background="{DynamicResource BgShellBrush}" BorderBrush="{DynamicResource BgInteractiveBrush}" BorderThickness="1,0,0,0">
+        <Grid RowDefinitions="Auto,*,Auto">
+
+            <!-- Header + workspace context (scrollable, capped height) -->
+            <ScrollViewer Grid.Row="0" HorizontalScrollBarVisibility="Disabled" MaxHeight="480">
+                <StackPanel Spacing="0">
+
+                    <!-- Main header -->
+                    <Border Padding="18,18,18,14" BorderBrush="{DynamicResource BgInteractiveBrush}" BorderThickness="0,0,0,1">
+                        <StackPanel Spacing="12">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel Spacing="3">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <TextBlock Text="ARCHITEKT ✦" IsVisible="{Binding IsArchitektAgentMode}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource PrimaryBBrush}" LetterSpacing="0.5"/>
+                                        <TextBlock Text="ARCHITEKT 💬" IsVisible="{Binding !IsArchitektAgentMode}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMutedBrush}" LetterSpacing="0.5"/>
+                                    </StackPanel>
+                                    <TextBlock Text="{Binding CreatorDockHeadline}" FontSize="18" FontWeight="ExtraBold" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                                    <TextBlock Text="{Binding CreatorDockSubtitle}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                </StackPanel>
+
+                                <ToggleSwitch Grid.Column="1" IsChecked="{Binding IsArchitektAgentMode, Mode=TwoWay}"
+                                              OnContent="Agent" OffContent="Chat"
+                                              FontSize="10" FontWeight="Bold" VerticalAlignment="Top"/>
+                            </Grid>
+
+                            <!-- Status tiles -->
+                            <WrapPanel Orientation="Horizontal" ItemWidth="118" ItemHeight="48">
+                                <Border Background="{DynamicResource BgInteractiveBrush}" CornerRadius="10" Padding="10,8" Margin="0,0,8,8">
+                                    <StackPanel Spacing="2">
+                                        <TextBlock Text="Manifest" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                        <TextBlock Text="{Binding CreatorManifestStatus}" FontSize="10" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Background="{DynamicResource BgInteractiveBrush}" CornerRadius="10" Padding="10,8" Margin="0,0,8,8">
+                                    <StackPanel Spacing="2">
+                                        <TextBlock Text="Git" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                        <TextBlock Text="{Binding CreatorGitStatusSummary}" FontSize="10" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Background="{DynamicResource BgInteractiveBrush}" CornerRadius="10" Padding="10,8" Margin="0,0,8,8">
+                                    <StackPanel Spacing="2">
+                                        <TextBlock Text="Release" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                        <TextBlock Text="{Binding CreatorReleaseStatusSummary}" FontSize="10" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Border>
+                            </WrapPanel>
+
+                            <!-- Quick actions -->
+                            <StackPanel Spacing="6">
+                                <Button Command="{Binding OpenCreatorNotesDrawerCommand}" Classes="primary" FontSize="11" Padding="0,8" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
+                                    <TextBlock Text="Otevrit Notes Drawer"/>
+                                </Button>
+                                <Button Command="{Binding OpenStreamingWorkspaceCommand}" Classes="secondary" FontSize="11" Padding="0,8" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
+                                    <TextBlock Text="Otevrit workspace"/>
+                                </Button>
+                                <Button Command="{Binding CopyCreatorSessionSummaryCommand}" Classes="secondary" FontSize="11" Padding="0,8" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
+                                    <TextBlock Text="Kopirovat session summary"/>
+                                </Button>
+                                <Button Command="{Binding UseDefaultContextDockCommand}" Classes="ghost" FontSize="11" Padding="0,6" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
+                                    <TextBlock Text="Prepnout na standardni dock"/>
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- API Key warning -->
+                    <Border Padding="14,10" IsVisible="{Binding !HasSelectedArchitektProfile}"
+                            Background="#1A1412" BorderBrush="#5A3F20" BorderThickness="0,0,0,1">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="⚠ AI profil chybí" FontSize="11" FontWeight="Bold" Foreground="#FFB86B"/>
+                            <TextBlock Text="Přidej profil v Nastavení › ARCHITEKT pro aktivaci umělé inteligence." FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Active AI Scope selector -->
+                    <Border Padding="14,12" BorderBrush="{DynamicResource BgInteractiveBrush}" BorderThickness="0,0,0,1"
+                            IsVisible="{Binding HasSelectedArchitektProfile}">
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="Aktivní AI Profil" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextMutedBrush}" LetterSpacing="0.5"/>
+                            <ComboBox ItemsSource="{Binding ArchitektProfiles}" 
+                                      SelectedItem="{Binding SelectedArchitektProfile, Mode=TwoWay}" 
+                                      HorizontalAlignment="Stretch">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Name}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Active workspace context -->
+                    <Border Padding="14,12" BorderBrush="{DynamicResource BgInteractiveBrush}" BorderThickness="0,0,0,1"
+                            IsVisible="{Binding HasCreatorWorkspaceContext}">
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="Kontext" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextMutedBrush}" LetterSpacing="0.5"/>
+                            <TextBlock Text="{Binding CreatorActiveScopeSummary}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                            
+                            <Border Background="{DynamicResource BgInteractiveBrush}" CornerRadius="6" Padding="8,4" 
+                                    IsVisible="{Binding IsArchitektAgentMode}">
+                                <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding HasSelectedCreatorWorkbenchFile}">
+                                    <TextBlock Text="📄" FontSize="10" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding SelectedCreatorWorkbenchFile.RelativePath}" FontSize="10"
+                                               Foreground="{DynamicResource PrimaryBBrush}" TextTrimming="CharacterEllipsis"
+                                               VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Chat history (scrollable, fills remaining space) -->
+            <ScrollViewer Grid.Row="1" x:Name="ChatScrollViewer" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                <StackPanel Spacing="0">
+
+                    <!-- Empty / no-key placeholder -->
+                    <Border Padding="18,24" IsVisible="{Binding !HasArchitektHistory}">
+                        <StackPanel Spacing="8" HorizontalAlignment="Center">
+                            <TextBlock Text="✦" FontSize="24" Foreground="{DynamicResource TextMutedBrush}" HorizontalAlignment="Center"/>
+                            <TextBlock Text="ARCHITEKT AI" FontSize="13" FontWeight="Bold"
+                                       Foreground="{DynamicResource TextMutedBrush}" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding ArchitektPlaceholderText}" FontSize="11"
+                                       Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"
+                                       HorizontalAlignment="Center" TextAlignment="Center" MaxWidth="190"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Message bubbles -->
+                    <ItemsControl ItemsSource="{Binding ArchitektHistory}" IsVisible="{Binding HasArchitektHistory}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="models:ArchitektMessage">
+                                <Border Padding="12,6">
+                                    <StackPanel Spacing="3">
+                                        <!-- Role label -->
+                                        <TextBlock Text="{Binding Role}"
+                                                   FontSize="11" FontWeight="Bold" LetterSpacing="0.5"
+                                                   Foreground="{DynamicResource TextMutedBrush}"/>
+                                        <!-- Bubble -->
+                                        <Border CornerRadius="10" Padding="14,12"
+                                                Background="{DynamicResource BgElevatedBrush}"
+                                                TextElement.Foreground="{DynamicResource TextPrimaryBrush}">
+                                            <md:MarkdownScrollViewer Markdown="{Binding Content}" HorizontalAlignment="Left">
+                                                <md:MarkdownScrollViewer.Styles>
+                                                    <Style Selector="md|MarkdownScrollViewer">
+                                                        <!-- Inherit fonts from the app -->
+                                                        <Setter Property="TextElement.FontSize" Value="13"/>
+                                                    </Style>
+                                                    <Style Selector="TextBlock">
+                                                        <Setter Property="TextWrapping" Value="Wrap"/>
+                                                        <Setter Property="LineHeight" Value="20"/>
+                                                    </Style>
+                                                </md:MarkdownScrollViewer.Styles>
+                                            </md:MarkdownScrollViewer>
+                                        </Border>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- Streaming indicator -->
+                    <Border Padding="12,6" IsVisible="{Binding IsArchitektStreaming}">
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="ARCHITEKT" FontSize="9" FontWeight="Bold" LetterSpacing="0.5"
+                                       Foreground="{DynamicResource TextMutedBrush}"/>
+                            <ProgressBar IsIndeterminate="True" Height="2" CornerRadius="1"/>
+                        </StackPanel>
+                    </Border>
+
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Input area (fixed at bottom) -->
+            <Border Grid.Row="2" Padding="12,10" BorderBrush="{DynamicResource BgInteractiveBrush}" BorderThickness="0,1,0,0">
+                <StackPanel Spacing="8">
+
+                    <!-- Clear history -->
+                    <Button Command="{Binding ClearArchitektHistoryCommand}" Classes="ghost"
+                            FontSize="10" Padding="0,4" HorizontalAlignment="Right"
+                            IsVisible="{Binding HasArchitektHistory}">
+                        <TextBlock Text="Vymazat historii" Foreground="{DynamicResource TextMutedBrush}"/>
+                    </Button>
+
+                    <!-- Input TextBox -->
+                    <TextBox Text="{Binding ArchitektInput, UpdateSourceTrigger=PropertyChanged}"
+                             Watermark="{Binding ArchitektPlaceholderText}"
+                             AcceptsReturn="True" TextWrapping="Wrap"
+                             MinHeight="80" MaxHeight="200"
+                             IsReadOnly="{Binding IsArchitektStreaming}"
+                             IsEnabled="{Binding HasSelectedArchitektProfile}"
+                             FontSize="14">
+                        <TextBox.KeyBindings>
+                            <KeyBinding Gesture="Enter" Command="{Binding SendArchitektMessageCommand}" />
+                        </TextBox.KeyBindings>
+                    </TextBox>
+
+                    <!-- Send / Stop / Attach row -->
+                    <Grid ColumnDefinitions="Auto,8,*,8,Auto">
+                        <Button Grid.Column="0" Command="{Binding AttachFileToArchitektCommand}"
+                                Classes="secondary" Padding="10,8" ToolTip.Tip="Přiložit soubor z workspace">
+                            <TextBlock Text="+" FontSize="16" FontWeight="Bold"/>
+                        </Button>
+
+                        <TextBlock Grid.Column="2" Text="{Binding ArchitektStatus}" FontSize="11"
+                                   Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center"
+                                   TextTrimming="CharacterEllipsis"/>
+                        
+                        <Button Grid.Column="4" Command="{Binding StopArchitektStreamCommand}"
+                                Classes="secondary" Padding="14,8"
+                                IsVisible="{Binding IsArchitektStreaming}">
+                            <TextBlock Text="Stop" FontSize="12"/>
+                        </Button>
+                        <Button Grid.Column="4" Command="{Binding SendArchitektMessageCommand}"
+                                Classes="primary" Padding="14,8"
+                                IsVisible="{Binding !IsArchitektStreaming}"
+                                IsEnabled="{Binding CanSendArchitektMessage}">
+                            <TextBlock Text="{Binding ArchitektSendLabel}" FontSize="12"/>
+                        </Button>
+                    </Grid>
+
+                </StackPanel>
+            </Border>
+
+        </Grid>
+    </Border>
+
+</UserControl>

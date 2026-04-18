@@ -23,7 +23,7 @@
         <KeyBinding Gesture="Ctrl+Shift+S" Command="{Binding SaveAllCreatorSurfaceCommand}"/>
         <KeyBinding Gesture="Ctrl+E" Command="{Binding QuickCreatorExportCommand}"/>
         <KeyBinding Gesture="Ctrl+D" Command="{Binding OpenCreatorWorkbenchDiffModeCommand}"/>
-        <KeyBinding Gesture="Ctrl+OemQuestion" Command="{Binding FocusCreatorCopilotDeskCommand}"/>
+        <KeyBinding Gesture="Ctrl+OemQuestion" Command="{Binding FocusCreatorArchitektDeskCommand}"/>
         <KeyBinding Gesture="Escape" Command="{Binding HandleCreatorEscapeCommand}"/>
     </UserControl.KeyBindings>
 
@@ -48,8 +48,8 @@
                         </StackPanel>
 
                         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                            <Button Command="{Binding UseCreatorCopilotDeskCommand}" Classes="primary" Padding="12,7" FontSize="12">
-                                <TextBlock Text="Copilot Desk"/>
+                            <Button Command="{Binding UseCreatorArchitektDeskCommand}" Classes="primary" Padding="12,7" FontSize="12">
+                                <TextBlock Text="ARCHITEKT Desk"/>
                             </Button>
                             <Button Command="{Binding UseDefaultContextDockCommand}" Classes="secondary" Padding="12,7" FontSize="12">
                                 <TextBlock Text="Context Dock"/>
@@ -1662,7 +1662,30 @@
                                 <Button Command="{Binding CreatorGitInitCommand}" Classes="primary" Padding="20,10" HorizontalAlignment="Center" IsEnabled="{Binding CreatorGitIsAvailable}">
                                     <TextBlock Text="git init"/>
                                 </Button>
-                                <TextBlock Text="Git musi byt dostupny v PATH." FontSize="10" Foreground="{DynamicResource TextMutedBrush}" HorizontalAlignment="Center" IsVisible="{Binding !CreatorGitIsAvailable}"/>
+                                <Border Background="#1E1713" BorderBrush="#5A3F20" BorderThickness="1"
+                                        CornerRadius="10" Padding="16" Margin="0,4,0,0"
+                                        IsVisible="{Binding IsGitInstallBannerVisible}">
+                                    <StackPanel Spacing="10">
+                                        <TextBlock Text="Git není nainstalovaný" FontWeight="Bold"
+                                                   Foreground="#FFB86B" FontSize="13"/>
+                                        <TextBlock Text="Git nebyl nalezen v PATH. Launcher ho může nainstalovat automaticky přes winget (Windows Package Manager)."
+                                                   Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11" TextWrapping="Wrap"/>
+                                        <Button Command="{Binding InstallGitCommand}" Classes="primary"
+                                                Padding="16,10" HorizontalAlignment="Left">
+                                            <TextBlock Text="Nainstalovat Git automaticky"/>
+                                        </Button>
+                                    </StackPanel>
+                                </Border>
+                                <Border Background="#141A14" BorderBrush="#335A20" BorderThickness="1"
+                                        CornerRadius="10" Padding="12,10" Margin="0,4,0,0"
+                                        IsVisible="{Binding IsGitInstalling}">
+                                    <StackPanel Spacing="8">
+                                        <ProgressBar IsIndeterminate="True" Height="3"/>
+                                        <TextBlock Text="{Binding GitInstallStatus}" FontSize="10"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Border>
+
                             </StackPanel>
                         </Border>
 

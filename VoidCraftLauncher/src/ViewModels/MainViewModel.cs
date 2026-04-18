@@ -95,6 +95,7 @@ public partial class MainViewModel : ViewModelBase
     private readonly GitHubReleaseService _gitHubReleaseService;
     private readonly CreatorNotesService _creatorNotesService;
     private readonly CreatorReleaseService _creatorReleaseService;
+    private readonly ArchitektDeskService _architektDeskService;
     private ModpackManifestInfo _lastManifestInfo;
     private readonly SemaphoreSlim _modpackUpdateCheckLock = new(1, 1);
     private static readonly TimeSpan ModpackUpdateCheckInterval = TimeSpan.FromSeconds(5);
@@ -652,6 +653,7 @@ public partial class MainViewModel : ViewModelBase
         _gitHubReleaseService = sl.Resolve<GitHubReleaseService>();
         _creatorNotesService = sl.Resolve<CreatorNotesService>();
         _creatorReleaseService = sl.Resolve<CreatorReleaseService>();
+        _architektDeskService = sl.Resolve<ArchitektDeskService>();
         InitializeCreatorWorkbenchEditorState();
         _discordRpcService.Initialize();
         _discordRpcService.PresenceChanged += () => Avalonia.Threading.Dispatcher.UIThread.Post(NotifyStreamingToolsStateChanged);
@@ -703,6 +705,7 @@ public partial class MainViewModel : ViewModelBase
         InitializeLocalizationSurface();
         InitializeAchievementSurface();
         InitializeCreatorStudioShell();
+        LoadArchitektProfiles();
 
         // Restore offline username
         if (!string.IsNullOrEmpty(Config.LastOfflineUsername))

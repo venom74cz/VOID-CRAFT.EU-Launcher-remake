@@ -189,25 +189,6 @@
                     </StackPanel>
                 </Button>
 
-                <Button Command="{Binding GoToThemeSwitcherCommand}" Classes="navRailItem" Classes.active="{Binding IsThemeSwitcherView}" ToolTip.Tip="Motivy">
-                    <StackPanel Orientation="Horizontal" Spacing="12">
-                        <TextBlock Text="{StaticResource IconTheme}" FontSize="18" Width="22" HorizontalAlignment="Center" Foreground="{DynamicResource PrimaryBBrush}"/>
-                        <StackPanel IsVisible="{Binding IsNavRailExpanded}" Spacing="1">
-                            <TextBlock Text="Motivy" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                            <TextBlock Text="Vizuální režimy a animace" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
-                        </StackPanel>
-                    </StackPanel>
-                </Button>
-
-                <Button Command="{Binding GoToLocalizationCommand}" Classes="navRailItem" Classes.active="{Binding IsLocalizationView}" ToolTip.Tip="Jazyk">
-                    <StackPanel Orientation="Horizontal" Spacing="12">
-                        <TextBlock Text="{StaticResource IconLanguage}" FontSize="18" Width="22" HorizontalAlignment="Center" Foreground="{DynamicResource PrimaryBBrush}"/>
-                        <StackPanel IsVisible="{Binding IsNavRailExpanded}" Spacing="1">
-                            <TextBlock Text="Jazyk" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                            <TextBlock Text="Lokalizace a texty" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
-                        </StackPanel>
-                    </StackPanel>
-                </Button>
 
                 <Button Command="{Binding OpenLoginModalCommand}" Classes="navRailItem" ToolTip.Tip="{Binding UserSession.Username, FallbackValue='Přihlásit se'}">
                     <StackPanel Orientation="Horizontal" Spacing="12">

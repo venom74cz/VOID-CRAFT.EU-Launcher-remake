@@ -30,6 +30,69 @@ public sealed class CreatorGitService
         }
     }
 
+    /// <summary>
+    /// Installs Git via winget silently, streaming progress lines back through <paramref name="progress"/>.
+    /// Throws <see cref="InvalidOperationException"/> if winget exits with non-zero or git is still unavailable after install.
+    /// </summary>
+    public async Task InstallGitViaWingetAsync(Action<string> progress, CancellationToken cancellationToken = default)
+    {
+        progress("Spouštím instalaci Git přes winget...");
+
+        var psi = new ProcessStartInfo
+        {
+            FileName = "winget",
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true,
+            StandardOutputEncoding = Encoding.UTF8,
+            StandardErrorEncoding = Encoding.UTF8
+        };
+
+        // Silent, non-interactive winget install
+        foreach (var arg in new[] { "install", "--id", "Git.Git", "-e", "--source", "winget",
+                                    "--accept-package-agreements", "--accept-source-agreements", "--silent" })
+            psi.ArgumentList.Add(arg);
+
+        using var proc = Process.Start(psi)
+            ?? throw new InvalidOperationException("Nepodařilo se spustit winget. Je winget dostupný?");
+
+        var outputReaderTask = Task.Run(async () =>
+        {
+            while (!proc.StandardOutput.EndOfStream)
+            {
+                var line = await proc.StandardOutput.ReadLineAsync(cancellationToken).ConfigureAwait(false);
+                if (!string.IsNullOrWhiteSpace(line))
+                    progress(line.Trim());
+            }
+        }, cancellationToken);
+
+        var errorReaderTask = proc.StandardError.ReadToEndAsync(cancellationToken);
+
+        try
+        {
+            await proc.WaitForExitAsync(new CancellationTokenSource(TimeSpan.FromMinutes(5)).Token)
+                      .ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            TryKillProcess(proc);
+            throw new InvalidOperationException("Instalace Git přes winget překročila časový limit.");
+        }
+
+        await outputReaderTask.ConfigureAwait(false);
+        var stderr = await errorReaderTask.ConfigureAwait(false);
+
+        if (proc.ExitCode != 0)
+        {
+            var detail = string.IsNullOrWhiteSpace(stderr) ? $"Exit code: {proc.ExitCode}" : stderr.Trim();
+            throw new InvalidOperationException(
+                $"winget instalace Git selhala ({detail}). Nainstaluj Git ručně z https://git-scm.com");
+        }
+
+        progress("Instalace dokončena. Ověřuji dostupnost Git...");
+    }
+
     public async Task<CreatorGitStatus> GetStatusAsync(string workspacePath, IReadOnlyCollection<string>? scopedPaths = null)
     {
         var status = new CreatorGitStatus();

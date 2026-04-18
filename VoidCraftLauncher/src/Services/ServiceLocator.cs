@@ -118,5 +118,6 @@ public sealed class ServiceLocator
         RegisterFactory(() => new AchievementHubService(Resolve<HttpClient>(), Resolve<LauncherService>(), Resolve<ObservabilityService>()));
         RegisterFactory(() => new ServerDiscoveryService(Resolve<LauncherService>(), Resolve<ObservabilityService>()));
         RegisterFactory(() => new InstanceExportService(Resolve<CurseForgeApi>(), Resolve<ModrinthApi>()));
+        RegisterFactory(() => new ArchitektDeskService(Resolve<SecureStorageService>()));
     }
 }

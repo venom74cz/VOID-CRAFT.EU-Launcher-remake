@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:VoidCraftLauncher.ViewModels"
              xmlns:converters="using:VoidCraftLauncher.Converters"
+             xmlns:controls="using:VoidCraftLauncher.Controls"
              x:Class="VoidCraftLauncher.Controls.SettingsView"
              x:DataType="vm:MainViewModel">
 
@@ -21,12 +22,45 @@
                         <TextBlock Text="Nastavení" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center"/>
                     </StackPanel>
 
-                    <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="12,8">
+                    <Button Command="{Binding SwitchSettingsTabCommand}" CommandParameter="Performance"
+                            Classes="ghost" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="12,10">
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <TextBlock Text="{StaticResource IconPerformance}" FontSize="13" VerticalAlignment="Center"/>
-                            <TextBlock Text="Paměť a výkon" FontSize="13" Foreground="{DynamicResource PrimaryBBrush}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            <TextBlock Text="{StaticResource IconPerformance}" FontSize="13" VerticalAlignment="Center"
+                                       Foreground="{Binding SettingsActiveTab, Converter={x:Static converters:EqualityToBrushConverter.Instance}, ConverterParameter='Performance'}"/>
+                            <TextBlock Text="Paměť a výkon" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"
+                                       Foreground="{Binding SettingsActiveTab, Converter={x:Static converters:EqualityToBrushConverter.Instance}, ConverterParameter='Performance'}"/>
                         </StackPanel>
-                    </Border>
+                    </Button>
+
+                    <Button Command="{Binding SwitchSettingsTabCommand}" CommandParameter="Architekt"
+                            Classes="ghost" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="12,10">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="✦" FontSize="13" VerticalAlignment="Center"
+                                       Foreground="{Binding SettingsActiveTab, Converter={x:Static converters:EqualityToBrushConverter.Instance}, ConverterParameter='Architekt'}"/>
+                            <TextBlock Text="Umělá inteligence" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"
+                                       Foreground="{Binding SettingsActiveTab, Converter={x:Static converters:EqualityToBrushConverter.Instance}, ConverterParameter='Architekt'}"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding SwitchSettingsTabCommand}" CommandParameter="Themes"
+                            Classes="ghost" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="12,10">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="{StaticResource IconTheme}" FontSize="13" VerticalAlignment="Center"
+                                       Foreground="{Binding SettingsActiveTab, Converter={x:Static converters:EqualityToBrushConverter.Instance}, ConverterParameter='Themes'}"/>
+                            <TextBlock Text="Vzhled a Měřítko" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"
+                                       Foreground="{Binding SettingsActiveTab, Converter={x:Static converters:EqualityToBrushConverter.Instance}, ConverterParameter='Themes'}"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding SwitchSettingsTabCommand}" CommandParameter="Language"
+                            Classes="ghost" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="12,10">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="{StaticResource IconLanguage}" FontSize="13" VerticalAlignment="Center"
+                                       Foreground="{Binding SettingsActiveTab, Converter={x:Static converters:EqualityToBrushConverter.Instance}, ConverterParameter='Language'}"/>
+                            <TextBlock Text="Jazyk a Texty" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"
+                                       Foreground="{Binding SettingsActiveTab, Converter={x:Static converters:EqualityToBrushConverter.Instance}, ConverterParameter='Language'}"/>
+                        </StackPanel>
+                    </Button>
 
                     <!-- Spacer + version -->
                     <Border Height="1" Background="{DynamicResource StrokeSoftBrush}" Margin="0,20"/>
@@ -42,58 +76,135 @@
                 <Border Padding="32,28,32,60">
                     <StackPanel Spacing="24" MaxWidth="700">
 
-                        <!-- RAM Section -->
-                        <StackPanel Spacing="8">
-                            <TextBlock Text="Paměť a výkon" FontSize="22" FontWeight="ExtraBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                            <TextBlock Text="Globální konfigurace launcheru a herního běhu" Foreground="{DynamicResource TextMutedBrush}" FontSize="13"/>
+                        <!-- PERFORMANCE TAB -->
+                        <StackPanel Spacing="24" IsVisible="{Binding SettingsActiveTab, Converter={x:Static converters:EqualityToBoolConverter.Instance}, ConverterParameter='Performance'}">
+                            <!-- RAM Section -->
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Paměť a výkon" FontSize="22" FontWeight="ExtraBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Globální konfigurace launcheru a herního běhu" Foreground="{DynamicResource TextMutedBrush}" FontSize="13"/>
+                            </StackPanel>
+
+                            <!-- RAM Card -->
+                            <Border Classes="card">
+                                <StackPanel Spacing="18">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <StackPanel Spacing="2">
+                                            <TextBlock Text="Maximální RAM" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="15"/>
+                                            <TextBlock Text="Kolik paměti může hra využít" Foreground="{DynamicResource TextMutedBrush}" FontSize="11"/>
+                                        </StackPanel>
+                                        <Border Grid.Column="1" Background="{DynamicResource BgInteractiveBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="12,6">
+                                            <TextBlock Text="{Binding Config.MaxRamMb, Converter={StaticResource RamValueConverter}}" FontWeight="ExtraBold" Foreground="{DynamicResource PrimaryBBrush}" FontSize="16"/>
+                                        </Border>
+                                    </Grid>
+                                    <Slider Minimum="2048" Maximum="{Binding SystemRamMb}" Value="{Binding Config.MaxRamMb}" TickFrequency="512" IsSnapToTickEnabled="True"/>
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Text="Min: 2 GB" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding SystemRamMb, Converter={StaticResource RamValueConverter}, StringFormat='Systém: {0}'}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Optimization Card -->
+                            <Border Classes="card">
+                                <StackPanel Spacing="16">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <StackPanel Spacing="2">
+                                            <TextBlock Text="Optimalizační flagy" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="15"/>
+                                            <TextBlock Text="JVM argumenty pro lepší výkon" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                        </StackPanel>
+                                        <ToggleSwitch Grid.Column="1" IsChecked="{Binding Config.EnableOptimizationFlags}" OnContent="" OffContent=""/>
+                                    </Grid>
+
+                                    <StackPanel IsVisible="{Binding Config.EnableOptimizationFlags}" Spacing="10">
+                                        <Border Height="1" Background="{DynamicResource StrokeSoftBrush}"/>
+                                        <TextBlock Text="Garbage Collector" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" FontWeight="SemiBold"/>
+                                        <ComboBox ItemsSource="{Binding GcTypes}" SelectedItem="{Binding Config.SelectedGc}" HorizontalAlignment="Stretch"/>
+                                        <TextBlock Text="Doporučujeme ponechat výchozí nastavení." FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Save -->
+                            <Button Content="Uložit změny" Command="{Binding SaveSettingsCommand}"
+                                    Classes="primary" FontSize="14" Padding="0,14" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
                         </StackPanel>
 
-                        <!-- RAM Card -->
-                        <Border Classes="card">
-                            <StackPanel Spacing="18">
-                                <Grid ColumnDefinitions="*,Auto">
-                                    <StackPanel Spacing="2">
-                                        <TextBlock Text="Maximální RAM" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="15"/>
-                                        <TextBlock Text="Kolik paměti může hra využít" Foreground="{DynamicResource TextMutedBrush}" FontSize="11"/>
-                                    </StackPanel>
-                                    <Border Grid.Column="1" Background="{DynamicResource BgInteractiveBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="12,6">
-                                        <TextBlock Text="{Binding Config.MaxRamMb, Converter={StaticResource RamValueConverter}}" FontWeight="ExtraBold" Foreground="{DynamicResource PrimaryBBrush}" FontSize="16"/>
-                                    </Border>
-                                </Grid>
-                                <Slider Minimum="2048" Maximum="{Binding SystemRamMb}" Value="{Binding Config.MaxRamMb}" TickFrequency="512" IsSnapToTickEnabled="True"/>
-                                <Grid ColumnDefinitions="*,Auto">
-                                    <TextBlock Text="Min: 2 GB" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
-                                    <TextBlock Grid.Column="1" Text="{Binding SystemRamMb, Converter={StaticResource RamValueConverter}, StringFormat='Systém: {0}'}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
-                                </Grid>
+                        <!-- ARCHITEKT TAB -->
+                        <StackPanel Spacing="24" IsVisible="{Binding SettingsActiveTab, Converter={x:Static converters:EqualityToBoolConverter.Instance}, ConverterParameter='Architekt'}">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Umělá inteligence (ARCHITEKT)" FontSize="22" FontWeight="ExtraBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Konfigurace API pro integraci libovolných AI agentů v aplikaci" Foreground="{DynamicResource TextMutedBrush}" FontSize="13"/>
                             </StackPanel>
-                        </Border>
 
-                        <!-- Optimization Card -->
-                        <Border Classes="card">
-                            <StackPanel Spacing="16">
-                                <Grid ColumnDefinitions="*,Auto">
-                                    <StackPanel Spacing="2">
-                                        <TextBlock Text="Optimalizační flagy" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="15"/>
-                                        <TextBlock Text="JVM argumenty pro lepší výkon" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
-                                    </StackPanel>
-                                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding Config.EnableOptimizationFlags}" OnContent="" OffContent=""/>
-                                </Grid>
-
-                                <StackPanel IsVisible="{Binding Config.EnableOptimizationFlags}" Spacing="10">
+                            <Border Classes="card">
+                                <StackPanel Spacing="16">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <StackPanel Spacing="2">
+                                            <TextBlock Text="Profily AI rozhraní" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="15"/>
+                                            <TextBlock Text="Připojte lokální modely (Ollama) nebo libovolné SaaS (OpenAI, Groq)" Foreground="{DynamicResource TextMutedBrush}" FontSize="11"/>
+                                        </StackPanel>
+                                        <Button Grid.Column="1" Command="{Binding AddArchitektProfileCommand}" Classes="secondary" Padding="12,6">
+                                            <TextBlock Text="Pridat profil" FontSize="11"/>
+                                        </Button>
+                                    </Grid>
+                                    
                                     <Border Height="1" Background="{DynamicResource StrokeSoftBrush}"/>
-                                    <TextBlock Text="Garbage Collector" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" FontWeight="SemiBold"/>
-                                    <ComboBox ItemsSource="{Binding GcTypes}" SelectedItem="{Binding Config.SelectedGc}" HorizontalAlignment="Stretch"/>
-                                    <TextBlock Text="Doporučujeme ponechat výchozí nastavení." FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
 
-                        <!-- Save -->
-                        <Button Content="Uložit změny" Command="{Binding SaveSettingsCommand}"
-                                Classes="primary" FontSize="14" Padding="0,14" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                                    <Grid ColumnDefinitions="*,24,*">
+                                        <StackPanel Grid.Column="0" Spacing="6">
+                                            <TextBlock Text="Vyberte profil k úpravě" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                            <ComboBox ItemsSource="{Binding ArchitektProfiles}"
+                                                      SelectedItem="{Binding SelectedArchitektProfile, Mode=TwoWay}"
+                                                      HorizontalAlignment="Stretch">
+                                                <ComboBox.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Text="{Binding Name}"/>
+                                                    </DataTemplate>
+                                                </ComboBox.ItemTemplate>
+                                            </ComboBox>
+
+                                            <!-- Smazat -->
+                                            <Button Command="{Binding DeleteSelectedArchitektProfileCommand}"
+                                                    Classes="ghost" HorizontalAlignment="Left" Padding="8,4" Margin="0,8,0,0">
+                                                <TextBlock Text="Smazat profil" Foreground="{DynamicResource WarningBrush}" FontSize="11"/>
+                                            </Button>
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="2" Spacing="14" IsVisible="{Binding HasSelectedArchitektProfile}">
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Text="Název profilu" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                                <TextBox Text="{Binding SelectedArchitektProfile.Name, Mode=TwoWay}" FontSize="12"/>
+                                            </StackPanel>
+
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Text="Zkopírovaný cURL příkaz" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                                <TextBox Text="{Binding SelectedArchitektProfile.RawCurlCommand, Mode=TwoWay}"
+                                                         AcceptsReturn="True" TextWrapping="Wrap" MinHeight="100" MaxHeight="250"
+                                                         Watermark="curl https://... -H 'Autorization: Bearer ...' -d '{...}'" FontSize="11" FontFamily="Consolas"/>
+                                                <TextBlock Text="Zkopíruj cURL rovnou ze stránek Gemini, Groq, OpenAI nebo Ollama. Automaticky sjednotíme spojení pro Agenta." 
+                                                           FontSize="10" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                            </StackPanel>
+
+                                            <CheckBox Content="Výchozí připojení pro Architekt" IsChecked="{Binding SelectedArchitektProfile.IsDefault, Mode=TwoWay}"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                            
+                            <!-- Save -->
+                            <Button Content="Uložit změny" Command="{Binding SaveArchitektProfilesCommand}"
+                                    Classes="primary" FontSize="14" Padding="0,14" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                        </StackPanel>
                     </StackPanel>
                 </Border>
             </ScrollViewer>
+
+            <!-- Embedded External Settings Views -->
+            <controls:ThemeSwitcherView Grid.Column="1" 
+                                        IsVisible="{Binding SettingsActiveTab, Converter={x:Static converters:EqualityToBoolConverter.Instance}, ConverterParameter='Themes'}"/>
+                                        
+            <controls:LocalizationView Grid.Column="1" 
+                                       IsVisible="{Binding SettingsActiveTab, Converter={x:Static converters:EqualityToBoolConverter.Instance}, ConverterParameter='Language'}"/>
         </Grid>
     </Border>
 </UserControl>

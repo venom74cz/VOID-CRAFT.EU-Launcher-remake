@@ -1,10 +1,14 @@
 using System;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 
 namespace VoidCraftLauncher.Models;
 
-public sealed class AiProfile
+public sealed class AiProfile : INotifyPropertyChanged
 {
+    private bool _isCurlMode;
+
     [JsonPropertyName("id")]
     public string Id { get; set; } = Guid.NewGuid().ToString();
 
@@ -30,5 +34,23 @@ public sealed class AiProfile
     public string CustomSystemPrompt { get; set; } = string.Empty;
 
     [JsonPropertyName("isCurlMode")]
-    public bool IsCurlMode { get; set; } = false;
+    public bool IsCurlMode
+    {
+        get => _isCurlMode;
+        set
+        {
+            if (_isCurlMode != value)
+            {
+                _isCurlMode = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
 }

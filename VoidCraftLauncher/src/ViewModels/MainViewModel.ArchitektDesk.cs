@@ -359,8 +359,8 @@ public partial class MainViewModel
             sb.AppendLine($"## Aktivní soubor: {SelectedCreatorWorkbenchFile?.RelativePath}");
             sb.AppendLine("```");
             var content = CreatorWorkbenchContent;
-            // ULTRA-AGRESIVNÍ LIMIT: 600 znaků pro maximální stabilitu na 8k limitech
-            const int maxFileChars = 600;
+            // Zvýšeno na 8000 znaků pro moderní modely (využijí kód lépe)
+            const int maxFileChars = 8000;
             sb.AppendLine(content.Length > maxFileChars
                 ? content.Substring(0, maxFileChars) + "\n... (oříznuto)"
                 : content);

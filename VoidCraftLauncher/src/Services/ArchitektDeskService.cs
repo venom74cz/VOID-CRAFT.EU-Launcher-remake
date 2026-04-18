@@ -117,7 +117,7 @@ public sealed class ArchitektDeskService
                 messages.Add(new global::OpenAI.Chat.AssistantChatMessage(msg.Content));
         }
 
-        var chatOptions = new global::OpenAI.Chat.ChatCompletionOptions { MaxOutputTokenCount = 1024 }; // Agresivní snížení pro Groq stabilitu (Input+Output < 8k)
+        var chatOptions = new global::OpenAI.Chat.ChatCompletionOptions();
         
         // Define Tools only if requested
         if (useTools)

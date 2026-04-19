@@ -1,5 +1,34 @@
 # Changelog
 
+## 3.3.0 - 2026-04-19
+
+### Architekt AI (LLM & Reasoning)
+
+#### Funkce a optimalizace
+- **Zpracování myšlenkových pochodů**: Implementována robustní podpora pro `<think>` tagy používané reasoning modely. Zpracování je regex-based a bezpečné pro streamování odpovědí.
+- **Vizuální výstup**: Možnost zobrazení uvažování modelu přímo v chatu pro lepší přehled o tom, jak AI dospěla k výsledku.
+- **Optimalizace promptů**:
+    - Odebrání odesílání stavu Gitu do systémového promptu pro šetření tokenů.
+    - Selektivní odebírání nástrojů ze systémového promptu v čistém Chat režimu.
+    - Fix fragmentace stavu AI v rámci Creator Architektu.
+
+#### UI & UX Architektu
+- **Sjednocený design**: Konzistentní vzhled vrchní lišty a vizuální styl prvků.
+- **Nastavení k ruce**: Ovládací prvky a nastavení AI přesunuty přímo k chatu pro rychlejší přístup.
+- **Robustnost**: Uvolnění limitů a přidání pojistky pro situace, kdy LLM vrátí prázdnou odpověď po volání nástrojů.
+- **Diagnostika**: Přidán debug log preview pro lepší přehled o průběhu streamování.
+
+#### Nastavení & Konektivita
+- **Flexibilita API**: Přidán přepínač mezi cURL režimem a Klasickým API pro širší kompatibilitu.
+- **Opravy UI**: Zajištěna správná reaktivní aktualizace UI při přepínání režimu cURL v nastavení.
+- **Kontext & Limity**:
+    - Opraven slider kontextu (oprava typové konverze int → double).
+    - Zvýšení výchozího kontextového okna a limitů pro efektivnější práci s delšími texty.
+
+#### Release metadata
+- Srovnána release verze na `3.3.0` v projektu, installeru a meta informacích.
+
+
 ## 3.2.0 - 2026-04-16
 
 ### Selektivní verze & Update Prompt

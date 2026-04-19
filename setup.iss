@@ -9,7 +9,7 @@
 ; Get Version from command line or define default. GitHub Action can pass this? 
 ; We'll use a placeholder and let ISCC override it or use a fixed one if complex.
 #ifndef MyAppVersion
-  #define MyAppVersion "3.1.11"
+  #define MyAppVersion "3.3.0"
 #endif
 
 [Setup]

@@ -223,6 +223,7 @@ public partial class MainViewModel
                     var resultStream = _architektDeskService.StreamChatAsync(
                         systemPrompt, historyForApi, SelectedArchitektProfile, workspacePath, useTools, IsArchitektAgentMode, cts.Token);
 
+                    bool inThinkBlock = false;
                     await foreach (var update in resultStream)
                     {
                         if (cts.Token.IsCancellationRequested)
@@ -242,8 +243,34 @@ public partial class MainViewModel
                             }
                             else
                             {
-                                assistantMsg.Content += update.Text;
-                                ArchitektStatus = "Píše odpověď...";
+                                string chunk = update.Text ?? "";
+                                
+                                // Detekce začátku/konce <think> tagu i napříč chunky
+                                // (Pro zjednodušení předpokládáme, že tagy nepřijdou uprostřed slova, ale i tak to ošetříme)
+                                var currentFull = assistantMsg.Content + chunk;
+                                
+                                if (currentFull.Contains("<think>") && !inThinkBlock)
+                                {
+                                    inThinkBlock = true;
+                                    assistantMsg.Content = currentFull.Replace("<think>", "\n> 🧠 **Přemýšlím...**\n> _");
+                                }
+                                else if (currentFull.Contains("</think>") && inThinkBlock)
+                                {
+                                    inThinkBlock = false;
+                                    assistantMsg.Content = currentFull.Replace("</think>", "_\n\n");
+                                }
+                                else if (inThinkBlock)
+                                {
+                                    // Pokud jsme v think bloku, každému novému řádku přidáme "> "
+                                    string processedChunk = chunk.Replace("\n", "\n> ");
+                                    assistantMsg.Content += processedChunk;
+                                }
+                                else
+                                {
+                                    assistantMsg.Content += chunk;
+                                }
+
+                                ArchitektStatus = inThinkBlock ? "AI přemýšlí..." : "Píše odpověď...";
                             }
 
                             // Vyvolat scroll dolů

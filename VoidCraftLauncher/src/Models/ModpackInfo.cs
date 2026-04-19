@@ -58,6 +58,7 @@ namespace VoidCraftLauncher.Models
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(LibraryStatusLabel))]
+        [NotifyPropertyChangedFor(nameof(IsDevBadgeVisible))]
         private bool _isCollaboratorWorkspace;
 
         [ObservableProperty]
@@ -91,6 +92,7 @@ namespace VoidCraftLauncher.Models
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(ImageUrl))]
+        [NotifyPropertyChangedFor(nameof(DisplayLogoUrl))]
         private string _logoUrl = "";
         
         public string ImageUrl => LogoUrl;
@@ -98,6 +100,16 @@ namespace VoidCraftLauncher.Models
         public string DisplayLabel => string.IsNullOrWhiteSpace(DisplayName) ? Name : DisplayName;
 
         public string LibraryStatusLabel => IsCollaboratorWorkspace ? "Creator workspace" : "Připraveno";
+
+        /// <summary>True when the card should display the .dev ribbon badge (top-right corner).</summary>
+        [System.Text.Json.Serialization.JsonIgnore]
+        public bool IsDevBadgeVisible => IsCustomProfile || IsCollaboratorWorkspace;
+
+        /// <summary>Logo pro kartu — custom profily bez nastaveného loga zobrazí výchozí obrázek.</summary>
+        [System.Text.Json.Serialization.JsonIgnore]
+        public string DisplayLogoUrl => string.IsNullOrWhiteSpace(LogoUrl) && IsCustomProfile
+            ? "avares://VoidCraftLauncher/Assets/custom_profile_default.png"
+            : LogoUrl;
 
         [ObservableProperty]
         private string _description = "";
@@ -107,6 +119,8 @@ namespace VoidCraftLauncher.Models
 
         /// <summary>Custom profile = user-created, allows adding/removing individual mods</summary>
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(IsDevBadgeVisible))]
+        [NotifyPropertyChangedFor(nameof(DisplayLogoUrl))]
         private bool _isCustomProfile = false;
 
         /// <summary>MC version for custom profiles (e.g. "1.21.1")</summary>

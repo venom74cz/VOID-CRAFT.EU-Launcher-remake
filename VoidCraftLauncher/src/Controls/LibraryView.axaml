@@ -102,37 +102,21 @@
 
                                             <Grid RowDefinitions="130,*">
                                                 <Border Grid.Row="0" CornerRadius="12,12,0,0" ClipToBounds="True" Background="{DynamicResource BgInteractiveBrush}">
-                                                    <asyncImage:AdvancedImage Source="{Binding DisplayLogoUrl}" Stretch="UniformToFill"/>
+                                                    <asyncImage:AdvancedImage Source="{Binding LogoUrl}" Stretch="UniformToFill"/>
                                                 </Border>
 
                                                 <StackPanel Grid.Row="1" Margin="12,10,12,12" Spacing="4" VerticalAlignment="Top">
-                                                    <TextBlock Text="{Binding DisplayLabel}" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="13"
+                                                    <TextBlock Text="{Binding Name}" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="13"
                                                                TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis" LineHeight="17"/>
-                                                    <Grid ColumnDefinitions="Auto,*">
-                                                        <ComboBox ItemsSource="{Binding Versions}" 
-                                                                  SelectedItem="{Binding TargetVersion}"
-                                                                  PlaceholderText="{Binding VersionTransitionText}"
-                                                                  FontSize="10" Foreground="{DynamicResource TextMutedBrush}"
-                                                                  Background="Transparent" BorderThickness="0" BorderBrush="Transparent"
-                                                                  Padding="4,2,24,2" MinHeight="20" CornerRadius="4"
-                                                                  Cursor="Hand"
-                                                                  IsVisible="{Binding Versions.Count}">
-                                                            <ComboBox.ItemTemplate>
-                                                                <DataTemplate>
-                                                                    <TextBlock Text="{Binding Name}"/>
-                                                                </DataTemplate>
-                                                            </ComboBox.ItemTemplate>
-                                                        </ComboBox>
-                                                        <TextBlock Text="{Binding VersionTransitionText}" Foreground="{DynamicResource TextMutedBrush}" FontSize="10"
-                                                                   TextTrimming="CharacterEllipsis" MaxLines="1" IsVisible="{Binding !Versions.Count}"/>
-                                                    </Grid>
+                                                    <TextBlock Text="{Binding VersionTransitionText}" Foreground="{DynamicResource TextMutedBrush}" FontSize="10"
+                                                               TextTrimming="CharacterEllipsis" MaxLines="1"/>
                                                     <Border CornerRadius="4" Padding="6,2" HorizontalAlignment="Left" Margin="0,2,0,0">
                                                         <Border.Background>
                                                             <SolidColorBrush Color="{DynamicResource PrimaryB}" Opacity="0.12"/>
                                                         </Border.Background>
                                                         <StackPanel Orientation="Horizontal" Spacing="4">
                                                             <Border Width="5" Height="5" CornerRadius="2.5" Background="{DynamicResource PrimaryBBrush}" VerticalAlignment="Center"/>
-                                                            <TextBlock Text="{Binding LibraryStatusLabel}" FontSize="9" Foreground="{DynamicResource PrimaryBBrush}" FontWeight="SemiBold"/>
+                                                            <TextBlock Text="Připraveno" FontSize="9" Foreground="{DynamicResource PrimaryBBrush}" FontWeight="SemiBold"/>
                                                         </StackPanel>
                                                     </Border>
                                                 </StackPanel>
@@ -172,43 +156,6 @@
                                                         <ProgressBar Value="{Binding #LibraryRoot.DataContext.LaunchProgress}" Maximum="100"/>
                                                     </StackPanel>
                                                 </Border>
-
-                                                <!-- .dev Ribbon badge (top-right corner, 45°) -->
-                                                <!-- Viditelný pro Custom profily (violet) a Collaborant/Majitel workspace (teal) -->
-                                                <!-- ClipToBounds="True" na InstanceBorder ořízne ribbon zaoblenými rohy karty -->
-                                                <Grid Grid.RowSpan="2"
-                                                      HorizontalAlignment="Right" VerticalAlignment="Top"
-                                                      Width="16" Height="16"
-                                                      Margin="0,-16,-10,0"
-                                                      IsHitTestVisible="False">
-                                                    <!-- Custom profil = PrimaryB #7c6fff -->
-                                                    <Border IsVisible="{Binding IsCustomProfile}"
-                                                            Width="120" Height="28"
-                                                            Background="#7c6fff"
-                                                            RenderTransformOrigin="0.5,0.5"
-                                                            HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                        <Border.RenderTransform>
-                                                            <RotateTransform Angle="45"/>
-                                                        </Border.RenderTransform>
-                                                        <TextBlock Text=".dev" FontSize="13" FontWeight="Bold"
-                                                                   Foreground="#f5f7ff" TextAlignment="Center"
-                                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                    </Border>
-                                                    <!-- Collaborant / Majitel = AccentTeal #00d4aa (renderuje nad violet) -->
-                                                    <Border IsVisible="{Binding IsCollaboratorWorkspace}"
-                                                            Width="120" Height="28"
-                                                            Background="#00d4aa"
-                                                            RenderTransformOrigin="0.5,0.5"
-                                                            HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                        <Border.RenderTransform>
-                                                            <RotateTransform Angle="45"/>
-                                                        </Border.RenderTransform>
-                                                        <TextBlock Text=".dev" FontSize="13" FontWeight="Bold"
-                                                                   Foreground="#04342c" TextAlignment="Center"
-                                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                    </Border>
-                                                </Grid>
-
                                             </Grid>
                                         </Border>
 

@@ -369,10 +369,10 @@ public partial class MainViewModel
                 throw new InvalidOperationException("Origin remote už existuje a míří jinam. Přepiš ho ručně nebo nejdřív remote odpoj.");
             }
 
-            var remoteSet = await _creatorGitService.SetRemoteOriginDetailedAsync(workspacePath, repository.CloneUrl);
-            if (!remoteSet.Success)
+            var remoteSet = await _creatorGitService.SetRemoteOriginAsync(workspacePath, repository.CloneUrl);
+            if (!remoteSet)
             {
-                throw new InvalidOperationException(remoteSet.Message);
+                throw new InvalidOperationException("Repo bylo vytvořené, ale nepodařilo se nastavit origin remote.");
             }
 
             await PersistGitHubRepositoryMetadataAsync(workspacePath, repository);
@@ -432,10 +432,10 @@ public partial class MainViewModel
 
             await RefreshCreatorGitStatus();
 
-            var remoteSet = await _creatorGitService.SetRemoteOriginDetailedAsync(workspacePath, repository.CloneUrl);
-            if (!remoteSet.Success)
+            var remoteSet = await _creatorGitService.SetRemoteOriginAsync(workspacePath, repository.CloneUrl);
+            if (!remoteSet)
             {
-                throw new InvalidOperationException(remoteSet.Message);
+                throw new InvalidOperationException("Nepodařilo se nastavit origin remote na vybrané GitHub repo.");
             }
 
             ApplyGitHubRepositoryDraft(repository);
@@ -490,52 +490,43 @@ public partial class MainViewModel
             return;
         }
 
-        await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() => IsCreatorGitHubRepositoriesLoading = true);
+        IsCreatorGitHubRepositoriesLoading = true;
         try
         {
             var repositories = await _gitHubAuthService.ListAccessibleRepositoriesAsync(accessToken);
             repositories.Sort((left, right) => Nullable.Compare(right.UpdatedAtUtc, left.UpdatedAtUtc));
 
-            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+            ReplaceCollectionItems(CreatorGitHubRepositories, repositories);
+            CreatorGitHubRepositoriesStatus = repositories.Count == 0
+                ? "Účet zatím nemá žádná dostupná repa."
+                : $"Načteno {repositories.Count} GitHub repozitářů.";
+
+            var preferredRepository = !string.IsNullOrWhiteSpace(preferredRepositoryFullName)
+                ? repositories.Find(repo => string.Equals(repo.FullName, preferredRepositoryFullName, StringComparison.OrdinalIgnoreCase))
+                : null;
+
+            if (preferredRepository != null)
             {
-                ReplaceCollectionItems(CreatorGitHubRepositories, repositories);
-                CreatorGitHubRepositoriesStatus = repositories.Count == 0
-                    ? "Účet zatím nemá žádná dostupná repa."
-                    : $"Načteno {repositories.Count} GitHub repozitářů.";
+                ApplyGitHubRepositoryDraft(preferredRepository);
+            }
 
-                var preferredRepository = !string.IsNullOrWhiteSpace(preferredRepositoryFullName)
-                    ? repositories.Find(repo => string.Equals(repo.FullName, preferredRepositoryFullName, StringComparison.OrdinalIgnoreCase))
-                    : null;
-
-                if (preferredRepository != null)
-                {
-                    ApplyGitHubRepositoryDraft(preferredRepository);
-                }
-
-                if (showToastOnSuccess)
-                {
-                    ShowToast("GitHub", CreatorGitHubRepositoriesStatus, ToastSeverity.Success, 2400);
-                }
-            });
+            if (showToastOnSuccess)
+            {
+                ShowToast("GitHub", CreatorGitHubRepositoriesStatus, ToastSeverity.Success, 2400);
+            }
         }
         catch (Exception ex)
         {
-            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+            CreatorGitHubRepositoriesStatus = $"Načtení rep selhalo: {ex.Message}";
+            if (showToastOnSuccess)
             {
-                CreatorGitHubRepositoriesStatus = $"Načtení rep selhalo: {ex.Message}";
-                if (showToastOnSuccess)
-                {
-                    ShowToast("GitHub", ex.Message, ToastSeverity.Error, 4200);
-                }
-            });
+                ShowToast("GitHub", ex.Message, ToastSeverity.Error, 4200);
+            }
         }
         finally
         {
-            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
-            {
-                IsCreatorGitHubRepositoriesLoading = false;
-                NotifyCreatorGitHubStateChanged();
-            });
+            IsCreatorGitHubRepositoriesLoading = false;
+            NotifyCreatorGitHubStateChanged();
         }
     }
 

@@ -4,7 +4,6 @@
              xmlns:models="using:VoidCraftLauncher.Models"
              x:Class="VoidCraftLauncher.Controls.ToastHost"
              x:DataType="vm:MainViewModel"
-             x:Name="ToastHostRoot"
              IsHitTestVisible="True">
 
     <ItemsControl ItemsSource="{Binding Toasts}" VerticalAlignment="Bottom" HorizontalAlignment="Right"
@@ -36,7 +35,7 @@
                         </StackPanel>
 
                         <Button Grid.Column="2"
-                                Command="{Binding #ToastHostRoot.DataContext.DismissToastCommand}"
+                                Command="{Binding $parent[ItemsControl].((vm:MainViewModel)DataContext).DismissToastCommand}"
                                 CommandParameter="{Binding}"
                                 Background="Transparent" Foreground="{DynamicResource TextMutedBrush}"
                                 FontSize="12" Padding="4" Cursor="Hand" VerticalAlignment="Top"

@@ -162,9 +162,6 @@ public partial class MainViewModel
     {
         try
         {
-            // First load from local storage to have the user's selection ready
-            await LoadSavedModpacks();
-
             const int VOID_BOX_PROJECT_ID = 1402056;
             
             LogService.Log($"[LoadModpackData] Fetching modpack ID: {VOID_BOX_PROJECT_ID}");
@@ -220,11 +217,7 @@ public partial class MainViewModel
                 }
             }
 
-            // Insert ⭐ Latest sentinel at the top
-            var latestSentinel = ModpackVersion.CreateLatest();
-            versionsList.Insert(0, latestSentinel);
-
-            var newModpack = new ModpackInfo
+            CurrentModpack = new ModpackInfo
             {
                 ProjectId = id ?? VOID_BOX_PROJECT_ID,
                 Source = "CurseForge",
@@ -236,30 +229,15 @@ public partial class MainViewModel
                 WebLink = modpack?["links"]?["websiteUrl"]?.ToString() ?? "",
                 CurrentVersion = selectedVersion,
                 Versions = versionsList,
-                TargetVersion = latestSentinel,
                 IsDeletable = false
             };
 
-            var existingMatch = InstalledModpacks.FirstOrDefault(m => m.ProjectId == newModpack.ProjectId);
-            if (existingMatch != null)
-            {
-                // Preserve the target version selection from the existing instance
-                newModpack.TargetVersion = existingMatch.TargetVersion;
-            }
-
-            CurrentModpack = newModpack;
-
-            if (existingMatch == null)
+            if (!InstalledModpacks.Any(m => m.ProjectId == CurrentModpack.ProjectId))
             {
                 Avalonia.Threading.Dispatcher.UIThread.Post(() => InstalledModpacks.Add(CurrentModpack));
             }
-            else
-            {
-                // Synchronize the existing instance with new data (versions, current version etc)
-                // to keep the library card up to date
-                existingMatch.Versions = versionsList;
-                existingMatch.CurrentVersion = selectedVersion;
-            }
+            
+            await Task.Run(LoadSavedModpacks);
         }
         catch (Exception ex)
         {
@@ -318,13 +296,7 @@ public partial class MainViewModel
                             continue;
                         }
 
-                        var accessToken = await ResolveVoidRegistryAccessTokenAsync(modpack, requireFreshSession: false);
-                        if (IsCollaboratorRegistryWorkspace(modpack) && string.IsNullOrWhiteSpace(accessToken))
-                        {
-                            continue;
-                        }
-
-                        var updateCheck = await _voidRegistryService.GetUpdateCheckAsync(modpack.VoidRegistrySlug, currentVersionName, accessToken);
+                        var updateCheck = await _voidRegistryService.GetUpdateCheckAsync(modpack.VoidRegistrySlug, currentVersionName);
                         if (updateCheck?.Latest == null)
                         {
                             continue;
@@ -337,7 +309,7 @@ public partial class MainViewModel
                             ReleaseDate = updateCheck.Latest.PublishedAtUtc?.ToString("O") ?? string.Empty
                         };
 
-                        var registryLatestVersions = new ObservableCollection<ModpackVersion> { ModpackVersion.CreateLatest(), latestVersion };
+                        var registryLatestVersions = new ObservableCollection<ModpackVersion> { latestVersion };
                         var registryCurrentVersion = new ModpackVersion
                         {
                             Name = currentVersionName,
@@ -347,12 +319,8 @@ public partial class MainViewModel
 
                         await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
                         {
-                            var preservedTarget = modpack.TargetVersion;
                             modpack.Versions = registryLatestVersions;
                             modpack.CurrentVersion = registryCurrentVersion;
-                            modpack.TargetVersion = preservedTarget != null && !preservedTarget.IsLatestSentinel
-                                ? registryLatestVersions.FirstOrDefault(v => v.FileId == preservedTarget.FileId) ?? registryLatestVersions.First()
-                                : registryLatestVersions.First();
                         });
 
                         continue;
@@ -398,17 +366,10 @@ public partial class MainViewModel
                         currentVersion = new ModpackVersion { Name = "-", FileId = "0", ReleaseDate = "" };
                     }
 
-                    // Insert ⭐ Latest sentinel at the top
-                    latestVersions.Insert(0, ModpackVersion.CreateLatest());
-
                     await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
                     {
-                        var preservedTarget = modpack.TargetVersion;
                         modpack.Versions = latestVersions;
                         modpack.CurrentVersion = currentVersion;
-                        modpack.TargetVersion = preservedTarget != null && !preservedTarget.IsLatestSentinel
-                            ? latestVersions.FirstOrDefault(v => v.FileId == preservedTarget.FileId) ?? latestVersions.First()
-                            : latestVersions.First();
                     });
                 }
                 catch (Exception ex)
@@ -505,7 +466,7 @@ public partial class MainViewModel
         }
     }
 
-    private async Task LoadSavedModpacks()
+    private void LoadSavedModpacks()
     {
         try
         {
@@ -523,31 +484,12 @@ public partial class MainViewModel
                         hydratedAny |= HydrateModpackFromInstalledManifest(modpack);
                     }
 
-                    await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+                    Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                     {
                         foreach (var modpack in list)
                         {
                             if (!InstalledModpacks.Any(m => m.Name == modpack.Name))
                             {
-                                // Ensure ⭐ Latest sentinel exists in Versions
-                                if (modpack.Versions != null && !modpack.Versions.Any(v => v.IsLatestSentinel))
-                                {
-                                    modpack.Versions.Insert(0, ModpackVersion.CreateLatest());
-                                }
-
-                                // Restore TargetVersion: if saved as __latest__ or null, point to sentinel
-                                if (modpack.TargetVersion == null || modpack.TargetVersion.IsLatestSentinel)
-                                {
-                                    modpack.TargetVersion = modpack.Versions?.FirstOrDefault(v => v.IsLatestSentinel)
-                                        ?? ModpackVersion.CreateLatest();
-                                }
-                                else
-                                {
-                                    // Re-link to the actual version object in the collection
-                                    var match = modpack.Versions?.FirstOrDefault(v => v.FileId == modpack.TargetVersion.FileId);
-                                    if (match != null) modpack.TargetVersion = match;
-                                }
-
                                 InstalledModpacks.Add(modpack);
                             }
                         }

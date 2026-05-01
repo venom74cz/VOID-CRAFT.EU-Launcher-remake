@@ -38,78 +38,32 @@ public partial class MainViewModel
             var modsDir = Path.Combine(modpackDir, "mods");
 
             // INSTALL / UPDATE
-            if (CurrentModpack.IsCustomProfile && string.IsNullOrWhiteSpace(CurrentModpack.VoidRegistrySlug))
+            if (CurrentModpack.IsCustomProfile)
             {
                 LaunchStatus = "Vlastní profil – přeskočena kontrola aktualizací.";
             }
-            else if (CurrentModpack.IsTrackingLatest && CurrentModpack.IsUpdateAvailable)
-            {
-                // ⭐ Latest selected & new version exists → show update prompt with changelog
-                UpdatePromptModpackName = CurrentModpack.DisplayLabel;
-                UpdatePromptTargetVersionName = CurrentModpack.TargetVersionName;
-                
-                LaunchStatus = "Načítám changelog...";
-                UpdatePromptChangelog = await FetchModpackChangelogAsync(CurrentModpack) ?? "Changelog nebyl poskytnut platformou.";
-
-                LaunchStatus = "Čekám na rozhodnutí uživatele...";
-                var decision = await ShowUpdatePromptAsync(UpdatePromptModpackName, UpdatePromptTargetVersionName, UpdatePromptChangelog);
-
-                if (decision == "Skip")
-                {
-                    LaunchStatus = "Přeskakuji update...";
-                    _lastManifestInfo = ModpackInstaller.LoadManifestInfo(modpackDir) ?? new ModpackManifestInfo();
-                }
-                else if (decision == "ConfirmBackup")
-                {
-                    LaunchStatus = "Spouštím zálohování před updatem...";
-                    var backupDecision = await ShowBackupPrompt(CurrentModpack.Name);
-                    if (backupDecision == BackupPromptDecision.Cancel)
-                    {
-                        IsLaunching = false;
-                        LaunchStatus = "Zrušeno uživatelem.";
-                        return;
-                    }
-                    
-                    if (backupDecision == BackupPromptDecision.BackupAndContinue)
-                    {
-                        await CreatePersistentBackupSnapshotAsync(CurrentModpack, "Před aktualizací modpacku", notifyUser: true);
-                    }
-
-                    LaunchStatus = "Instaluji aktualizaci...";
-                    await ExecUpdateImplementation(CurrentModpack, modpackDir, modsDir);
-                }
-                else // Confirm
-                {
-                    LaunchStatus = "Instaluji aktualizaci...";
-                    await ExecUpdateImplementation(CurrentModpack, modpackDir, modsDir);
-                }
-            }
-            else if (!CurrentModpack.IsTrackingLatest && CurrentModpack.ResolvedTargetVersion != null)
-            {
-                // Pinned specific version → install silently if differs from installed
-                var pinned = CurrentModpack.ResolvedTargetVersion;
-                var installedManifest = ModpackInstaller.LoadManifestInfo(modpackDir);
-                var pinnedFileId = pinned.FileId;
-                var isAlreadyInstalled = installedManifest != null &&
-                    (installedManifest.FileId.ToString() == pinnedFileId ||
-                     string.Equals(installedManifest.Version, pinned.Name, System.StringComparison.OrdinalIgnoreCase)) &&
-                    HasInstalledModpackContent(modpackDir, modsDir);
-
-                if (isAlreadyInstalled)
-                {
-                    LaunchStatus = $"Verze {pinned.Name} je nainstalována.";
-                    _lastManifestInfo = installedManifest ?? new ModpackManifestInfo();
-                }
-                else
-                {
-                    LaunchStatus = $"Příprava verze {pinned.Name}...";
-                    await ExecUpdateImplementation(CurrentModpack, modpackDir, modsDir, pinned);
-                }
-            }
             else
             {
-                // All up to date or no versions available
-                _lastManifestInfo = ModpackInstaller.LoadManifestInfo(modpackDir) ?? new ModpackManifestInfo();
+                LaunchStatus = "Kontroluji aktualizace...";
+
+                try
+                {
+                    await EnsureLatestModpackInstalledBeforeLaunchAsync(CurrentModpack, modpackDir, modsDir);
+                }
+                catch (Exception ex)
+                {
+                    var hasInstalledContent = HasInstalledModpackContent(modpackDir, modsDir);
+                    LogService.Error($"[PlayModpack] Auto-update check failed for {CurrentModpack.Name}", ex);
+
+                    if (!hasInstalledContent)
+                    {
+                        throw;
+                    }
+
+                    LaunchStatus = "Nepodařilo se ověřit update, spouštím lokální instalaci...";
+                    ShowToast("Modpack update", $"Online kontrola updatu selhala, spouštím nainstalovanou verzi {CurrentModpack.DisplayLabel}.", ToastSeverity.Warning, 3200);
+                    _lastManifestInfo = ModpackInstaller.LoadManifestInfo(modpackDir) ?? new ModpackManifestInfo();
+                }
             }
             
             LaunchStatus = "Spouštím hru...";
@@ -272,7 +226,7 @@ public partial class MainViewModel
             IsLaunching = false;
             IsGameRunning = true;
             RunningModpack = TargetModpack ?? CurrentModpack;
-            _discordRpcService.SetPlayingState(RunningModpack?.DisplayLabel ?? RunningModpack?.Name ?? "Minecraft");
+            _discordRpcService.SetPlayingState(RunningModpack?.Name ?? "Minecraft");
             LaunchProgress = 100;
 
             // Uložit do nedávných instancí
@@ -292,8 +246,7 @@ public partial class MainViewModel
             App.MinimizeToTray();
             
             // Wait for game to exit in background
-            var launchedModpackName = RunningModpack?.DisplayLabel ?? RunningModpack?.Name ?? "Minecraft";
-            var launchedModpackId = RunningModpack?.Name ?? "Minecraft";
+            var launchedModpackName = RunningModpack?.Name ?? "Minecraft";
             var gameStartTime = DateTime.UtcNow;
             _ = Task.Run(async () => 
             {
@@ -316,7 +269,7 @@ public partial class MainViewModel
                         string? logPath = null;
                         try
                         {
-                            var logDir = Path.Combine(_launcherService.GetModpackPath(launchedModpackId), "logs");
+                            var logDir = Path.Combine(_launcherService.GetModpackPath(launchedModpackName), "logs");
                             logPath = Path.Combine(logDir, "latest.log");
                             if (File.Exists(logPath))
                             {
@@ -347,34 +300,33 @@ public partial class MainViewModel
         }
     }
 
-    private async Task EnsureRequiredModpackVersionInstalledAsync(ModpackInfo modpack, string modpackDir, string modsDir, ModpackVersion? targetVersion = null)
+    private async Task EnsureLatestModpackInstalledBeforeLaunchAsync(ModpackInfo modpack, string modpackDir, string modsDir)
     {
         if (modpack.ProjectId > 0)
         {
-            await EnsureLatestCurseForgeModpackInstalledAsync(modpack, modpackDir, modsDir, targetVersion);
+            await EnsureLatestCurseForgeModpackInstalledAsync(modpack, modpackDir, modsDir);
             return;
         }
 
         if (!string.IsNullOrWhiteSpace(modpack.VoidRegistrySlug))
         {
-            await EnsureLatestVoidRegistryModpackInstalledAsync(modpack, modpackDir, modsDir, targetVersion);
+            await EnsureLatestVoidRegistryModpackInstalledAsync(modpack, modpackDir, modsDir);
             return;
         }
 
         if (!string.IsNullOrWhiteSpace(modpack.ModrinthId))
         {
-            await EnsureLatestModrinthModpackInstalledAsync(modpack, modpackDir, modsDir, targetVersion);
+            await EnsureLatestModrinthModpackInstalledAsync(modpack, modpackDir, modsDir);
             return;
         }
 
         _lastManifestInfo = ModpackInstaller.LoadManifestInfo(modpackDir) ?? new ModpackManifestInfo();
     }
 
-    private async Task EnsureLatestCurseForgeModpackInstalledAsync(ModpackInfo modpack, string modpackDir, string modsDir, ModpackVersion? targetVersion = null)
+    private async Task EnsureLatestCurseForgeModpackInstalledAsync(ModpackInfo modpack, string modpackDir, string modsDir)
     {
         var filesJson = await _curseForgeApi.GetModpackFilesAsync(modpack.ProjectId);
-        var filesNode = JsonNode.Parse(filesJson);
-        var files = filesNode?["data"]?.AsArray();
+        var files = JsonNode.Parse(filesJson)?["data"]?.AsArray();
         if (files == null || files.Count == 0)
         {
             throw new InvalidOperationException("Zdroj nevrátil žádné buildy modpacku.");
@@ -392,59 +344,45 @@ public partial class MainViewModel
 
         modpack.Versions = new ObservableCollection<ModpackVersion>(remoteVersions);
 
-        // Determine goal version
-        ModpackVersion? goalVersion = null;
-        if (targetVersion != null && !targetVersion.IsLatestSentinel)
+        var latestVersion = remoteVersions.FirstOrDefault();
+        if (latestVersion == null || !int.TryParse(latestVersion.FileId, out var latestFileId))
         {
-            goalVersion = remoteVersions.FirstOrDefault(v => v.FileId == targetVersion.FileId);
-        }
-
-        if (goalVersion == null)
-        {
-            goalVersion = remoteVersions.FirstOrDefault();
-        }
-
-        if (goalVersion == null || !int.TryParse(goalVersion.FileId, out var goalFileId))
-        {
-            throw new InvalidOperationException("Nepodařilo se určit cílový build CurseForge modpacku.");
+            throw new InvalidOperationException("Nepodařilo se určit latest build CurseForge modpacku.");
         }
 
         var installedManifest = ModpackInstaller.LoadManifestInfo(modpackDir);
-        var isGoalInstalled = HasInstalledModpackContent(modpackDir, modsDir) &&
-            ((installedManifest?.FileId == goalFileId) || 
-             string.Equals(installedManifest?.Version, goalVersion.Name, StringComparison.OrdinalIgnoreCase));
-
-        if (isGoalInstalled)
+        var isLatestInstalled = installedManifest?.FileId == latestFileId && HasInstalledModpackContent(modpackDir, modsDir);
+        if (isLatestInstalled)
         {
-            LaunchStatus = $"Verze {goalVersion.Name} je připravena.";
-            SyncInstalledVersionState(modpack, goalVersion);
+            LaunchStatus = $"Máte nejnovější verzi ({latestVersion.Name}).";
+            SyncInstalledVersionState(modpack, latestVersion);
             _lastManifestInfo = installedManifest ?? new ModpackManifestInfo();
             return;
         }
 
-        var goalFileNode = files.FirstOrDefault(file => file?["id"]?.GetValue<int?>() == goalFileId);
-        if (goalFileNode == null)
+        var latestFileNode = files.FirstOrDefault(file => file?["id"]?.GetValue<int?>() == latestFileId);
+        if (latestFileNode == null)
         {
-            throw new InvalidOperationException("Cílovou verzi se nepodařilo dohledat v seznamu souborů.");
+            throw new InvalidOperationException("Latest build se nepodařilo dohledat v seznamu souborů.");
         }
 
-        var downloadUrl = goalFileNode["downloadUrl"]?.ToString();
-        var fileName = goalFileNode["fileName"]?.ToString() ?? $"voidcraft_{modpack.ProjectId}_{goalFileId}.zip";
-        var downloadCandidates = await BuildCurseForgeArchiveDownloadCandidatesAsync(modpack.ProjectId, goalFileId, downloadUrl, fileName);
+        var downloadUrl = latestFileNode["downloadUrl"]?.ToString();
+        var fileName = latestFileNode["fileName"]?.ToString() ?? $"voidcraft_{modpack.ProjectId}_{latestFileId}.zip";
+        var downloadCandidates = await BuildCurseForgeArchiveDownloadCandidatesAsync(modpack.ProjectId, latestFileId, downloadUrl, fileName);
         if (downloadCandidates.Count == 0)
         {
-            throw new InvalidOperationException("Nepodařilo se získat URL ke stažení cílové verze.");
+            throw new InvalidOperationException("Nepodařilo se získat URL ke stažení latest builda.");
         }
 
-        var tempPath = Path.Combine(Path.GetTempPath(), $"voidcraft_{modpack.ProjectId}_{goalFileId}.zip");
+        var tempPath = Path.Combine(Path.GetTempPath(), $"voidcraft_{modpack.ProjectId}_{latestFileId}.zip");
         try
         {
-            LaunchStatus = $"Stahuji verzi {goalVersion.Name}...";
-            await DownloadPackageArchiveAsync(downloadCandidates, tempPath, goalVersion.Name);
+            LaunchStatus = $"Stahuji aktualizaci {latestVersion.Name}...";
+            await DownloadPackageArchiveAsync(downloadCandidates, tempPath, latestVersion.Name);
 
-            LaunchStatus = "Instaluji soubory modpacku...";
-            _lastManifestInfo = await _modpackInstaller.InstallOrUpdateAsync(tempPath, modpackDir, goalFileId, goalVersion.Name);
-            SyncInstalledVersionState(modpack, goalVersion);
+            LaunchStatus = "Instaluji aktualizované soubory...";
+            _lastManifestInfo = await _modpackInstaller.InstallOrUpdateAsync(tempPath, modpackDir, latestFileId, latestVersion.Name);
+            SyncInstalledVersionState(modpack, latestVersion);
             SaveModpacks();
         }
         finally
@@ -456,7 +394,7 @@ public partial class MainViewModel
         }
     }
 
-    private async Task EnsureLatestModrinthModpackInstalledAsync(ModpackInfo modpack, string modpackDir, string modsDir, ModpackVersion? targetVersion = null)
+    private async Task EnsureLatestModrinthModpackInstalledAsync(ModpackInfo modpack, string modpackDir, string modsDir)
     {
         var versionsJson = await _modrinthApi.GetProjectVersionsAsync(modpack.ModrinthId);
         var versions = JsonNode.Parse(versionsJson)?.AsArray();
@@ -476,63 +414,53 @@ public partial class MainViewModel
 
         modpack.Versions = new ObservableCollection<ModpackVersion>(remoteVersions);
 
-        // Determine goal version
-        JsonNode? goalVersionNode = null;
-        if (targetVersion != null && !targetVersion.IsLatestSentinel)
+        var latestVersionNode = versions.FirstOrDefault(version => string.Equals(version?["version_type"]?.ToString(), "release", StringComparison.OrdinalIgnoreCase))
+            ?? versions.FirstOrDefault();
+
+        if (latestVersionNode == null)
         {
-            goalVersionNode = versions.FirstOrDefault(v => v?["id"]?.ToString() == targetVersion.FileId);
+            throw new InvalidOperationException("Nepodařilo se určit latest build Modrinth modpacku.");
         }
 
-        if (goalVersionNode == null)
-        {
-            goalVersionNode = versions.FirstOrDefault(version => string.Equals(version?["version_type"]?.ToString(), "release", StringComparison.OrdinalIgnoreCase))
-                ?? versions.FirstOrDefault();
-        }
-
-        if (goalVersionNode == null)
-        {
-            throw new InvalidOperationException("Nepodařilo se určit cílový build Modrinth modpacku.");
-        }
-
-        var goalVersionId = goalVersionNode["id"]?.ToString() ?? "0";
-        var goalVersionName = goalVersionNode["version_number"]?.ToString() ?? goalVersionNode["name"]?.ToString() ?? "Unknown";
-        var goalVersion = remoteVersions.FirstOrDefault(version => string.Equals(version.FileId, goalVersionId, StringComparison.OrdinalIgnoreCase))
-            ?? new ModpackVersion { Name = goalVersionName, FileId = goalVersionId };
+        var latestVersionId = latestVersionNode["id"]?.ToString() ?? "0";
+        var latestVersionName = latestVersionNode["version_number"]?.ToString() ?? latestVersionNode["name"]?.ToString() ?? "Unknown";
+        var latestVersion = remoteVersions.FirstOrDefault(version => string.Equals(version.FileId, latestVersionId, StringComparison.OrdinalIgnoreCase))
+            ?? new ModpackVersion { Name = latestVersionName, FileId = latestVersionId };
 
         var installedManifest = ModpackInstaller.LoadManifestInfo(modpackDir);
-        var isGoalInstalled = HasInstalledModpackContent(modpackDir, modsDir) &&
-            ((installedManifest?.Version?.Equals(goalVersionName, StringComparison.OrdinalIgnoreCase) ?? false) ||
-             string.Equals(modpack.CurrentVersion?.FileId, goalVersionId, StringComparison.OrdinalIgnoreCase));
+        var isLatestInstalled = HasInstalledModpackContent(modpackDir, modsDir) &&
+            ((installedManifest?.Version?.Equals(latestVersionName, StringComparison.OrdinalIgnoreCase) ?? false) ||
+             string.Equals(modpack.CurrentVersion?.FileId, latestVersionId, StringComparison.OrdinalIgnoreCase));
 
-        if (isGoalInstalled)
+        if (isLatestInstalled)
         {
-            LaunchStatus = $"Verze {goalVersionName} připravena.";
-            SyncInstalledVersionState(modpack, goalVersion);
+            LaunchStatus = $"Máte nejnovější verzi ({latestVersionName}).";
+            SyncInstalledVersionState(modpack, latestVersion);
             _lastManifestInfo = installedManifest ?? new ModpackManifestInfo();
             return;
         }
 
-        var primaryFile = goalVersionNode["files"]?.AsArray()
+        var primaryFile = latestVersionNode["files"]?.AsArray()
             ?.FirstOrDefault(file => file?["primary"]?.GetValue<bool>() == true)
-            ?? goalVersionNode["files"]?.AsArray()?.FirstOrDefault();
+            ?? latestVersionNode["files"]?.AsArray()?.FirstOrDefault();
 
-        var files = goalVersionNode["files"]?.AsArray();
+        var files = latestVersionNode["files"]?.AsArray();
         var downloadCandidates = BuildModrinthArchiveDownloadCandidates(files, primaryFile);
-        var fileName = primaryFile?["filename"]?.ToString() ?? $"{modpack.Name}-{goalVersionName}.mrpack";
+        var fileName = primaryFile?["filename"]?.ToString() ?? $"{modpack.Name}-{latestVersionName}.mrpack";
         if (downloadCandidates.Count == 0)
         {
-            throw new InvalidOperationException("Nepodařilo se získat URL ke stažení cílového Modrinth buildu.");
+            throw new InvalidOperationException("Nepodařilo se získat URL ke stažení latest Modrinth builda.");
         }
 
         var tempPath = Path.Combine(Path.GetTempPath(), fileName);
         try
         {
-            LaunchStatus = $"Stahuji verzi {goalVersionName}...";
-            await DownloadPackageArchiveAsync(downloadCandidates, tempPath, goalVersionName);
+            LaunchStatus = $"Stahuji aktualizaci {latestVersionName}...";
+            await DownloadPackageArchiveAsync(downloadCandidates, tempPath, latestVersionName);
 
-            LaunchStatus = "Instaluji soubory modpacku...";
-            _lastManifestInfo = await _modpackInstaller.InstallOrUpdateAsync(tempPath, modpackDir, targetVersion: goalVersionName);
-            SyncInstalledVersionState(modpack, goalVersion);
+            LaunchStatus = "Instaluji aktualizované soubory...";
+            _lastManifestInfo = await _modpackInstaller.InstallOrUpdateAsync(tempPath, modpackDir, targetVersion: latestVersionName);
+            SyncInstalledVersionState(modpack, latestVersion);
             SaveModpacks();
         }
         finally
@@ -544,7 +472,7 @@ public partial class MainViewModel
         }
     }
 
-    private async Task EnsureLatestVoidRegistryModpackInstalledAsync(ModpackInfo modpack, string modpackDir, string modsDir, ModpackVersion? targetVersion = null)
+    private async Task EnsureLatestVoidRegistryModpackInstalledAsync(ModpackInfo modpack, string modpackDir, string modsDir)
     {
         var slug = modpack.VoidRegistrySlug;
         if (string.IsNullOrWhiteSpace(slug))
@@ -556,34 +484,10 @@ public partial class MainViewModel
         var installedManifest = ModpackInstaller.LoadManifestInfo(modpackDir);
         var currentVersionName = FirstNonEmpty(installedManifest?.Version, modpack.CurrentVersion?.Name);
         var hasInstalledContent = HasInstalledModpackContent(modpackDir, modsDir);
-        var accessToken = await ResolveVoidRegistryAccessTokenAsync(modpack, requireFreshSession: true);
-
-        if (IsCollaboratorRegistryWorkspace(modpack) && string.IsNullOrWhiteSpace(accessToken))
-        {
-            if (hasInstalledContent)
-            {
-                LaunchStatus = $"VOID ID session není aktivní, používám lokální workspace {modpack.DisplayLabel}.";
-                _lastManifestInfo = installedManifest ?? new ModpackManifestInfo();
-                return;
-            }
-
-            throw new InvalidOperationException("Collaborator workspace vyžaduje aktivní VOID ID session, aby šel stáhnout interní release.");
-        }
-
-        // Handle specific version if available (pinned mode)
-        if (targetVersion != null && !targetVersion.IsLatestSentinel)
-        {
-            if (hasInstalledContent && currentVersionName == targetVersion.Name)
-            {
-                LaunchStatus = $"Verze {currentVersionName} je připravena.";
-                _lastManifestInfo = installedManifest ?? new ModpackManifestInfo();
-                return;
-            }
-        }
 
         if (hasInstalledContent && !string.IsNullOrWhiteSpace(currentVersionName))
         {
-            var updateCheck = await _voidRegistryService.GetUpdateCheckAsync(slug, currentVersionName, accessToken);
+            var updateCheck = await _voidRegistryService.GetUpdateCheckAsync(slug, currentVersionName);
             var latestInfo = updateCheck?.Latest;
             if (latestInfo != null)
             {
@@ -611,7 +515,7 @@ public partial class MainViewModel
             }
         }
 
-        var manifest = await _voidRegistryService.GetInstallManifestAsync(slug, accessToken);
+        var manifest = await _voidRegistryService.GetInstallManifestAsync(slug);
         if (manifest == null || string.IsNullOrWhiteSpace(manifest.FileUrl))
         {
             throw new InvalidOperationException("VOID Registry nevrátil validní install manifest.");
@@ -1329,56 +1233,5 @@ public partial class MainViewModel
         }
 
         return false;
-    }
-
-    private async Task ExecUpdateImplementation(ModpackInfo modpack, string modpackDir, string modsDir, ModpackVersion? targetVersion = null)
-    {
-        try
-        {
-            await EnsureRequiredModpackVersionInstalledAsync(modpack, modpackDir, modsDir, targetVersion);
-        }
-        catch (Exception ex)
-        {
-            var hasInstalledContent = HasInstalledModpackContent(modpackDir, modsDir);
-            LogService.Error($"[PlayModpack] Auto-update check failed for {modpack.DisplayLabel}", ex);
-
-            if (!hasInstalledContent)
-            {
-                throw;
-            }
-
-            LaunchStatus = "Nepodařilo se ověřit update, spouštím lokální instalaci...";
-            ShowToast("Modpack update", $"Online kontrola updatu selhala, spouštím nainstalovanou verzi {modpack.DisplayLabel}.", ToastSeverity.Warning, 3200);
-            _lastManifestInfo = ModpackInstaller.LoadManifestInfo(modpackDir) ?? new ModpackManifestInfo();
-        }
-    }
-
-    private async Task<string?> FetchModpackChangelogAsync(ModpackInfo modpack)
-    {
-        try
-        {
-            if (!string.IsNullOrWhiteSpace(modpack.VoidRegistrySlug))
-            {
-                var accessToken = await ResolveVoidRegistryAccessTokenAsync(modpack, requireFreshSession: false);
-                var updateCheck = await _voidRegistryService.GetUpdateCheckAsync(modpack.VoidRegistrySlug, modpack.CurrentVersion?.Name ?? "0.0.0", accessToken);
-                return updateCheck?.Latest?.Changelog;
-            }
-            if (modpack.Source == "Modrinth" && !string.IsNullOrEmpty(modpack.ModrinthId) && modpack.TargetVersion != null && !string.IsNullOrEmpty(modpack.TargetVersion.FileId))
-            {
-                var response = await _httpClient.GetStringAsync($"https://api.modrinth.com/v2/version/{modpack.TargetVersion.FileId}");
-                var node = JsonNode.Parse(response);
-                return node?["changelog"]?.ToString();
-            }
-            if (modpack.Source == "CurseForge" && modpack.ProjectId > 0 && modpack.TargetVersion != null && !string.IsNullOrEmpty(modpack.TargetVersion.FileId))
-            {
-                var changelogHtml = await _curseForgeApi.GetModFileChangelogAsync(modpack.ProjectId, int.Parse(modpack.TargetVersion.FileId));
-                return changelogHtml;
-            }
-        }
-        catch (Exception ex)
-        {
-            LogService.Error($"Failed to fetch changelog for {modpack.Name}", ex);
-        }
-        return null;
     }
 }

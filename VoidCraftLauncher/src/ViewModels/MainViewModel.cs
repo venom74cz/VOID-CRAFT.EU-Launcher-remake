@@ -95,7 +95,6 @@ public partial class MainViewModel : ViewModelBase
     private readonly GitHubReleaseService _gitHubReleaseService;
     private readonly CreatorNotesService _creatorNotesService;
     private readonly CreatorReleaseService _creatorReleaseService;
-    private readonly ArchitektDeskService _architektDeskService;
     private ModpackManifestInfo _lastManifestInfo;
     private readonly SemaphoreSlim _modpackUpdateCheckLock = new(1, 1);
     private static readonly TimeSpan ModpackUpdateCheckInterval = TimeSpan.FromSeconds(5);
@@ -260,7 +259,7 @@ public partial class MainViewModel : ViewModelBase
         MainViewType.Discover => LF("Shell.Title.Discover", BrowserSource),
         MainViewType.Identity => "VOID ID",
         MainViewType.Settings => L("Shell.Title.Settings"),
-        MainViewType.InstanceDetail => CurrentModpack?.DisplayLabel ?? L("Shell.Title.InstanceDetailFallback"),
+        MainViewType.InstanceDetail => CurrentModpack?.Name ?? L("Shell.Title.InstanceDetailFallback"),
         MainViewType.SkinStudio => L("Shell.Title.SkinStudio"),
         MainViewType.Achievements => L("Shell.Title.Achievements"),
         MainViewType.ServerHub => L("Shell.Title.ServerHub"),
@@ -293,8 +292,6 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     private void GoToFuture() => NavigateToView(MainViewType.Future);
 
-
-
     [RelayCommand]
     private void GoToThemeSwitcher() => NavigateToView(MainViewType.ThemeSwitcher);
 
@@ -303,53 +300,6 @@ public partial class MainViewModel : ViewModelBase
 
     [RelayCommand]
     private void GoBack() => _navigationService.GoBack();
-
-    // ===== UPDATE PROMPT =====
-
-    [ObservableProperty]
-    private bool _isUpdatePromptVisible = false;
-
-    [ObservableProperty]
-    private string _updatePromptModpackName = "";
-
-    [ObservableProperty]
-    private string _updatePromptTargetVersionName = "";
-
-    [ObservableProperty]
-    private string _updatePromptChangelog = "";
-
-    private TaskCompletionSource<string>? _updatePromptTcs;
-
-    public Task<string> ShowUpdatePromptAsync(string modpackName, string targetVersion, string changelog)
-    {
-        UpdatePromptModpackName = modpackName;
-        UpdatePromptTargetVersionName = targetVersion;
-        UpdatePromptChangelog = changelog;
-        IsUpdatePromptVisible = true;
-        _updatePromptTcs = new TaskCompletionSource<string>();
-        return _updatePromptTcs.Task;
-    }
-
-    [RelayCommand]
-    private void ConfirmUpdatePrompt()
-    {
-        IsUpdatePromptVisible = false;
-        _updatePromptTcs?.TrySetResult("Confirm");
-    }
-
-    [RelayCommand]
-    private void ConfirmUpdatePromptWithBackup()
-    {
-        IsUpdatePromptVisible = false;
-        _updatePromptTcs?.TrySetResult("ConfirmBackup");
-    }
-
-    [RelayCommand]
-    private void SkipUpdatePrompt()
-    {
-        IsUpdatePromptVisible = false;
-        _updatePromptTcs?.TrySetResult("Skip");
-    }
 
     // ===== BACKUP PROMPT =====
 
@@ -653,7 +603,6 @@ public partial class MainViewModel : ViewModelBase
         _gitHubReleaseService = sl.Resolve<GitHubReleaseService>();
         _creatorNotesService = sl.Resolve<CreatorNotesService>();
         _creatorReleaseService = sl.Resolve<CreatorReleaseService>();
-        _architektDeskService = sl.Resolve<ArchitektDeskService>();
         InitializeCreatorWorkbenchEditorState();
         _discordRpcService.Initialize();
         _discordRpcService.PresenceChanged += () => Avalonia.Threading.Dispatcher.UIThread.Post(NotifyStreamingToolsStateChanged);
@@ -705,7 +654,6 @@ public partial class MainViewModel : ViewModelBase
         InitializeLocalizationSurface();
         InitializeAchievementSurface();
         InitializeCreatorStudioShell();
-        LoadArchitektProfiles();
 
         // Restore offline username
         if (!string.IsNullOrEmpty(Config.LastOfflineUsername))
@@ -866,29 +814,7 @@ public partial class MainViewModel : ViewModelBase
 
     private void OnInstalledModpacksCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
-        if (e.OldItems != null)
-        {
-            foreach (ModpackInfo item in e.OldItems)
-            {
-                item.PropertyChanged -= OnModpackItemPropertyChanged;
-            }
-        }
-        if (e.NewItems != null)
-        {
-            foreach (ModpackInfo item in e.NewItems)
-            {
-                item.PropertyChanged += OnModpackItemPropertyChanged;
-            }
-        }
         HandleInstalledModpacksChanged();
-    }
-
-    private void OnModpackItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName == nameof(ModpackInfo.TargetVersion))
-        {
-            SaveModpacks();
-        }
     }
 
     private void HandleInstalledModpacksChanged()
@@ -920,19 +846,6 @@ public partial class MainViewModel : ViewModelBase
                 
             OnPropertyChanged(nameof(HasRecentModpacks));
         });
-    }
-
-    private ModpackInfo? FindInstalledModpack(ModpackInfo candidate)
-    {
-        return InstalledModpacks.FirstOrDefault(existing =>
-            string.Equals(existing.Name, candidate.Name, StringComparison.OrdinalIgnoreCase) ||
-            (candidate.ProjectId > 0 && existing.ProjectId == candidate.ProjectId && existing.IsCollaboratorWorkspace == candidate.IsCollaboratorWorkspace) ||
-            (!string.IsNullOrWhiteSpace(candidate.VoidRegistrySlug) &&
-             string.Equals(existing.VoidRegistrySlug, candidate.VoidRegistrySlug, StringComparison.OrdinalIgnoreCase) &&
-             existing.IsCollaboratorWorkspace == candidate.IsCollaboratorWorkspace) ||
-            (!string.IsNullOrWhiteSpace(candidate.ModrinthId) &&
-             string.Equals(existing.ModrinthId, candidate.ModrinthId, StringComparison.OrdinalIgnoreCase) &&
-             existing.IsCollaboratorWorkspace == candidate.IsCollaboratorWorkspace));
     }
 
     private void OnCurrentModpackScreenshotsChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -1043,7 +956,7 @@ public partial class MainViewModel : ViewModelBase
             MainViewType.Discover => $"Hledá nové modpacky ({BrowserSource})",
             MainViewType.Identity => "Spravuje VOID ID a GitHub propojení",
             MainViewType.Settings => "Upravuje nastavení",
-            MainViewType.InstanceDetail => $"Detail: {CurrentModpack?.DisplayLabel ?? CurrentModpack?.Name}",
+            MainViewType.InstanceDetail => $"Detail: {CurrentModpack?.Name}",
             MainViewType.Future => "Prohlíží si future roadmapu",
             _ => "V hlavní nabídce"
         };

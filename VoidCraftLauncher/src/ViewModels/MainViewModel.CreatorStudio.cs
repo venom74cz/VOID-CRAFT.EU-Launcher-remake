@@ -145,7 +145,6 @@ public partial class MainViewModel
     {
         RefreshCurrentWorkspaceHeroState();
         QueueRefreshCreatorCollaborators("Projektový kontext se změnil, collaborator list se obnovuje.");
-        QueueRefreshCreatorReleaseGovernance("Projektový kontext se změnil, release governance se obnovuje.");
         OnPropertyChanged(nameof(HasCurrentWorkspaceCreatorMetadata));
         OnPropertyChanged(nameof(HasCurrentWorkspaceDescription));
         OnPropertyChanged(nameof(HasCurrentWorkspaceFullDescription));
@@ -232,9 +231,7 @@ public partial class MainViewModel
 
     public string CreatorCurrentTabLabel => GetCreatorTabLabel(CreatorShellState.SelectedTab);
 
-    public string CreatorActiveScopeSummary => IsArchitektAgentMode 
-        ? CreatorWorkspaceContext.ActiveScope.Summary 
-        : (CreatorWorkspaceContext.WorkspaceLabel ?? "Vybraný workspace");
+    public string CreatorActiveScopeSummary => CreatorWorkspaceContext.ActiveScope.Summary;
 
     public string CreatorManifestStatus => CreatorWorkspaceContext.HasCreatorManifest
         ? IsCreatorMetadataDirty
@@ -252,11 +249,9 @@ public partial class MainViewModel
 
     public string CreatorLastActivityLabel => CreatorWorkspaceContext.LastActivityLabel;
 
-    public bool IsCreatorArchitektDeskVisible => IsStreamingToolsView && CreatorShellState.RightDockMode == CreatorRightDockMode.ArchitektDesk;
+    public bool IsCreatorCopilotDeskVisible => IsStreamingToolsView && CreatorShellState.RightDockMode == CreatorRightDockMode.CopilotDesk;
 
     public bool IsStandardContextDockVisible => !IsStreamingToolsView || CreatorShellState.RightDockMode == CreatorRightDockMode.ContextDock;
-
-    public bool IsRightDockHostVisible => IsCreatorArchitektDeskVisible || IsStandardContextDockVisible;
 
     public bool IsCreatorNotesDrawerOpen => IsStreamingToolsView && CreatorShellState.SecondaryDrawerMode == CreatorSecondaryDrawerMode.Notes;
 
@@ -602,9 +597,8 @@ public partial class MainViewModel
         OnPropertyChanged(nameof(CreatorGitStatusSummary));
         OnPropertyChanged(nameof(CreatorReleaseStatusSummary));
         OnPropertyChanged(nameof(CreatorLastActivityLabel));
-        OnPropertyChanged(nameof(IsCreatorArchitektDeskVisible));
+        OnPropertyChanged(nameof(IsCreatorCopilotDeskVisible));
         OnPropertyChanged(nameof(IsStandardContextDockVisible));
-        OnPropertyChanged(nameof(IsRightDockHostVisible));
         OnPropertyChanged(nameof(IsCreatorNotesDrawerOpen));
         OnPropertyChanged(nameof(HasCreatorMissingFolders));
         OnPropertyChanged(nameof(HasCreatorRecentWorkspaces));
@@ -1528,10 +1522,10 @@ public partial class MainViewModel
     }
 
     [RelayCommand]
-    private void UseCreatorArchitektDesk()
+    private void UseCreatorCopilotDesk()
     {
-        SetCreatorDockMode(CreatorRightDockMode.ArchitektDesk);
-        TrackCreatorActivity("Zapnuty ARCHITEKT Desk.");
+        SetCreatorDockMode(CreatorRightDockMode.CopilotDesk);
+        TrackCreatorActivity("Zapnuty Creator Copilot Desk.");
     }
 
     [RelayCommand]
@@ -1544,7 +1538,7 @@ public partial class MainViewModel
     [RelayCommand]
     private void OpenCreatorNotesDrawer()
     {
-        SetCreatorDockMode(CreatorRightDockMode.ArchitektDesk, false);
+        SetCreatorDockMode(CreatorRightDockMode.CopilotDesk, false);
         SetCreatorDrawerMode(CreatorSecondaryDrawerMode.Notes);
         TrackCreatorActivity("Otevren Notes drawer.");
     }

@@ -2,35 +2,16 @@
 
 Všechny důležité změny v projektu jsou dokumentovány v tomto souboru.
 
-## [3.1.11] - 2026-04-06
+## [3.3.1] - 2026-05-01
 
-### 🚀 Creator release governance + Git repair
-
-### Přidáno
-- **Registry governance v launcheru**: `Creator Studio` teď v `Release` panelu načítá historii verzí z `VOID Registry`, pending public approvals a governance stav aktivního projektu.
-- **Visibility actions**: launcher umí nad registry verzemi přímo spustit akce `public`, `internal` a `yank` bez odskoku na web.
-
-### Změněno
-- **VOID ID wording**: dashboard, identitní plocha i nav rail používají běžný profilový / projektový wording bez admin leaků.
-- **Release metadata**: projekt, installer, fallback `User-Agent` a referenční dokumentace jsou srovnané na verzi `3.1.11`.
+### 🛠️ Modpack system stability & Fixes
 
 ### Opraveno
-- **GitHub origin repair**: akce `Použít jako origin` u existujícího GitHub repa už dokáže opravit rozbitý lokální `.git` stav a znovu nastavit `origin`.
-- **Git repository detection**: invalidní `.git` složka už se netváří jako validní repository jen kvůli existenci adresáře.
-- **GitHub error detail**: toast při failu vrací konkrétnější git chybu místo generického hlášení.
-
-## [3.1.10.1] - 2026-04-05
-
-### 🛠️ Creator Studio auth hotfix
-
-### Opraveno
-- **Creator Studio login crash**: collaborator templaty ve `StreamingToolsView` už neodkazují na `MainViewModel` přes křehký `$parent[ItemsControl].((vm:MainViewModel)DataContext)` cast, ale přes pojmenovaný root binding, takže otevření creator plochy po `VOID ID` loginu už nerozbije XAML deferred content.
-- **GitHub session restore threading**: refresh GitHub repozitářů po restore session už přesouvá změny bindovaných kolekcí a stavů na UI thread, takže Creator Studio nespadne při aktivním GitHub účtu.
-- **Dock actions**: toast dismiss command používá stejný root binding pattern, aby se stejná XAML binding chyba nevracela i v overlay prvcích.
-
-### Změněno
-- **Context dock visuals**: community sekce dostala brand-aware ikony pro web, Discord, GitHub a YouTube, kartový styl tlačítek a jemnější spacing mezi sekcemi.
-- **Release metadata**: projekt, installer, fallback `User-Agent` a referenční dokumentace jsou srovnané na verzi `3.1.10.1`.
+- **CurseForge "Latest" vanilla fix**: "Latest" verze u CurseForge už nestahuje server packy, které způsobovaly spouštění čisté vanilly. Automaticky se preferuje klientský modpack archiv.
+- **Infinite update loop**: Opravena chyba v persistenci verze u VOIDPACKů, která způsobovala, že launcher nabízel aktualizaci i po jejím úspěšném dokončení.
+- **Smart mod cleanup**: Při aktualizaci VOIDPACKu se nyní automaticky odstraňují staré verze módů, které už v novém buildu nejsou (prevence duplicit a pádů).
+- **CurseForge 403 Forbidden**: Opravena chyba stahování archivů z CurseForge CDN způsobená nevalidní hlavičkou prohlížeče.
+- **Release metadata**: Verze projektu, installer a fallbacky jsou srovnané na verzi `3.3.1`.
 
 ## [3.1.10] - 2026-04-05
 

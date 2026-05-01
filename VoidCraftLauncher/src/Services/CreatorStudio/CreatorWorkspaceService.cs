@@ -236,8 +236,7 @@ public sealed class CreatorWorkspaceService
             return (false, "Git neni inicializovan", null);
         }
 
-        var gitPath = Path.Combine(workspacePath, ".git");
-        if (!Directory.Exists(gitPath) && !File.Exists(gitPath))
+        if (!Directory.Exists(Path.Combine(workspacePath, ".git")))
         {
             return (false, "Git neni inicializovan", null);
         }
@@ -257,12 +256,11 @@ public sealed class CreatorWorkspaceService
 
             process.Start();
             var output = process.StandardOutput.ReadToEnd();
-            _ = process.StandardError.ReadToEnd();
             process.WaitForExit(3000);
 
             if (process.ExitCode != 0)
             {
-                return (false, "Git neni inicializovan", null);
+                return (true, "Git repository", null);
             }
 
             var lines = output
@@ -276,7 +274,7 @@ public sealed class CreatorWorkspaceService
         }
         catch
         {
-            return (false, "Git neni inicializovan", null);
+            return (true, "Git repository", null);
         }
     }
 

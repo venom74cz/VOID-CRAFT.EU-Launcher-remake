@@ -15,8 +15,6 @@ public sealed class CreatorGitService
     private static readonly string[] EmptyArgs = Array.Empty<string>();
     private static readonly TimeSpan DefaultGitTimeout = TimeSpan.FromMinutes(2);
 
-    private static readonly char[] OutputLineSeparators = { '\r', '\n' };
-
     public bool IsGitAvailable()
     {
         try
@@ -30,69 +28,6 @@ public sealed class CreatorGitService
         }
     }
 
-    /// <summary>
-    /// Installs Git via winget silently, streaming progress lines back through <paramref name="progress"/>.
-    /// Throws <see cref="InvalidOperationException"/> if winget exits with non-zero or git is still unavailable after install.
-    /// </summary>
-    public async Task InstallGitViaWingetAsync(Action<string> progress, CancellationToken cancellationToken = default)
-    {
-        progress("Spouštím instalaci Git přes winget...");
-
-        var psi = new ProcessStartInfo
-        {
-            FileName = "winget",
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            CreateNoWindow = true,
-            StandardOutputEncoding = Encoding.UTF8,
-            StandardErrorEncoding = Encoding.UTF8
-        };
-
-        // Silent, non-interactive winget install
-        foreach (var arg in new[] { "install", "--id", "Git.Git", "-e", "--source", "winget",
-                                    "--accept-package-agreements", "--accept-source-agreements", "--silent" })
-            psi.ArgumentList.Add(arg);
-
-        using var proc = Process.Start(psi)
-            ?? throw new InvalidOperationException("Nepodařilo se spustit winget. Je winget dostupný?");
-
-        var outputReaderTask = Task.Run(async () =>
-        {
-            while (!proc.StandardOutput.EndOfStream)
-            {
-                var line = await proc.StandardOutput.ReadLineAsync(cancellationToken).ConfigureAwait(false);
-                if (!string.IsNullOrWhiteSpace(line))
-                    progress(line.Trim());
-            }
-        }, cancellationToken);
-
-        var errorReaderTask = proc.StandardError.ReadToEndAsync(cancellationToken);
-
-        try
-        {
-            await proc.WaitForExitAsync(new CancellationTokenSource(TimeSpan.FromMinutes(5)).Token)
-                      .ConfigureAwait(false);
-        }
-        catch (OperationCanceledException)
-        {
-            TryKillProcess(proc);
-            throw new InvalidOperationException("Instalace Git přes winget překročila časový limit.");
-        }
-
-        await outputReaderTask.ConfigureAwait(false);
-        var stderr = await errorReaderTask.ConfigureAwait(false);
-
-        if (proc.ExitCode != 0)
-        {
-            var detail = string.IsNullOrWhiteSpace(stderr) ? $"Exit code: {proc.ExitCode}" : stderr.Trim();
-            throw new InvalidOperationException(
-                $"winget instalace Git selhala ({detail}). Nainstaluj Git ručně z https://git-scm.com");
-        }
-
-        progress("Instalace dokončena. Ověřuji dostupnost Git...");
-    }
-
     public async Task<CreatorGitStatus> GetStatusAsync(string workspacePath, IReadOnlyCollection<string>? scopedPaths = null)
     {
         var status = new CreatorGitStatus();
@@ -103,12 +38,6 @@ public sealed class CreatorGitService
         var gitDir = Path.Combine(workspacePath, ".git");
         if (!Directory.Exists(gitDir) && !File.Exists(gitDir))
             return status;
-
-        var repositoryProbe = await RunGitAsync(workspacePath, "rev-parse", "--is-inside-work-tree");
-        if (!IsHealthyRepository(repositoryProbe))
-        {
-            return status;
-        }
 
         status.IsRepository = true;
 
@@ -218,8 +147,8 @@ public sealed class CreatorGitService
 
     public async Task<bool> InitRepositoryAsync(string workspacePath)
     {
-        var result = await EnsureRepositoryReadyAsync(workspacePath);
-        return result.Success;
+        var result = await RunGitAsync(workspacePath, "init");
+        return result.ExitCode == 0;
     }
 
     public async Task<bool> StageFileAsync(string workspacePath, string filePath)
@@ -356,64 +285,17 @@ public sealed class CreatorGitService
 
     public async Task<bool> SetRemoteOriginAsync(string workspacePath, string remoteUrl)
     {
-        var result = await SetRemoteOriginDetailedAsync(workspacePath, remoteUrl);
-        return result.Success;
-    }
-
-    public async Task<(bool Success, string Message)> SetRemoteOriginDetailedAsync(string workspacePath, string remoteUrl)
-    {
         if (string.IsNullOrWhiteSpace(workspacePath) || string.IsNullOrWhiteSpace(remoteUrl))
         {
-            return (false, "Chybí creator workspace nebo URL GitHub repozitáře.");
+            return false;
         }
 
-        var repositoryReady = await EnsureRepositoryReadyAsync(workspacePath);
-        if (!repositoryReady.Success)
-        {
-            return repositoryReady;
-        }
-
-        var normalizedRemoteUrl = remoteUrl.Trim();
         var existing = await RunGitAsync(workspacePath, "remote", "get-url", "origin");
-        if (existing.ExitCode == 0)
-        {
-            var existingUrl = existing.Output.Trim();
-            if (string.Equals(existingUrl, normalizedRemoteUrl, StringComparison.OrdinalIgnoreCase))
-            {
-                return (true, "Origin remote už je nastavený na vybrané repo.");
-            }
+        var result = existing.ExitCode == 0
+            ? await RunGitAsync(workspacePath, "remote", "set-url", "origin", remoteUrl.Trim())
+            : await RunGitAsync(workspacePath, "remote", "add", "origin", remoteUrl.Trim());
 
-            var setResult = await RunGitAsync(workspacePath, "remote", "set-url", "origin", normalizedRemoteUrl);
-            if (setResult.ExitCode == 0)
-            {
-                return (true, "Origin remote byl aktualizovaný.");
-            }
-
-            LogService.Error($"Git remote set-url origin failed for '{workspacePath}': {NormalizeGitOutput(setResult.Output)}");
-            return (false, BuildGitFailureMessage("Nepodařilo se přepsat existující origin remote.", setResult.Output));
-        }
-
-        var addResult = await RunGitAsync(workspacePath, "remote", "add", "origin", normalizedRemoteUrl);
-        if (addResult.ExitCode == 0)
-        {
-            return (true, "Origin remote byl nastavený.");
-        }
-
-        var remoteList = await RunGitAsync(workspacePath, "remote");
-        if (remoteList.ExitCode == 0 && RemoteExists(remoteList.Output, "origin"))
-        {
-            var fallbackSetResult = await RunGitAsync(workspacePath, "remote", "set-url", "origin", normalizedRemoteUrl);
-            if (fallbackSetResult.ExitCode == 0)
-            {
-                return (true, "Origin remote byl opravený.");
-            }
-
-            LogService.Error($"Git remote recovery failed for '{workspacePath}': {NormalizeGitOutput(fallbackSetResult.Output)}");
-            return (false, BuildGitFailureMessage("Origin remote existuje, ale nepodařilo se ho opravit.", fallbackSetResult.Output));
-        }
-
-        LogService.Error($"Git remote add origin failed for '{workspacePath}': {NormalizeGitOutput(addResult.Output)}");
-        return (false, BuildGitFailureMessage("Nepodařilo se nastavit origin remote.", addResult.Output));
+        return result.ExitCode == 0;
     }
 
     public async Task<string> GetDiffAsync(string workspacePath, string filePath)
@@ -638,89 +520,6 @@ public sealed class CreatorGitService
             await stream.WriteAsync(pathBytes);
             stream.WriteByte(0);
         }
-    }
-
-    private static async Task<(bool Success, string Message)> EnsureRepositoryReadyAsync(string workspacePath)
-    {
-        if (string.IsNullOrWhiteSpace(workspacePath) || !Directory.Exists(workspacePath))
-        {
-            return (false, "Creator workspace neexistuje.");
-        }
-
-        var repositoryProbe = await RunGitAsync(workspacePath, "rev-parse", "--is-inside-work-tree");
-        if (IsHealthyRepository(repositoryProbe))
-        {
-            return (true, "Git repository je připravené.");
-        }
-
-        var hadGitMetadata = HasGitMetadata(workspacePath);
-        if (hadGitMetadata)
-        {
-            LogService.Log($"Detected invalid git metadata in '{workspacePath}', attempting automatic repair.", "WARN");
-        }
-
-        var initResult = await RunGitAsync(workspacePath, "init");
-        if (initResult.ExitCode == 0)
-        {
-            if (hadGitMetadata)
-            {
-                LogService.Log($"Git metadata repaired for '{workspacePath}'.", "WARN");
-            }
-
-            return (true, hadGitMetadata
-                ? "Poškozené lokální git metadata byla opravená."
-                : "Lokální git repository bylo inicializované.");
-        }
-
-        LogService.Error($"Git init failed for '{workspacePath}': {NormalizeGitOutput(initResult.Output)}");
-        var failurePrefix = hadGitMetadata
-            ? "Lokální git metadata jsou poškozená a jejich oprava selhala."
-            : "Nepodařilo se inicializovat lokální git repository.";
-        return (false, BuildGitFailureMessage(failurePrefix, initResult.Output));
-    }
-
-    private static bool HasGitMetadata(string workspacePath)
-    {
-        var gitPath = Path.Combine(workspacePath, ".git");
-        return Directory.Exists(gitPath) || File.Exists(gitPath);
-    }
-
-    private static bool IsHealthyRepository((int ExitCode, string Output) probe)
-    {
-        return probe.ExitCode == 0 && string.Equals(probe.Output.Trim(), "true", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static bool RemoteExists(string output, string remoteName)
-    {
-        return output
-            .Split(OutputLineSeparators, StringSplitOptions.RemoveEmptyEntries)
-            .Any(line => string.Equals(line.Trim(), remoteName, StringComparison.OrdinalIgnoreCase));
-    }
-
-    private static string BuildGitFailureMessage(string prefix, string output)
-    {
-        var detail = NormalizeGitOutput(output);
-        return string.IsNullOrWhiteSpace(detail) ? prefix : $"{prefix} {detail}";
-    }
-
-    private static string NormalizeGitOutput(string? output)
-    {
-        if (string.IsNullOrWhiteSpace(output))
-        {
-            return string.Empty;
-        }
-
-        var collapsed = string.Join(" ", output
-            .Split(OutputLineSeparators, StringSplitOptions.RemoveEmptyEntries)
-            .Select(line => line.Trim())
-            .Where(line => !string.IsNullOrWhiteSpace(line)));
-
-        if (collapsed.Length <= 220)
-        {
-            return collapsed;
-        }
-
-        return collapsed[..220].TrimEnd() + "...";
     }
 
     private static string GetOriginRemoteUrl(string workspacePath)

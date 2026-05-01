@@ -2,6 +2,17 @@
 
 Všechny důležité změny v projektu jsou dokumentovány v tomto souboru.
 
+## [3.3.1] - 2026-05-01
+
+### 🛠️ Modpack system stability & Fixes
+
+### Opraveno
+- **CurseForge "Latest" vanilla fix**: "Latest" verze u CurseForge už nestahuje server packy, které způsobovaly spouštění čisté vanilly. Automaticky se preferuje klientský modpack archiv.
+- **Infinite update loop**: Opravena chyba v persistenci verze u VOIDPACKů, která způsobovala, že launcher nabízel aktualizaci i po jejím úspěšném dokončení.
+- **Smart mod cleanup**: Při aktualizaci VOIDPACKu se nyní automaticky odstraňují staré verze módů, které už v novém buildu nejsou (prevence duplicit a pádů).
+- **CurseForge 403 Forbidden**: Opravena chyba stahování archivů z CurseForge CDN způsobená nevalidní hlavičkou prohlížeče.
+- **Release metadata**: Verze projektu, installer a fallbacky jsou srovnané na verzi `3.3.1`.
+
 ## [3.1.10] - 2026-04-05
 
 ### ✨ Shell, VOID ID a registry workflow

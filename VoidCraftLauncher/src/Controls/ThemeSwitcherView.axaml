@@ -12,9 +12,9 @@
             <!-- Header -->
             <Grid ColumnDefinitions="*,Auto">
                 <StackPanel Spacing="4">
-                    <TextBlock Text="Motivy" FontSize="26" FontWeight="ExtraBold"
+                    <TextBlock Text="Motivy a Celoaplikační Měřítko" FontSize="26" FontWeight="ExtraBold"
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
-                    <TextBlock Text="Zvol vizuální styl launcheru. Změna se projeví okamžitě."
+                    <TextBlock Text="Zvol vizuální styl launcheru nebo uprav jeho celkovou velikost. Změna se projeví okamžitě."
                                FontSize="13" Foreground="{DynamicResource TextMutedBrush}"/>
                 </StackPanel>
                 <Border Grid.Column="1" Background="{DynamicResource BgElevatedBrush}" CornerRadius="{DynamicResource RadiusPill}"
@@ -22,6 +22,30 @@
                     <TextBlock Text="{Binding BuiltInThemeCount, StringFormat='{}{0} built-in motivy'}" FontSize="11" Foreground="{DynamicResource SuccessBrush}" FontWeight="SemiBold"/>
                 </Border>
             </Grid>
+
+            <!-- UI Scale Card -->
+            <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="{DynamicResource RadiusCard}"
+                    BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1" Padding="24">
+                <StackPanel Spacing="16">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="Měřítko Uživatelského Rozhraní (UI Scale)" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="16"/>
+                            <TextBlock Text="Zvětšit nebo zmenšit všechny prvky Launcheru plošně" FontSize="12" Foreground="{DynamicResource TextMutedBrush}"/>
+                        </StackPanel>
+                        <Border Grid.Column="1" Background="{DynamicResource BgInteractiveBrush}" CornerRadius="{DynamicResource RadiusSmall}" Padding="12,6">
+                            <TextBlock Text="{Binding Config.GlobalUiScale, StringFormat='{}{0:P0}'}" FontWeight="ExtraBold" Foreground="{DynamicResource PrimaryBBrush}" FontSize="16"/>
+                        </Border>
+                    </Grid>
+                    
+                    <Slider Minimum="0.5" Maximum="2.0" Value="{Binding Config.GlobalUiScale}" TickFrequency="0.05" IsSnapToTickEnabled="True"/>
+                    
+                    <Grid ColumnDefinitions="*,*,*">
+                        <TextBlock Grid.Column="0" Text="Malé (50%)" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" HorizontalAlignment="Left"/>
+                        <TextBlock Grid.Column="1" Text="Výchozí (100%)" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" HorizontalAlignment="Center"/>
+                        <TextBlock Grid.Column="2" Text="Velké (200%)" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" HorizontalAlignment="Right"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
 
             <!-- Current theme preview -->
             <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="{DynamicResource RadiusCard}"

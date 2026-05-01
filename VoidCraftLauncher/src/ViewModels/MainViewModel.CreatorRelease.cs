@@ -24,11 +24,13 @@ public partial class MainViewModel
 
     public ObservableCollection<CreatorReleaseHistoryEntry> CreatorReleaseHistory { get; } = new();
 
+    public ObservableCollection<VoidRegistryVersionEntry> CreatorRegistryVersions { get; } = new();
+
     [ObservableProperty]
     private string _creatorReleaseChangelogContent = string.Empty;
 
     [ObservableProperty]
-    private string _creatorPublishStatus = "Publikace připravená. VOID Launcher release zatím nebyl spuštěný.";
+    private string _creatorPublishStatus = "Publikace připravená. VOID Registry release zápis ještě neběžel.";
 
     [ObservableProperty]
     private bool _isCreatorPublishRunning;
@@ -42,6 +44,18 @@ public partial class MainViewModel
     [ObservableProperty]
     private bool _hasCreatorPublishWorkflow;
 
+    [ObservableProperty]
+    private VoidRegistryProjectSummary? _creatorRegistryReleaseProject;
+
+    [ObservableProperty]
+    private string _creatorRegistryReleaseStatus = "Release governance čeká na VOID ID a slug projektu.";
+
+    [ObservableProperty]
+    private bool _isCreatorRegistryReleaseLoading;
+
+    [ObservableProperty]
+    private bool _isCreatorRegistryReleaseMutationRunning;
+
     public bool HasCreatorReleasePipeline => CreatorReleasePipeline.Count > 0;
 
     public bool HasCreatorValidationChecks => CreatorValidationChecks.Count > 0;
@@ -49,6 +63,14 @@ public partial class MainViewModel
     public bool HasCreatorExportProfiles => CreatorExportProfiles.Count > 0;
 
     public bool HasCreatorReleaseHistory => CreatorReleaseHistory.Count > 0;
+
+    public bool HasCreatorRegistryVersionHistory => CreatorRegistryVersions.Count > 0;
+
+    public int CreatorPendingPublicReleaseCount => CreatorRegistryReleaseProject?.PendingPublicReleaseCount > 0
+        ? CreatorRegistryReleaseProject.PendingPublicReleaseCount
+        : CreatorRegistryVersions.Count(version => version.IsPendingPublicApproval);
+
+    public bool HasCreatorPendingPublicReleases => CreatorPendingPublicReleaseCount > 0;
 
     public bool HasCreatorPublishedReleaseLinks =>
         !string.IsNullOrWhiteSpace(CreatorLastPublishedReleaseUrl) ||
@@ -71,13 +93,42 @@ public partial class MainViewModel
         CurrentModpackCreatorManifest != null &&
         !IsCreatorMetadataSaving;
 
+    public bool CanRefreshCreatorRegistryReleaseHistory =>
+        !IsCreatorRegistryReleaseLoading &&
+        !IsCreatorRegistryReleaseMutationRunning &&
+        HasVoidIdSession &&
+        !string.IsNullOrWhiteSpace(GetCreatorRegistrySlug());
+
+    public bool CanManageCreatorRegistryReleases =>
+        !IsCreatorRegistryReleaseLoading &&
+        !IsCreatorRegistryReleaseMutationRunning &&
+        CreatorRegistryReleaseProject?.CanPublish == true;
+
+    public bool ShowCreatorRegistryReleaseReadonlyWarning => CreatorRegistryReleaseProject != null && !CanManageCreatorRegistryReleases;
+
     public string CreatorPublishActionLabel => IsCreatorPublishRunning
         ? "Publikuji..."
-        : "Publish do VOID Launcher listu";
+        : "Zapsat release do VOID Registry";
 
     public string CreatorGitHubRepositoryLabel => !string.IsNullOrWhiteSpace(CreatorGitState.RemoteUrl)
         ? CreatorGitState.RemoteUrl
         : CurrentModpackCreatorManifest?.RepositoryUrl ?? CurrentModpackCreatorManifest?.BrandProfile?.GitHub ?? "GitHub remote není nastavený";
+
+    public string CreatorRegistryReleaseProjectLabel => CreatorRegistryReleaseProject != null
+        ? $"Projekt: {CreatorRegistryReleaseProject.Name} ({CreatorRegistryReleaseProject.Slug})"
+        : string.IsNullOrWhiteSpace(GetCreatorRegistrySlug())
+            ? "Slug projektu zatím chybí"
+            : $"Projekt: {GetCreatorRegistrySlug()}";
+
+    public string CreatorRegistryReleaseAccessLabel => CreatorRegistryReleaseProject?.CanPublish == true
+        ? $"Může publish: {CreatorRegistryReleaseProject.MembershipRoleLabel}"
+        : CreatorRegistryReleaseProject != null
+            ? $"Jen čtení: {CreatorRegistryReleaseProject.MembershipRoleLabel}"
+            : "Přístup se načte z backendu";
+
+    public string CreatorRegistryReleaseActionLabel => IsCreatorRegistryReleaseLoading
+        ? "Načítám historii..."
+        : "Obnovit release historii";
 
     public string CreatorPublishReadinessLabel
     {
@@ -108,7 +159,7 @@ public partial class MainViewModel
                 return "Workflow pro GitHub release ještě není bootstrapnutý.";
             }
 
-            return "Ready: commit, push, tag, GitHub release a zápis do VOID Registry.";
+            return "Ready: commit, push, tag, GitHub release a zápis do VOID Registry. Public viditelnost verze se řeší zvlášť.";
         }
     }
 
@@ -132,6 +183,12 @@ public partial class MainViewModel
     public string CreatorValidationSummary => CreatorValidationChecks.Count > 0
         ? $"{CreatorValidationPassedCount}/{CreatorValidationTotalCount} kontrol proslo"
         : "Zatim zadne kontroly";
+
+    partial void OnCreatorRegistryReleaseProjectChanged(VoidRegistryProjectSummary? value) => NotifyCreatorReleaseStateChanged();
+
+    partial void OnIsCreatorRegistryReleaseLoadingChanged(bool value) => NotifyCreatorReleaseStateChanged();
+
+    partial void OnIsCreatorRegistryReleaseMutationRunningChanged(bool value) => NotifyCreatorReleaseStateChanged();
 
     [RelayCommand]
     private async Task RefreshCreatorReleasePipeline()
@@ -173,6 +230,14 @@ public partial class MainViewModel
 
             NotifyCreatorReleaseStateChanged();
         });
+
+        QueueRefreshCreatorReleaseGovernance("Načítám release governance z VOID Registry...");
+    }
+
+    [RelayCommand]
+    private async Task RefreshCreatorRegistryReleaseHistory()
+    {
+        await RefreshCreatorRegistryReleaseGovernanceCoreAsync(true);
     }
 
     [RelayCommand]
@@ -402,10 +467,10 @@ public partial class MainViewModel
 
             CreatorLastPublishedReleaseUrl = publishedAsset.ReleasePageUrl;
             CreatorLastPublishedAssetUrl = publishedAsset.DownloadUrl;
-            CreatorPublishStatus = $"Publikováno: {publishResult.Slug} v{publishResult.VersionNumber} je zapsaný ve VOID Launcher listu.";
+            CreatorPublishStatus = $"Publikováno: {publishResult.Slug} v{publishResult.VersionNumber} je zapsaný ve VOID Registry. Public release se schvaluje samostatně.";
 
-            ShowToast("Publish", $"{manifest.PackName} v{manifest.Version} je publikovaný a zalistovaný.", ToastSeverity.Success, 4200);
-            TrackCreatorActivity($"Publish do VOID Launcher listu: {manifest.Slug} v{manifest.Version}", "Release");
+            ShowToast("Publish", $"{manifest.PackName} v{manifest.Version} je zapsaný ve VOID Registry.", ToastSeverity.Success, 4200);
+            TrackCreatorActivity($"Publish do VOID Registry: {manifest.Slug} v{manifest.Version}", "Release");
 
             await RefreshCreatorGitStatus();
             await RefreshCreatorReleasePipeline();
@@ -420,6 +485,112 @@ public partial class MainViewModel
         {
             IsCreatorPublishRunning = false;
             NotifyCreatorReleaseStateChanged();
+        }
+    }
+
+    [RelayCommand]
+    private async Task ToggleCreatorRegistryVersionVisibility(VoidRegistryVersionEntry? version)
+    {
+        if (version == null)
+        {
+            return;
+        }
+
+        if (version.IsYanked)
+        {
+            ShowToast("Registry", "Yanked release nejde znovu schválit ani vracet mezi interní bez nové verze.", ToastSeverity.Warning, 3600);
+            return;
+        }
+
+        if (!CanManageCreatorRegistryReleases)
+        {
+            ShowToast("Registry", "Visibility release může měnit jen owner nebo maintainer projektu.", ToastSeverity.Warning, 3200);
+            return;
+        }
+
+        var slug = GetCreatorRegistrySlug();
+        var accessToken = await GetCreatorRegistryReleaseAccessTokenAsync(true);
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            return;
+        }
+
+        IsCreatorRegistryReleaseMutationRunning = true;
+
+        try
+        {
+            var successMessage = version.IsPublicRelease
+                ? $"Verze {version.VersionNumber} je znovu interní a veřejný web ji přestal nabízet."
+                : $"Verze {version.VersionNumber} je schválená pro veřejný web.";
+
+            CreatorRegistryReleaseStatus = version.IsPublicRelease
+                ? $"Stahuji {version.VersionNumber} z veřejného webu..."
+                : $"Schvaluji {version.VersionNumber} pro veřejný web...";
+
+            await _voidRegistryService.SetVersionVisibilityAsync(accessToken, slug, version.VersionNumber, version.VisibilityActionTarget);
+            await RefreshCreatorRegistryReleaseGovernanceCoreAsync(false, successMessage);
+            ShowToast("Registry", successMessage, ToastSeverity.Success, 3200);
+            TrackCreatorActivity($"Změněna visibility verze {version.VersionNumber} v {slug} na {version.VisibilityActionTarget}.", "Release");
+        }
+        catch (Exception ex)
+        {
+            LogService.Error("Creator release visibility mutation failed", ex);
+            CreatorRegistryReleaseStatus = $"Změna visibility selhala: {ex.Message}";
+            ShowToast("Registry", ex.Message, ToastSeverity.Error, 4200);
+        }
+        finally
+        {
+            IsCreatorRegistryReleaseMutationRunning = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task YankCreatorRegistryVersion(VoidRegistryVersionEntry? version)
+    {
+        if (version == null)
+        {
+            return;
+        }
+
+        if (version.IsYanked)
+        {
+            return;
+        }
+
+        if (!CanManageCreatorRegistryReleases)
+        {
+            ShowToast("Registry", "Release může stáhnout z katalogu jen owner nebo maintainer projektu.", ToastSeverity.Warning, 3200);
+            return;
+        }
+
+        var slug = GetCreatorRegistrySlug();
+        var accessToken = await GetCreatorRegistryReleaseAccessTokenAsync(true);
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            return;
+        }
+
+        IsCreatorRegistryReleaseMutationRunning = true;
+
+        try
+        {
+            var successMessage = $"Verze {version.VersionNumber} byla stažená z katalogu VOID Registry.";
+            CreatorRegistryReleaseStatus = $"Stahuji verzi {version.VersionNumber} z katalogu...";
+
+            await _voidRegistryService.YankVersionAsync(accessToken, slug, version.VersionNumber);
+            await RefreshCreatorRegistryReleaseGovernanceCoreAsync(false, successMessage);
+            ShowToast("Registry", successMessage, ToastSeverity.Success, 3200);
+            TrackCreatorActivity($"Stažena verze {version.VersionNumber} z katalogu projektu {slug}.", "Release");
+        }
+        catch (Exception ex)
+        {
+            LogService.Error("Creator release yank failed", ex);
+            CreatorRegistryReleaseStatus = $"Stažení verze z katalogu selhalo: {ex.Message}";
+            ShowToast("Registry", ex.Message, ToastSeverity.Error, 4200);
+        }
+        finally
+        {
+            IsCreatorRegistryReleaseMutationRunning = false;
         }
     }
 
@@ -456,6 +627,9 @@ public partial class MainViewModel
         OnPropertyChanged(nameof(HasCreatorValidationChecks));
         OnPropertyChanged(nameof(HasCreatorExportProfiles));
         OnPropertyChanged(nameof(HasCreatorReleaseHistory));
+        OnPropertyChanged(nameof(HasCreatorRegistryVersionHistory));
+        OnPropertyChanged(nameof(CreatorPendingPublicReleaseCount));
+        OnPropertyChanged(nameof(HasCreatorPendingPublicReleases));
         OnPropertyChanged(nameof(CreatorCurrentPipelineStep));
         OnPropertyChanged(nameof(CreatorPipelineSummary));
         OnPropertyChanged(nameof(CreatorValidationPassedCount));
@@ -466,10 +640,133 @@ public partial class MainViewModel
         OnPropertyChanged(nameof(HasCreatorPublishedAssetUrl));
         OnPropertyChanged(nameof(CanBootstrapCreatorPublishWorkflow));
         OnPropertyChanged(nameof(CanCreatorPublishRelease));
+        OnPropertyChanged(nameof(CanRefreshCreatorRegistryReleaseHistory));
+        OnPropertyChanged(nameof(CanManageCreatorRegistryReleases));
+        OnPropertyChanged(nameof(ShowCreatorRegistryReleaseReadonlyWarning));
         OnPropertyChanged(nameof(CreatorPublishActionLabel));
         OnPropertyChanged(nameof(CreatorGitHubRepositoryLabel));
         OnPropertyChanged(nameof(CreatorPublishReadinessLabel));
+        OnPropertyChanged(nameof(CreatorRegistryReleaseProjectLabel));
+        OnPropertyChanged(nameof(CreatorRegistryReleaseAccessLabel));
+        OnPropertyChanged(nameof(CreatorRegistryReleaseActionLabel));
         NotifyCreatorCollaboratorStateChanged();
+    }
+
+    private async Task<string?> GetCreatorRegistryReleaseAccessTokenAsync(bool showToast)
+    {
+        if (string.IsNullOrWhiteSpace(GetCreatorRegistrySlug()))
+        {
+            CreatorRegistryReleaseStatus = "Manifest ještě nemá slug projektu pro VOID Registry.";
+            if (showToast)
+            {
+                ShowToast("Registry", "Nejdřív doplň creator manifest se slugem projektu.", ToastSeverity.Warning, 3200);
+            }
+
+            return null;
+        }
+
+        if (!await EnsureFreshVoidIdSessionAsync(TimeSpan.FromMinutes(2)))
+        {
+            CreatorRegistryReleaseStatus = "Release governance vyžaduje aktivní relaci VOID ID.";
+            if (showToast)
+            {
+                ShowToast("Registry", "Nejdřív přihlas creatora přes VOID ID.", ToastSeverity.Warning, 3200);
+            }
+
+            return null;
+        }
+
+        return CreatorVoidIdSession?.AccessToken;
+    }
+
+    private async Task ResetCreatorRegistryReleaseStateAsync(string status)
+    {
+        await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            CreatorRegistryVersions.Clear();
+            CreatorRegistryReleaseProject = null;
+            CreatorRegistryReleaseStatus = status;
+            NotifyCreatorReleaseStateChanged();
+        });
+    }
+
+    private async Task ApplyCreatorRegistryVersionsBundleAsync(VoidRegistryProjectVersionsBundle bundle, string status)
+    {
+        await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            CreatorRegistryVersions.Clear();
+            foreach (var version in bundle.Data)
+            {
+                CreatorRegistryVersions.Add(version);
+            }
+
+            if (bundle.Project != null && bundle.Project.PendingPublicReleaseCount <= 0)
+            {
+                bundle.Project.PendingPublicReleaseCount = bundle.Data.Count(version => version.IsPendingPublicApproval);
+            }
+
+            CreatorRegistryReleaseProject = bundle.Project;
+            CreatorRegistryReleaseStatus = status;
+            NotifyCreatorReleaseStateChanged();
+        });
+    }
+
+    private async Task RefreshCreatorRegistryReleaseGovernanceCoreAsync(bool showToast, string? successStatus = null)
+    {
+        var slug = GetCreatorRegistrySlug();
+        var accessToken = await GetCreatorRegistryReleaseAccessTokenAsync(showToast);
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            await ResetCreatorRegistryReleaseStateAsync(string.IsNullOrWhiteSpace(slug)
+                ? "Release governance čeká na slug projektu."
+                : "Release governance čeká na aktivní relaci VOID ID.");
+
+            return;
+        }
+
+        IsCreatorRegistryReleaseLoading = true;
+
+        try
+        {
+            var bundle = await _voidRegistryService.GetProjectVersionsAsync(accessToken, slug);
+            var resolvedStatus = successStatus ?? (bundle.Data.Count > 0
+                ? $"Načtena historie {bundle.Data.Count} verzí pro {slug}."
+                : $"Projekt {slug} zatím nemá žádný release v registry historii.");
+
+            await ApplyCreatorRegistryVersionsBundleAsync(bundle, resolvedStatus);
+        }
+        catch (Exception ex)
+        {
+            LogService.Error("Creator registry release history refresh failed", ex);
+            CreatorRegistryReleaseStatus = $"Načtení release historie selhalo: {ex.Message}";
+            if (showToast)
+            {
+                ShowToast("Registry", ex.Message, ToastSeverity.Error, 4200);
+            }
+        }
+        finally
+        {
+            IsCreatorRegistryReleaseLoading = false;
+        }
+    }
+
+    private void QueueRefreshCreatorReleaseGovernance(string status)
+    {
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await ResetCreatorRegistryReleaseStateAsync(status);
+                if (HasVoidIdSession && !string.IsNullOrWhiteSpace(GetCreatorRegistrySlug()))
+                {
+                    await RefreshCreatorRegistryReleaseGovernanceCoreAsync(false);
+                }
+            }
+            catch (Exception ex)
+            {
+                LogService.Error("Creator release governance queued refresh failed", ex);
+            }
+        });
     }
 
     private bool TryResolveCreatorRepository(CreatorManifest manifest, out GitHubRepositoryReference repository)

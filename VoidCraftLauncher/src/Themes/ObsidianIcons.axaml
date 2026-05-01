@@ -55,11 +55,32 @@
     <x:String x:Key="IconUsers">◎</x:String>
     <x:String x:Key="IconShield">◇</x:String>
 
-    <!-- ═══════════════ SOCIAL ═══════════════ -->
+    <!-- ═══════════════ SOCIAL (SVG Path Geometries) ═══════════════ -->
+    <!-- Discord mark (simplified Clyde) -->
+    <StreamGeometry x:Key="IconDiscordGeometry">M19.27 5.33C17.94 4.71 16.5 4.26 15 4a.09.09 0 0 0-.07.03c-.18.33-.39.76-.53 1.09a16.09 16.09 0 0 0-4.8 0c-.14-.34-.36-.76-.54-1.09a.09.09 0 0 0-.07-.03c-1.5.26-2.93.71-4.27 1.33a.08.08 0 0 0-.04.03C2.18 8.77 1.36 12.09 1.77 15.36a.1.1 0 0 0 .04.07 17.09 17.09 0 0 0 5.16 2.61.1.1 0 0 0 .09-.01c.4-.54.75-1.11 1.06-1.71a.08.08 0 0 0-.05-.11 11.28 11.28 0 0 1-1.61-.77.08.08 0 0 1-.01-.14c.11-.08.22-.17.32-.25a.08.08 0 0 1 .09-.01c3.39 1.55 7.07 1.55 10.43 0a.08.08 0 0 1 .09.01c.1.09.21.17.33.26a.08.08 0 0 1 0 .14c-.51.3-1.05.56-1.62.77a.08.08 0 0 0-.04.11c.31.6.67 1.17 1.06 1.71a.09.09 0 0 0 .09.01 17.05 17.05 0 0 0 5.16-2.61.09.09 0 0 0 .04-.07c.49-5.07-.82-9.47-3.46-13.38a.07.07 0 0 0-.04-.03zM8.68 13.17c-1.16 0-2.12-1.06-2.12-2.37s.93-2.37 2.12-2.37c1.2 0 2.13 1.07 2.12 2.37 0 1.31-.94 2.37-2.12 2.37zm7.83 0c-1.16 0-2.12-1.06-2.12-2.37s.93-2.37 2.12-2.37c1.2 0 2.13 1.07 2.12 2.37 0 1.31-.93 2.37-2.12 2.37z</StreamGeometry>
+    <!-- GitHub mark (Invertocat) -->
+    <StreamGeometry x:Key="IconGitHubGeometry">M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.161 22 16.416 22 12c0-5.523-4.477-10-10-10z</StreamGeometry>
+    <!-- YouTube mark (Play triangle in rounded rect) -->
+    <StreamGeometry x:Key="IconYouTubeGeometry">M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.546 12 3.546 12 3.546s-7.505 0-9.377.504A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.504 9.376.504 9.376.504s7.505 0 9.377-.504a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z</StreamGeometry>
+    <!-- Globe/Web icon -->
+    <StreamGeometry x:Key="IconWebGeometry">M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z</StreamGeometry>
+
+    <!-- Legacy text fallbacks keep backward compatibility -->
     <x:String x:Key="IconDiscord">D</x:String>
     <x:String x:Key="IconYouTube">Y</x:String>
     <x:String x:Key="IconFacebook">f</x:String>
     <x:String x:Key="IconInstagram">I</x:String>
+    <x:String x:Key="IconGitHub">G</x:String>
+
+    <!-- ═══════════════ SOCIAL BRAND COLORS ═══════════════ -->
+    <Color x:Key="DiscordBrand">#5865F2</Color>
+    <Color x:Key="GitHubBrand">#f0f0f0</Color>
+    <Color x:Key="YouTubeBrand">#FF0000</Color>
+    <Color x:Key="WebBrand">#00d4aa</Color>
+    <SolidColorBrush x:Key="DiscordBrandBrush" Color="{StaticResource DiscordBrand}"/>
+    <SolidColorBrush x:Key="GitHubBrandBrush" Color="{StaticResource GitHubBrand}"/>
+    <SolidColorBrush x:Key="YouTubeBrandBrush" Color="{StaticResource YouTubeBrand}"/>
+    <SolidColorBrush x:Key="WebBrandBrush" Color="{StaticResource WebBrand}"/>
 
     <!-- ═══════════════ INSTANCE / GAME ═══════════════ -->
     <x:String x:Key="IconFolder">□</x:String>

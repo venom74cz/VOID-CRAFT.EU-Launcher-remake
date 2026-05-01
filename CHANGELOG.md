@@ -1,6 +1,99 @@
 # Changelog
 
-## Unreleased - 2026-04-05
+## 3.3.0 - 2026-04-19
+
+### Architekt AI (LLM & Reasoning)
+
+#### Funkce a optimalizace
+- **Zpracování myšlenkových pochodů**: Implementována robustní podpora pro `<think>` tagy používané reasoning modely. Zpracování je regex-based a bezpečné pro streamování odpovědí.
+- **Vizuální výstup**: Možnost zobrazení uvažování modelu přímo v chatu pro lepší přehled o tom, jak AI dospěla k výsledku.
+- **Optimalizace promptů**:
+    - Odebrání odesílání stavu Gitu do systémového promptu pro šetření tokenů.
+    - Selektivní odebírání nástrojů ze systémového promptu v čistém Chat režimu.
+    - Fix fragmentace stavu AI v rámci Creator Architektu.
+
+#### UI & UX Architektu
+- **Sjednocený design**: Konzistentní vzhled vrchní lišty a vizuální styl prvků.
+- **Nastavení k ruce**: Ovládací prvky a nastavení AI přesunuty přímo k chatu pro rychlejší přístup.
+- **Robustnost**: Uvolnění limitů a přidání pojistky pro situace, kdy LLM vrátí prázdnou odpověď po volání nástrojů.
+- **Diagnostika**: Přidán debug log preview pro lepší přehled o průběhu streamování.
+
+#### Nastavení & Konektivita
+- **Flexibilita API**: Přidán přepínač mezi cURL režimem a Klasickým API pro širší kompatibilitu.
+- **Opravy UI**: Zajištěna správná reaktivní aktualizace UI při přepínání režimu cURL v nastavení.
+- **Kontext & Limity**:
+    - Opraven slider kontextu (oprava typové konverze int → double).
+    - Zvýšení výchozího kontextového okna a limitů pro efektivnější práci s delšími texty.
+
+#### Release metadata
+- Srovnána release verze na `3.3.0` v projektu, installeru a meta informacích.
+
+
+## 3.2.0 - 2026-04-16
+
+### Selektivní verze & Update Prompt
+
+#### Správa verzí
+- Zavedena podpora pro výběr konkrétní verze modpacku přímo v knihovně přes nové dropdown menu.
+- Přidán režim **`⭐ Latest`**, který automaticky sleduje nejnovější dostupné verze a upozorňuje na ně.
+- Výběr verze je okamžitě perzistentní a ukládá se do konfigurace modpacku při každé změně.
+- Pinned mode: Pokud je vybrána specifická verze, launcher ji při startu tiše nainstaluje (pokud chybí) a neobtěžuje uživatele dotazy na aktualizace.
+
+#### Interaktivní aktualizace
+- Přidán modul **`UpdatePromptSheet`** ve stylu M3, který se zobrazí před spuštěním hry, pokud je v režimu `⭐ Latest` dostupná nová verze.
+- Prompt umožňuje prohlížet **Changelog** (seznam změn) stažený přímo z platformy (CurseForge, Modrinth, VOID Registry).
+- Tři možnosti volby: `Aktualizovat a HRÁT`, `Zálohovat a aktualizovat` (vyvolá Backup Prompt) nebo `Ne, spustit stávající verzi`.
+
+#### Integrace a API
+- Přidána implementace pro transformaci HTML changelogů z CurseForge API do čitelného textu.
+- Rozšířena `ModpackInfo` logika o odlišení `IsTrackingLatest`, `ResolvedTargetVersion` a podmíněného `IsUpdateAvailable`.
+- Opravena detekce aktualizací pro hybridní zdroje (VOID Registry).
+
+#### UI & Fixy
+- Opraven kritický bug (event bubbling), kdy kliknutí na šipku výběru verze v kartě instance otevřelo detail modpacku.
+- Vylepšen vizuál karet v knihovně a zajištěna plynulejší interakce s překryvnými vrstvami.
+- Synchronizace `⭐ Latest` sentinelu při načítání dat i offline cold-startu.
+
+#### Release metadata
+- Srovnána release verze na `3.2.0` v launcher projektu, installeru a meta informacích.
+
+
+## 3.1.11 - 2026-04-06
+
+### Creator release governance + GitHub repair
+
+#### Release governance
+- `Creator Studio` v `Release` tabu nove nacita historii verzi z `VOID Registry`, pending public approvals a projektovy governance stav.
+- Schvaleni public releasu, navrat zpet na internal a `yank` chybne verze jde spoustet primo z launcheru nad registry projektem.
+- Release panel se po zmene workspace a manifestu obnovuje tak, aby drzel stejnou governance realitu jako web.
+
+#### GitHub / creator workflow
+- `Pouzit jako origin` uz umi opravit rozbite lokalni `.git` metadata misto generickeho failu pri napojeni existujiciho GitHub repa.
+- Invalidni `.git` slozka uz se v Creator Studiu netvari jako platny git repository jen kvuli existenci adresare; kontrola probiha skutecnym `git rev-parse` probe.
+- Pri selhani nastavovani `origin` launcher vraci konkretnejsi git detail, aby bylo jasne, co se pokazilo.
+
+#### UX / privacy polish
+- `VOID ID` copy v launcheru uz nemluvi o administratorskych opravnenich a neukazuje profilove CTA, ktere by prozrazovalo admin surface.
+- Dashboard, Identity a nav rail jsou srovnane na bezny webovy profil a projektove workflow misto interni access terminologie.
+
+#### Release metadata
+- Srovnana release verze na `3.1.11` v launcher projektu, installeru, fallback `User-Agent` hodnotach a referencni dokumentaci.
+
+## 3.1.10.1 - 2026-04-05
+
+### Creator Studio + auth hotfix
+
+#### Opravy crashu
+- `Creator Studio` uz necrashne po obnoveni nebo novem prihlaseni `VOID ID`, kdyz se po nacteni collaborator sekce buildi deferred `DataTemplate` ve `Streaming Tools`.
+- Problemove command bindingy z item templatu uz nepouzivaji krehky cast na `vm:MainViewModel` pres `$parent[ItemsControl]`, ale stabilni root binding pres pojmenovany control.
+- GitHub repository refresh pri restore session uz marshaluje mutace bindovanych kolekci a stavu na UI thread, takze login restore nevytvari dalsi nestabilitu pri otevrenem Creator Studiu.
+
+#### UI polish
+- `ContextDock` ma jemnejsi spacing mezi sekcemi a rozmanitejsi community linky misto generickych textovych glyfu.
+- Web, Discord, GitHub a YouTube odkazy dostaly brand-aware ikony a kartovy vizual, aby shell nepusobil jednotvarne.
+
+#### Release metadata
+- Srovnana release verze na `3.1.10.1` v launcher projektu, installeru, fallback `User-Agent` hodnotach a referencni dokumentaci.
 
 ## 3.1.10 - 2026-04-05
 

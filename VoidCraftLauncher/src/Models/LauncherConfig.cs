@@ -56,6 +56,9 @@ public partial class LauncherConfig : ObservableObject
     [ObservableProperty]
     private string? _activeAccountId;
 
+    [ObservableProperty]
+    private double _globalUiScale = 1.0;
+
     public CreatorStudioPreferences CreatorStudio { get; set; } = new();
 }
 

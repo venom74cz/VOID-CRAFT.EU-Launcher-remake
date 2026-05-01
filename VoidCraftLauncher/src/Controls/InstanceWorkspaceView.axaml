@@ -822,7 +822,7 @@
                                     <TextBlock Text="Informace o instanci" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="16"/>
                                     <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" Margin="0,4,0,0">
                                         <TextBlock Text="Název:" FontSize="12" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,12,6"/>
-                                        <TextBlock Grid.Column="1" Text="{Binding CurrentModpack.Name}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding CurrentWorkspaceDisplayName}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"/>
                                         <TextBlock Grid.Row="1" Text="Verze:" FontSize="12" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,12,6"/>
                                         <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding CurrentModpack.VersionTransitionText}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"/>
                                         <TextBlock Grid.Row="2" Text="Autor:" FontSize="12" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,12,0"/>

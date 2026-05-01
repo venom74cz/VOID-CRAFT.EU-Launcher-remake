@@ -53,9 +53,12 @@ public sealed class VoidRegistryService
             .ToList();
     }
 
-    public async Task<VoidRegistryInstallManifest?> GetInstallManifestAsync(string slug)
+    public async Task<VoidRegistryInstallManifest?> GetInstallManifestAsync(string slug, string? accessToken = null)
     {
-        using var response = await _httpClient.GetAsync($"{BaseApiUrl}/api/registry/projects/{Uri.EscapeDataString(slug)}/install-manifest");
+        using var response = await SendOptionalAuthorizedAsync(
+            HttpMethod.Get,
+            $"/api/registry/projects/{Uri.EscapeDataString(slug)}/install-manifest",
+            accessToken);
         var body = await response.Content.ReadAsStringAsync();
         if (!response.IsSuccessStatusCode)
         {
@@ -65,9 +68,12 @@ public sealed class VoidRegistryService
         return JsonSerializer.Deserialize<VoidRegistryInstallManifest>(body, JsonOptions);
     }
 
-    public async Task<VoidRegistryUpdateCheckResponse?> GetUpdateCheckAsync(string slug, string currentVersion)
+    public async Task<VoidRegistryUpdateCheckResponse?> GetUpdateCheckAsync(string slug, string currentVersion, string? accessToken = null)
     {
-        using var response = await _httpClient.GetAsync($"{BaseApiUrl}/api/registry/projects/{Uri.EscapeDataString(slug)}/update-check?current_version={Uri.EscapeDataString(currentVersion)}");
+        using var response = await SendOptionalAuthorizedAsync(
+            HttpMethod.Get,
+            $"/api/registry/projects/{Uri.EscapeDataString(slug)}/update-check?current_version={Uri.EscapeDataString(currentVersion)}",
+            accessToken);
         var body = await response.Content.ReadAsStringAsync();
         if (!response.IsSuccessStatusCode)
         {
@@ -100,6 +106,51 @@ public sealed class VoidRegistryService
             .Where(project => project != null)
             .Cast<VoidRegistryProjectSummary>()
             .ToList();
+    }
+
+    public async Task<VoidRegistryProjectVersionsBundle> GetProjectVersionsAsync(string accessToken, string slug)
+    {
+        using var response = await SendAuthorizedAsync(
+            HttpMethod.Get,
+            $"/api/registry/projects/{Uri.EscapeDataString(slug)}/versions",
+            accessToken);
+        var body = await response.Content.ReadAsStringAsync();
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException($"VOID Registry historie verzí selhala: {body}");
+        }
+
+        return ParseProjectVersionsBundle(body);
+    }
+
+    public async Task SetVersionVisibilityAsync(string accessToken, string slug, string versionNumber, string visibility)
+    {
+        using var response = await SendAuthorizedJsonAsync(
+            HttpMethod.Post,
+            $"/api/registry/projects/{Uri.EscapeDataString(slug)}/versions/{Uri.EscapeDataString(versionNumber)}/visibility",
+            accessToken,
+            new
+            {
+                visibility
+            });
+        var body = await response.Content.ReadAsStringAsync();
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException($"VOID Registry změna visibility selhala: {body}");
+        }
+    }
+
+    public async Task YankVersionAsync(string accessToken, string slug, string versionNumber)
+    {
+        using var response = await SendAuthorizedAsync(
+            HttpMethod.Post,
+            $"/api/registry/projects/{Uri.EscapeDataString(slug)}/versions/{Uri.EscapeDataString(versionNumber)}/yank",
+            accessToken);
+        var body = await response.Content.ReadAsStringAsync();
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException($"VOID Registry yank verze selhal: {body}");
+        }
     }
 
     public async Task<VoidRegistryCollaboratorBundle> GetCollaboratorsAsync(string accessToken, string slug)
@@ -318,6 +369,17 @@ public sealed class VoidRegistryService
         return await _httpClient.SendAsync(request);
     }
 
+    private async Task<HttpResponseMessage> SendOptionalAuthorizedAsync(HttpMethod method, string path, string? accessToken)
+    {
+        var request = new HttpRequestMessage(method, $"{BaseApiUrl}{path}");
+        if (!string.IsNullOrWhiteSpace(accessToken))
+        {
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        }
+
+        return await _httpClient.SendAsync(request);
+    }
+
     private static async Task<VoidRegistryPublishResult> ParsePublishResultAsync(HttpResponseMessage response, string fallbackSlug)
     {
         var body = await response.Content.ReadAsStringAsync();
@@ -367,12 +429,77 @@ public sealed class VoidRegistryService
             LatestPublishedAtUtc = latest?["published_at"]?.GetValue<DateTimeOffset?>(),
             Status = node["status"]?.ToString() ?? string.Empty,
             Visibility = node["visibility"]?.ToString() ?? string.Empty,
+            PendingPublicReleaseCount = node["pending_public_release_count"]?.GetValue<int?>() ?? 0,
             ViewerRole = permissions?["role"]?.ToString() ?? node["viewer_role"]?.ToString() ?? string.Empty,
             CanView = permissions?["canView"]?.GetValue<bool?>() ?? permissions?["can_view"]?.GetValue<bool?>() ?? false,
             CanEditMetadata = permissions?["canEditMetadata"]?.GetValue<bool?>() ?? permissions?["can_edit_metadata"]?.GetValue<bool?>() ?? false,
             CanPublish = permissions?["canPublish"]?.GetValue<bool?>() ?? permissions?["can_publish"]?.GetValue<bool?>() ?? false,
             CanManageCollaborators = permissions?["canManageCollaborators"]?.GetValue<bool?>() ?? permissions?["can_manage_collaborators"]?.GetValue<bool?>() ?? false,
             CanArchive = permissions?["canArchive"]?.GetValue<bool?>() ?? permissions?["can_archive"]?.GetValue<bool?>() ?? false
+        };
+    }
+
+    private static VoidRegistryProjectVersionsBundle ParseProjectVersionsBundle(string body)
+    {
+        var root = string.IsNullOrWhiteSpace(body) ? null : JsonNode.Parse(body);
+        var rows = root?["data"]?.AsArray()
+            ?? root?["versions"]?.AsArray()
+            ?? new JsonArray();
+
+        var versions = rows
+            .Select(ParseVersionEntry)
+            .Where(version => version != null)
+            .Cast<VoidRegistryVersionEntry>()
+            .ToList();
+
+        var project = ParseProjectSummary(root?["project"]);
+        if (project != null && project.PendingPublicReleaseCount <= 0)
+        {
+            project.PendingPublicReleaseCount = versions.Count(version => version.IsPendingPublicApproval);
+        }
+
+        return new VoidRegistryProjectVersionsBundle
+        {
+            Project = project,
+            Data = versions
+        };
+    }
+
+    private static VoidRegistryVersionEntry? ParseVersionEntry(JsonNode? node)
+    {
+        if (node == null)
+        {
+            return null;
+        }
+
+        var releaseVisibility = node["release_visibility"]?.ToString() ?? string.Empty;
+        var isPublicRelease = node["is_public_release"]?.GetValue<bool?>()
+            ?? string.Equals(releaseVisibility, "public", StringComparison.OrdinalIgnoreCase);
+        var yankedAtUtc = ParseDateTimeOffset(node["yanked_at"]);
+
+        return new VoidRegistryVersionEntry
+        {
+            VersionId = node["version_id"]?.ToString() ?? string.Empty,
+            VersionNumber = node["version_number"]?.ToString() ?? node["version"]?.ToString() ?? string.Empty,
+            ReleaseChannel = node["release_channel"]?.ToString() ?? node["channel"]?.ToString() ?? "stable",
+            ReleaseVisibility = string.IsNullOrWhiteSpace(releaseVisibility)
+                ? (isPublicRelease ? "public" : "internal")
+                : releaseVisibility,
+            IsPublicRelease = isPublicRelease,
+            Changelog = node["changelog"]?.ToString() ?? string.Empty,
+            MinecraftVersion = node["minecraft_version"]?.ToString() ?? string.Empty,
+            ModLoader = node["mod_loader"]?.ToString() ?? string.Empty,
+            ModCount = node["mod_count"]?.GetValue<int?>() ?? 0,
+            FileName = node["file_name"]?.ToString() ?? string.Empty,
+            FileSizeBytes = node["file_size_bytes"]?.GetValue<long?>() ?? 0,
+            FileHashSha256 = node["file_hash_sha256"]?.ToString() ?? node["file_hash"]?.ToString() ?? string.Empty,
+            DownloadUrl = node["download_url"]?.ToString() ?? node["file_url"]?.ToString() ?? string.Empty,
+            ReleasePageUrl = node["release_page_url"]?.ToString() ?? string.Empty,
+            PublishedAtUtc = ParseDateTimeOffset(node["published_at"]),
+            PublicApprovedAtUtc = ParseDateTimeOffset(node["public_approved_at"]),
+            PublicApprovedByAccountId = node["public_approved_by_account_id"]?.GetValue<int?>(),
+            YankedAtUtc = yankedAtUtc,
+            IsYanked = node["is_yanked"]?.GetValue<bool?>() ?? yankedAtUtc.HasValue
         };
     }
 
@@ -450,5 +577,11 @@ public sealed class VoidRegistryService
             AvatarUrl = node["avatar_url"]?.ToString() ?? string.Empty,
             DiscordUsername = node["discord_username"]?.ToString() ?? string.Empty
         };
+    }
+
+    private static DateTimeOffset? ParseDateTimeOffset(JsonNode? node)
+    {
+        var rawValue = node?.ToString();
+        return DateTimeOffset.TryParse(rawValue, out var value) ? value : null;
     }
 }

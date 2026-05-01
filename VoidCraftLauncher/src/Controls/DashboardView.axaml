@@ -74,7 +74,7 @@
 
                                 <Border Grid.Column="6" Background="{DynamicResource BgPanelBrush}" CornerRadius="16" Padding="16,14" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
                                     <StackPanel Spacing="4">
-                                        <TextBlock Text="VOID ID přístup" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                        <TextBlock Text="VOID ID profil" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
                                         <TextBlock Text="{Binding VoidIdAccessLevelLabel}" FontSize="18" FontWeight="ExtraBold" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
                                         <TextBlock Text="{Binding VoidIdDisplayName}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextTrimming="CharacterEllipsis"/>
                                     </StackPanel>
@@ -85,7 +85,7 @@
                         <StackPanel Grid.Column="2" Spacing="14">
                             <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="18" Padding="18" BorderBrush="{DynamicResource StrokeSoftBrush}" BorderThickness="1">
                                 <StackPanel Spacing="10">
-                                    <TextBlock Text="VOID ID přístup" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AccentTealBrush}"/>
+                                    <TextBlock Text="VOID ID profil" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AccentTealBrush}"/>
                                     <TextBlock Text="{Binding VoidIdAccessLevelLabel}" FontSize="22" FontWeight="ExtraBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                     <TextBlock Text="{Binding VoidIdAccessSummary}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
                                     <TextBlock Text="{Binding VoidIdMinecraftLabel}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" IsVisible="{Binding HasVoidIdSession}"/>

@@ -56,7 +56,7 @@ public sealed class CreatorModAttentionItem
 public enum CreatorRightDockMode
 {
     ContextDock,
-    CopilotDesk
+    ArchitektDesk
 }
 
 public enum CreatorSecondaryDrawerMode
@@ -107,7 +107,7 @@ public sealed class CreatorShellState
 
     public CreatorScope SelectedScope { get; set; } = new();
 
-    public CreatorRightDockMode RightDockMode { get; set; } = CreatorRightDockMode.CopilotDesk;
+    public CreatorRightDockMode RightDockMode { get; set; } = CreatorRightDockMode.ArchitektDesk;
 
     public CreatorSecondaryDrawerMode SecondaryDrawerMode { get; set; } = CreatorSecondaryDrawerMode.None;
 

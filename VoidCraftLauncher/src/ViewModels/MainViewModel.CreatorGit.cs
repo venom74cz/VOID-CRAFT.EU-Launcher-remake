@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using VoidCraftLauncher.Models;
 using VoidCraftLauncher.Models.CreatorStudio;
+using VoidCraftLauncher.Services;
 
 namespace VoidCraftLauncher.ViewModels;
 
@@ -30,6 +31,20 @@ public partial class MainViewModel
         OnPropertyChanged(nameof(CanCreatorGitGenerateVoidpack));
         OnPropertyChanged(nameof(CanCreatorGitUploadPublishPayload));
     }
+
+    [ObservableProperty]
+    private bool _isGitInstalling;
+
+    [ObservableProperty]
+    private string _gitInstallStatus = string.Empty;
+
+    partial void OnIsGitInstallingChanged(bool value)
+    {
+        OnPropertyChanged(nameof(CreatorGitIsAvailable));
+        OnPropertyChanged(nameof(IsGitInstallBannerVisible));
+    }
+
+    public bool IsGitInstallBannerVisible => !CreatorGitIsAvailable && !IsGitInstalling;
 
     public ObservableCollection<string> CreatorGitBranches { get; } = new();
 
@@ -381,6 +396,45 @@ public partial class MainViewModel
         finally
         {
             IsCreatorGitOperationRunning = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task InstallGit()
+    {
+        if (IsGitInstalling) return;
+
+        IsGitInstalling = true;
+        GitInstallStatus = "Připravuji instalaci...";
+
+        try
+        {
+            await _creatorGitService.InstallGitViaWingetAsync(status =>
+                Avalonia.Threading.Dispatcher.UIThread.Post(() => GitInstallStatus = status));
+
+            // Refresh PATH — new process should now see git
+            var gitNowAvailable = _creatorGitService.IsGitAvailable();
+            if (gitNowAvailable)
+            {
+                GitInstallStatus = string.Empty;
+                ShowToast("Git nainstalován", "Git je připravený k použití. Inicializuj repo v Git tabu.", ToastSeverity.Success, 4000);
+                NotifyCreatorGitStateChanged();
+            }
+            else
+            {
+                GitInstallStatus = "Git nainstalován, ale zatím není v PATH. Restartuj launcher.";
+                ShowToast("Git nainstalován", "Restartuj launcher aby se Git aktivoval v PATH.", ToastSeverity.Warning, 5000);
+            }
+        }
+        catch (Exception ex)
+        {
+            GitInstallStatus = string.Empty;
+            ShowToast("Instalace Git selhala", ex.Message, ToastSeverity.Error, 6000);
+            LogService.Error("InstallGit failed", ex);
+        }
+        finally
+        {
+            IsGitInstalling = false;
         }
     }
 

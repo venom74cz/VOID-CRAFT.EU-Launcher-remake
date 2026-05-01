@@ -70,6 +70,8 @@ public sealed class VoidRegistryProjectSummary
 
     public string OwnerAvatarUrl { get; set; } = string.Empty;
 
+    public int PendingPublicReleaseCount { get; set; }
+
     public DateTimeOffset? LatestPublishedAtUtc { get; set; }
 
     public bool HasLatestVersion => !string.IsNullOrWhiteSpace(LatestVersion);
@@ -165,6 +167,100 @@ public sealed class VoidRegistryVersionInfo
 
     [JsonPropertyName("published_at")]
     public DateTimeOffset? PublishedAtUtc { get; set; }
+}
+
+public sealed class VoidRegistryProjectVersionsBundle
+{
+    public VoidRegistryProjectSummary? Project { get; set; }
+
+    public IReadOnlyList<VoidRegistryVersionEntry> Data { get; set; } = Array.Empty<VoidRegistryVersionEntry>();
+}
+
+public sealed class VoidRegistryVersionEntry
+{
+    public string VersionId { get; set; } = string.Empty;
+
+    public string VersionNumber { get; set; } = string.Empty;
+
+    public string ReleaseChannel { get; set; } = "stable";
+
+    public string ReleaseVisibility { get; set; } = "internal";
+
+    public bool IsPublicRelease { get; set; }
+
+    public string Changelog { get; set; } = string.Empty;
+
+    public string MinecraftVersion { get; set; } = string.Empty;
+
+    public string ModLoader { get; set; } = string.Empty;
+
+    public int ModCount { get; set; }
+
+    public string FileName { get; set; } = string.Empty;
+
+    public long FileSizeBytes { get; set; }
+
+    public string FileHashSha256 { get; set; } = string.Empty;
+
+    public string DownloadUrl { get; set; } = string.Empty;
+
+    public string ReleasePageUrl { get; set; } = string.Empty;
+
+    public DateTimeOffset? PublishedAtUtc { get; set; }
+
+    public DateTimeOffset? PublicApprovedAtUtc { get; set; }
+
+    public int? PublicApprovedByAccountId { get; set; }
+
+    public DateTimeOffset? YankedAtUtc { get; set; }
+
+    public bool IsYanked { get; set; }
+
+    public bool HasReleasePageUrl => !string.IsNullOrWhiteSpace(ReleasePageUrl);
+
+    public bool HasDownloadUrl => !string.IsNullOrWhiteSpace(DownloadUrl);
+
+    public bool HasChangelog => !string.IsNullOrWhiteSpace(Changelog);
+
+    public bool HasPublicApproval => PublicApprovedAtUtc.HasValue;
+
+    public bool IsPendingPublicApproval => !IsPublicRelease && !IsYanked;
+
+    public bool CanApprovePublic => !IsPublicRelease && !IsYanked;
+
+    public bool CanReturnInternal => IsPublicRelease && !IsYanked;
+
+    public bool CanYank => !IsYanked;
+
+    public string ChannelLabel => ReleaseChannel switch
+    {
+        "alpha" => "Alpha",
+        "beta" => "Beta",
+        _ => "Stable"
+    };
+
+    public string VisibilityLabel => IsPublicRelease ? "Veřejný web" : "Interní";
+
+    public string VisibilityActionLabel => IsPublicRelease
+        ? "Stáhnout z veřejného webu"
+        : "Schválit pro veřejný web";
+
+    public string VisibilityActionTarget => IsPublicRelease ? "internal" : "public";
+
+    public string PublishedAtLabel => VoidIdModelFormatting.FormatDateTime(PublishedAtUtc);
+
+    public string PublicApprovalLabel => IsYanked
+        ? $"Staženo z katalogu {VoidIdModelFormatting.FormatDateTime(YankedAtUtc)}"
+        : HasPublicApproval
+            ? $"Veřejně schváleno {VoidIdModelFormatting.FormatDateTime(PublicApprovedAtUtc)}"
+            : "Čeká na explicitní veřejné schválení";
+
+    public string FileSizeLabel => FileSizeBytes switch
+    {
+        < 1024 => $"{FileSizeBytes} B",
+        < 1024 * 1024 => $"{FileSizeBytes / 1024d:0.#} KB",
+        _ => $"{FileSizeBytes / 1024d / 1024d:0.#} MB"
+    };
 }
 
 public sealed class VoidRegistryUpdateCheckResponse

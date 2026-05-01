@@ -140,9 +140,9 @@ public partial class MainViewModel
     }
 
     [RelayCommand]
-    private void FocusCreatorCopilotDesk()
+    private void FocusCreatorArchitektDesk()
     {
-        UseCreatorCopilotDesk();
+        UseCreatorArchitektDesk();
     }
 
     [RelayCommand]

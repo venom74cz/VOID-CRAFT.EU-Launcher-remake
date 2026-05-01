@@ -80,7 +80,7 @@ public sealed class ServiceLocator
     {
         // Shared HttpClient (pooled, long-lived)
         var httpClient = new HttpClient();
-        var launcherVersion = typeof(ServiceLocator).Assembly.GetName().Version?.ToString(4) ?? "3.1.10";
+        var launcherVersion = typeof(ServiceLocator).Assembly.GetName().Version?.ToString(4) ?? "3.1.11";
         httpClient.DefaultRequestHeaders.Add("User-Agent", $"VoidCraftLauncher/{launcherVersion}");
         Register(httpClient);
 
@@ -118,5 +118,6 @@ public sealed class ServiceLocator
         RegisterFactory(() => new AchievementHubService(Resolve<HttpClient>(), Resolve<LauncherService>(), Resolve<ObservabilityService>()));
         RegisterFactory(() => new ServerDiscoveryService(Resolve<LauncherService>(), Resolve<ObservabilityService>()));
         RegisterFactory(() => new InstanceExportService(Resolve<CurseForgeApi>(), Resolve<ModrinthApi>()));
+        RegisterFactory(() => new ArchitektDeskService(Resolve<SecureStorageService>()));
     }
 }
